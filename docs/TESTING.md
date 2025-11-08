@@ -277,7 +277,7 @@ You can now use the MCP server with Claude.
 
 ### Import Errors
 
-**Problem**: `ModuleNotFoundError: No module named 'server_improved'`
+**Problem**: `ModuleNotFoundError: No module named 'server'`
 
 **Solution**: Make sure you're running from the `mcp-server` directory:
 ```bash

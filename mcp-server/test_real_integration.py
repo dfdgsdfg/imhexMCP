@@ -21,12 +21,7 @@ import os
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-try:
-    from server_improved import ImHexClient, ServerConfig
-    USING_IMPROVED = True
-except ImportError:
-    from server import ImHexClient
-    USING_IMPROVED = False
+from server import ImHexClient, ServerConfig
 
 
 class Color:
@@ -51,17 +46,14 @@ class IntegrationTestRunner:
         self.tests_failed = 0
         self.test_results: List[Dict[str, Any]] = []
 
-        if USING_IMPROVED:
-            self.config = ServerConfig(
-                imhex_host=host,
-                imhex_port=port,
-                connection_timeout=5.0,
-                read_timeout=10.0,
-                max_retries=1
-            )
-            self.client = ImHexClient(self.config)
-        else:
-            self.client = ImHexClient(host, port)
+        self.config = ServerConfig(
+            imhex_host=host,
+            imhex_port=port,
+            connection_timeout=5.0,
+            read_timeout=10.0,
+            max_retries=1
+        )
+        self.client = ImHexClient(self.config)
 
     def print_header(self, text: str):
         """Print section header."""
@@ -403,13 +395,8 @@ class IntegrationTestRunner:
             return False
 
     def test_decode(self, file_info: Optional[Dict]) -> bool:
-        """Test data decoding (if available in improved version)."""
+        """Test data decoding."""
         self.print_test("Data Decode Endpoint")
-
-        if not USING_IMPROVED:
-            self.print_warning("Skipping - decode endpoint only in improved version")
-            self.record_result("Data Decode", True, "Skipped - not available")
-            return True
 
         if not file_info or not file_info.get("has_file"):
             self.print_warning("Skipping - no file open")
@@ -470,7 +457,6 @@ class IntegrationTestRunner:
         self.print_header("ImHex MCP Server - Real Integration Tests")
 
         print(f"Testing against: {self.host}:{self.port}")
-        print(f"Using: {'Improved' if USING_IMPROVED else 'Original'} server implementation")
         print()
 
         # Test connection first
@@ -483,10 +469,7 @@ class IntegrationTestRunner:
 
         # Connect client
         try:
-            if USING_IMPROVED:
-                self.client.connect()
-            else:
-                self.client.connect()
+            self.client.connect()
         except Exception as e:
             self.print_error(f"Failed to connect client: {e}")
             return 1
@@ -506,10 +489,7 @@ class IntegrationTestRunner:
         finally:
             # Disconnect
             try:
-                if USING_IMPROVED:
-                    self.client.disconnect()
-                else:
-                    self.client.disconnect()
+                self.client.disconnect()
             except:
                 pass
 

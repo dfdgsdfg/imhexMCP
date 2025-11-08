@@ -17,23 +17,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import after path is set
-try:
-    from server_improved import (
-        ImHexClient,
-        ServerConfig,
-        ConnectionError,
-        ImHexError,
-        hexStringToBytes,
-        bytesToHexString,
-    )
-    USING_IMPROVED = True
-except ImportError:
-    # Fallback to original server
-    from server import ImHexClient
-    USING_IMPROVED = False
-    ServerConfig = None
-    ConnectionError = Exception
-    ImHexError = Exception
+from server import (
+    ImHexClient,
+    ServerConfig,
+    ConnectionError,
+    ImHexError,
+)
 
 
 class MockImHexServer:
@@ -130,17 +119,14 @@ class TestImHexClient(unittest.TestCase):
         self.mock_server = MockImHexServer(port=31338)
         self.mock_server.start()
 
-        if USING_IMPROVED:
-            self.config = ServerConfig(
-                imhex_host='localhost',
-                imhex_port=31338,
-                connection_timeout=2.0,
-                read_timeout=2.0,
-                max_retries=2,
-                retry_delay=0.1
-            )
-        else:
-            self.config = {'host': 'localhost', 'port': 31338}
+        self.config = ServerConfig(
+            imhex_host='localhost',
+            imhex_port=31338,
+            connection_timeout=2.0,
+            read_timeout=2.0,
+            max_retries=2,
+            retry_delay=0.1
+        )
 
     def tearDown(self):
         """Clean up after tests."""
@@ -148,36 +134,21 @@ class TestImHexClient(unittest.TestCase):
 
     def test_connection_success(self):
         """Test successful connection to ImHex."""
-        if USING_IMPROVED:
-            client = ImHexClient(self.config)
-        else:
-            client = ImHexClient(**self.config)
-
+        client = ImHexClient(self.config)
         result = client.connect()
         self.assertTrue(result)
-
-        if USING_IMPROVED:
-            self.assertTrue(client.is_connected())
-
+        self.assertTrue(client.is_connected())
         client.disconnect()
-
-        if USING_IMPROVED:
-            self.assertFalse(client.is_connected())
+        self.assertFalse(client.is_connected())
 
     def test_connection_failure(self):
         """Test connection failure when server is not running."""
         # Stop the mock server
         self.mock_server.stop()
 
-        if USING_IMPROVED:
-            client = ImHexClient(self.config)
-            with self.assertRaises(ConnectionError):
-                client.connect()
-        else:
-            # Original version returns False instead of raising
-            client = ImHexClient(**self.config)
-            result = client.connect()
-            self.assertFalse(result)
+        client = ImHexClient(self.config)
+        with self.assertRaises(ConnectionError):
+            client.connect()
 
     def test_send_command_success(self):
         """Test sending a successful command."""
@@ -186,11 +157,7 @@ class TestImHexClient(unittest.TestCase):
             "data": {"result": "test_value"}
         })
 
-        if USING_IMPROVED:
-            client = ImHexClient(self.config)
-        else:
-            client = ImHexClient(**self.config)
-
+        client = ImHexClient(self.config)
         client.connect()
 
         response = client.send_command("test/endpoint", {"param": "value"})
@@ -207,30 +174,17 @@ class TestImHexClient(unittest.TestCase):
             "data": {"error": "Test error message"}
         })
 
-        if USING_IMPROVED:
-            client = ImHexClient(self.config)
-        else:
-            client = ImHexClient(**self.config)
-
+        client = ImHexClient(self.config)
         client.connect()
 
-        if USING_IMPROVED:
-            with self.assertRaises(ImHexError) as context:
-                client.send_command("error/endpoint")
-            self.assertIn("Test error message", str(context.exception))
-        else:
-            # Original version returns error in response instead of raising
-            response = client.send_command("error/endpoint")
-            self.assertEqual(response["status"], "error")
-            self.assertIn("error", response["data"])
+        with self.assertRaises(ImHexError) as context:
+            client.send_command("error/endpoint")
+        self.assertIn("Test error message", str(context.exception))
 
         client.disconnect()
 
     def test_context_manager(self):
         """Test using ImHexClient as a context manager."""
-        if not USING_IMPROVED:
-            self.skipTest("Context manager only available in improved version")
-
         with ImHexClient(self.config) as client:
             self.assertTrue(client.is_connected())
 
@@ -239,18 +193,13 @@ class TestImHexClient(unittest.TestCase):
 
     def test_auto_reconnect(self):
         """Test automatic reconnection when not connected."""
-        if USING_IMPROVED:
-            client = ImHexClient(self.config)
-        else:
-            client = ImHexClient(**self.config)
+        client = ImHexClient(self.config)
 
         # Send command without explicitly connecting
         # Should automatically connect
         response = client.send_command("test/endpoint")
 
-        if USING_IMPROVED:
-            self.assertTrue(client.is_connected())
-
+        self.assertTrue(client.is_connected())
         self.assertEqual(response["status"], "success")
 
         client.disconnect()
@@ -287,15 +236,12 @@ class TestIntegration(unittest.TestCase):
         self.mock_server = MockImHexServer(port=31339)
         self.mock_server.start()
 
-        if USING_IMPROVED:
-            self.config = ServerConfig(
-                imhex_host='localhost',
-                imhex_port=31339,
-                connection_timeout=2.0,
-                read_timeout=2.0
-            )
-        else:
-            self.config = {'host': 'localhost', 'port': 31339}
+        self.config = ServerConfig(
+            imhex_host='localhost',
+            imhex_port=31339,
+            connection_timeout=2.0,
+            read_timeout=2.0
+        )
 
     def tearDown(self):
         """Clean up."""
@@ -315,14 +261,8 @@ class TestIntegration(unittest.TestCase):
             }
         })
 
-        if USING_IMPROVED:
-            with ImHexClient(self.config) as client:
-                response = client.send_command("imhex/capabilities")
-        else:
-            client = ImHexClient(**self.config)
-            client.connect()
+        with ImHexClient(self.config) as client:
             response = client.send_command("imhex/capabilities")
-            client.disconnect()
 
         self.assertEqual(response["status"], "success")
         self.assertIn("build", response["data"])
@@ -340,14 +280,8 @@ class TestIntegration(unittest.TestCase):
             }
         })
 
-        if USING_IMPROVED:
-            with ImHexClient(self.config) as client:
-                response = client.send_command("file/open", {"path": "/path/to/file.bin"})
-        else:
-            client = ImHexClient(**self.config)
-            client.connect()
+        with ImHexClient(self.config) as client:
             response = client.send_command("file/open", {"path": "/path/to/file.bin"})
-            client.disconnect()
 
         self.assertEqual(response["status"], "success")
         self.assertEqual(response["data"]["size"], 1024)
@@ -363,20 +297,11 @@ class TestIntegration(unittest.TestCase):
             }
         })
 
-        if USING_IMPROVED:
-            with ImHexClient(self.config) as client:
-                response = client.send_command("data/read", {
-                    "offset": 0,
-                    "length": 16
-                })
-        else:
-            client = ImHexClient(**self.config)
-            client.connect()
+        with ImHexClient(self.config) as client:
             response = client.send_command("data/read", {
                 "offset": 0,
                 "length": 16
             })
-            client.disconnect()
 
         self.assertEqual(response["status"], "success")
         self.assertEqual(response["data"]["length"], 16)

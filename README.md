@@ -328,8 +328,7 @@ imhexMCP/                              # Your lightweight repo
 ├── 📄 .gitmodules                     # Submodule config
 │
 ├── 🐍 mcp-server/                     # Python MCP server
-│   ├── server.py                     # Original server (470 lines)
-│   ├── server_improved.py            # Enhanced server (850 lines)
+│   ├── server.py                     # MCP server (850 lines)
 │   ├── install.sh                    # Auto-installer
 │   ├── test_server.py                # Connection test
 │   ├── requirements.txt              # Dependencies
@@ -341,8 +340,7 @@ imhexMCP/                              # Your lightweight repo
 ├── 🔌 plugin/                         # ImHex C++ plugin
 │   ├── CMakeLists.txt                # Build config
 │   └── source/
-│       ├── plugin_mcp.cpp            # Original (548 lines)
-│       └── plugin_mcp_improved.cpp   # Enhanced (950 lines)
+│       └── plugin_mcp.cpp            # MCP plugin (950 lines)
 │
 ├── 🔧 scripts/                        # Automation scripts
 │   ├── build.sh                      # Build ImHex + plugin
@@ -433,7 +431,7 @@ make mcp -j$(nproc)
 
 ```bash
 cd mcp-server
-python server_improved.py --debug --log-file debug.log
+python server.py --debug --log-file debug.log
 ```
 
 ### Code Quality
@@ -446,10 +444,10 @@ pip install -r mcp-server/requirements-dev.txt
 black mcp-server/
 
 # Type check
-mypy mcp-server/server_improved.py
+mypy mcp-server/server.py
 
 # Lint
-pylint mcp-server/server_improved.py
+pylint mcp-server/server.py
 ```
 
 ---

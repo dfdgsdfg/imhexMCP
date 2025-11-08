@@ -130,12 +130,7 @@ configure_claude() {
     mkdir -p "$(dirname "$CLAUDE_CONFIG")"
 
     # Get absolute path to server.py
-    SERVER_PATH="$(cd "$(dirname "$0")" && pwd)/server_improved.py"
-
-    if [ ! -f "$SERVER_PATH" ]; then
-        # Fallback to original server.py
-        SERVER_PATH="$(cd "$(dirname "$0")" && pwd)/server.py"
-    fi
+    SERVER_PATH="$(cd "$(dirname "$0")" && pwd)/server.py"
 
     # Check if config file exists
     if [ -f "$CLAUDE_CONFIG" ]; then
