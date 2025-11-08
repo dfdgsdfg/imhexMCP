@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "imhex-mcp-server"
+version = "0.1.0"
+description = "Model Context Protocol server for ImHex hex editor"
+authors = [
+    {name = "ImHex MCP Contributors"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "GPL-2.0"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "mcp>=1.0.0",
+    "pydantic>=2.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/WerWolv/ImHex"
+Repository = "https://github.com/WerWolv/ImHex"
+
+[project.scripts]
+imhex-mcp-server = "server:main"
+
+[tool.setuptools]
+py-modules = ["server"]

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "imhex": {
+      "command": "python",
+      "args": ["-m", "server"],
+      "cwd": "/Users/pasha/PycharmProjects/IMHexMCP/ImHex/mcp_server",
+      "env": {
+        "IMHEX_HOST": "localhost",
+        "IMHEX_PORT": "31337"
+      }
+    }
+  }
+}
