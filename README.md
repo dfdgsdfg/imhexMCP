@@ -1,4 +1,5 @@
 # ImHex MCP Integration
+<img width="2912" height="1632" alt="image" src="https://github.com/user-attachments/assets/76df84b3-b91e-4a6e-8971-96893213ea6c" />
 
 **Model Context Protocol (MCP) server for ImHex - AI-powered binary analysis**
 
