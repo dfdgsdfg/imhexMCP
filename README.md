@@ -9,11 +9,11 @@
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![ImHex](https://img.shields.io/badge/ImHex-1.35%2B-orange.svg)](https://github.com/WerWolv/ImHex)
 [![MCP](https://img.shields.io/badge/MCP-1.0+-purple.svg)](https://modelcontextprotocol.io/)
-[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.5-blue.svg)](CHANGELOG.md)
 
 *Enable AI assistants like Claude to perform advanced binary file analysis through ImHex*
 
-[Quick Start](#-quick-start) • [Features](#-features) • [Documentation](#-documentation) • [Examples](#-usage-examples) • [Contributing](#-contributing)
+**[⚡ Quickstart Guide](QUICKSTART.md)** • [Features](#-features) • [Documentation](#-documentation) • [Testing](#-testing) • [Roadmap](#️-roadmap) • [Contributing](#-contributing)
 
 </div>
 
@@ -549,14 +549,13 @@ imhexMCP/                              # Your lightweight repo
 
 | Document | Description |
 |----------|-------------|
-| [QUICKSTART.md](docs/QUICKSTART.md) | Get started in 5 minutes |
-| [BUILD_MCP.md](docs/BUILD_MCP.md) | Detailed build instructions & troubleshooting |
-| [patches/README.md](patches/README.md) | **NEW!** Patch documentation & application guide |
-| [CLAUDE_CONTEXT.md](mcp-server/CLAUDE_CONTEXT.md) | **NEW!** Context for other Claude sessions |
-| [IMPROVEMENTS.md](docs/IMPROVEMENTS.md) | What's new in v0.2.0 |
-| [CHANGELOG.md](docs/CHANGELOG.md) | Complete version history |
-| [ARCHITECTURE.md](mcp-server/ARCHITECTURE.md) | Technical deep dive |
-| [API Reference](mcp-server/README.md) | MCP tools & endpoints |
+| **[QUICKSTART.md](QUICKSTART.md)** | ⚡ **Get started in 5 minutes!** |
+| **[CHANGELOG.md](CHANGELOG.md)** | 📝 **Version history & upgrade guide** |
+| [patches/README.md](patches/README.md) | Patch documentation & application guide |
+| [CLAUDE_CONTEXT.md](mcp-server/CLAUDE_CONTEXT.md) | Context for other Claude sessions |
+| [verify-setup.sh](verify-setup.sh) | Automated setup verification script |
+| [apply-patches.sh](apply-patches.sh) | Automated patch application |
+| [revert-patches.sh](revert-patches.sh) | Automated patch reversion |
 
 ---
 
