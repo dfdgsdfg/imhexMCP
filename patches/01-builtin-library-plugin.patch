@@ -1,0 +1,11 @@
+--- a/plugins/builtin/CMakeLists.txt
++++ b/plugins/builtin/CMakeLists.txt
+@@ -129,6 +129,8 @@ add_imhex_plugin(
+         ${JTHREAD_LIBRARIES}
+         plcli
+         libpl-gen
++
++    LIBRARY_PLUGIN
+ )
+
+ if (WIN32)

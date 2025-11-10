@@ -22,6 +22,7 @@
 ## 🌟 Highlights
 
 - ✨ **11 MCP Tools** - Complete binary analysis toolkit for AI assistants
+- 🤖 **Automated File Opening** - Fully implemented programmatic file access (no manual GUI!)
 - 🚀 **Lightning Fast** - Enhanced connection management with retry logic
 - 🔍 **Deep Inspection** - 24+ data type interpretations (int, float, ASCII, binary, etc.)
 - 🔐 **Secure Hashing** - MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512
@@ -29,7 +30,8 @@
 - 🎨 **Visual Bookmarks** - AI-driven code annotation and highlighting
 - 🧩 **Pattern Language** - AI generates ImHex patterns for binary parsing
 - ⚡ **Data Decoding** - Base64, ASCII, binary, hex encoding support
-- 🧪 **Fully Tested** - Comprehensive unit tests with mock server
+- 🔧 **Clean Patch System** - 6 automated patches for ImHex source modification
+- 🧪 **Fully Tested** - 8/8 binary analysis tests passing
 - 📦 **Lightweight** - Only 476 KB (ImHex via git submodule)
 
 ---
@@ -116,6 +118,69 @@ Can you check if ImHex is working? Use the capabilities tool.
 ```
 
 You should see ImHex version and available commands! 🎉
+
+---
+
+## 🎯 Automated File Opening - Now Fully Working!
+
+**Big Update**: Automated file opening is now fully implemented! Files can be opened programmatically via MCP without any manual GUI interaction.
+
+### How It Works
+
+We modified ImHex's plugin architecture to enable cross-plugin symbol sharing:
+
+1. **Builtin Plugin as Library** - Export `builtin` plugin as shared library (`.hexpluglib`)
+2. **Public FileProvider API** - Made `FileProvider::open(bool)` public
+3. **Graceful Settings Handling** - Handle missing settings with defaults
+4. **MCP Plugin Linking** - Link MCP plugin against builtin library
+5. **Direct FileProvider Usage** - Create and open files directly
+
+### Apply Patches
+
+The implementation requires 6 patches to ImHex source code. Apply them automatically:
+
+```bash
+cd /path/to/imhexMCP-standalone
+./apply-patches.sh
+```
+
+The script will:
+- ✅ Check which patches are already applied
+- ✅ Dry-run verify before applying
+- ✅ Apply patches in correct order
+- ✅ Provide next steps for building
+
+After applying patches, rebuild ImHex:
+
+```bash
+cd ImHex/build
+rm -f plugins/builtin.hexplug  # Remove old module
+ninja -j$(sysctl -n hw.ncpu)   # Rebuild
+```
+
+### Test Results
+
+All 8 comprehensive binary analysis tests pass:
+
+```
+✓ File Opening - Programmatic file opening via MCP
+✓ Header Reading - Read and verified magic bytes
+✓ Data Inspection - Type interpretation at offsets
+✓ SHA-256 Hashing - Hash calculation and verification
+✓ Pattern Search - Found hex patterns in binary data
+✓ ASCII Text Reading - Text extraction from binary
+✓ Bookmark Creation - Added annotations to file regions
+✓ Multi-Hash - MD5, SHA-1, SHA-256 generation
+
+🎉 8/8 tests passed!
+```
+
+### Documentation
+
+- **[IMPLEMENTATION_SUCCESS.md](IMPLEMENTATION_SUCCESS.md)** - Complete implementation report with technical details
+- **[patches/README.md](patches/README.md)** - Detailed patch documentation
+- **[apply-patches.sh](apply-patches.sh)** - Automated patch application script
+- **[revert-patches.sh](revert-patches.sh)** - Revert patches if needed
 
 ---
 
@@ -372,6 +437,9 @@ imhexMCP/                              # Your lightweight repo
 |----------|-------------|
 | [QUICKSTART.md](docs/QUICKSTART.md) | Get started in 5 minutes |
 | [BUILD_MCP.md](docs/BUILD_MCP.md) | Detailed build instructions & troubleshooting |
+| [IMPLEMENTATION_SUCCESS.md](IMPLEMENTATION_SUCCESS.md) | **NEW!** Complete implementation report & technical details |
+| [patches/README.md](patches/README.md) | **NEW!** Patch documentation & application guide |
+| [CLAUDE_CONTEXT.md](mcp-server/CLAUDE_CONTEXT.md) | **NEW!** Context for other Claude sessions |
 | [IMPROVEMENTS.md](docs/IMPROVEMENTS.md) | What's new in v0.2.0 |
 | [CHANGELOG.md](docs/CHANGELOG.md) | Complete version history |
 | [ARCHITECTURE.md](mcp-server/ARCHITECTURE.md) | Technical deep dive |

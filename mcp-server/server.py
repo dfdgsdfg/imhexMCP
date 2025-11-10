@@ -19,6 +19,7 @@ import logging
 import socket
 import argparse
 import sys
+import time
 from typing import Any, Dict, List, Optional, Tuple
 from pathlib import Path
 from dataclasses import dataclass
@@ -122,19 +123,19 @@ class ImHexClient:
                 logger.warning(f"Connection timeout (attempt {attempt + 1})")
                 self._cleanup_socket()
                 if attempt < self.config.max_retries - 1:
-                    asyncio.sleep(self.config.retry_delay)
+                    time.sleep(self.config.retry_delay)
 
             except ConnectionRefusedError:
                 logger.warning(f"Connection refused (attempt {attempt + 1})")
                 self._cleanup_socket()
                 if attempt < self.config.max_retries - 1:
-                    asyncio.sleep(self.config.retry_delay)
+                    time.sleep(self.config.retry_delay)
 
             except Exception as e:
                 logger.error(f"Connection error: {e} (attempt {attempt + 1})")
                 self._cleanup_socket()
                 if attempt < self.config.max_retries - 1:
-                    asyncio.sleep(self.config.retry_delay)
+                    time.sleep(self.config.retry_delay)
 
         # All attempts failed
         error_msg = (
@@ -177,10 +178,10 @@ class ImHexClient:
             ConnectionError: If not connected or connection fails
             ImHexError: If ImHex returns an error
         """
-        # Ensure connected
-        if not self.is_connected():
-            logger.debug("Not connected, attempting to connect...")
-            self.connect()
+        # ImHex closes connections after each request, so always reconnect
+        self.disconnect()
+        logger.debug("Creating new connection for request...")
+        self.connect()
 
         try:
             # Prepare request
@@ -201,7 +202,8 @@ class ImHexClient:
                 try:
                     chunk = self.socket.recv(4096)
                     if not chunk:
-                        raise ConnectionError("Connection closed by ImHex")
+                        # Connection closed by ImHex after response - this is normal
+                        break
                     response_data += chunk
                     if b"\n" in response_data:
                         break
@@ -214,6 +216,9 @@ class ImHexClient:
             response_str = response_data.decode('utf-8').strip()
             logger.debug(f"Received response: {response_str[:200]}...")
 
+            if not response_str:
+                raise ConnectionError("Empty response from ImHex")
+
             response: JSON = json.loads(response_str)
 
             # Check for errors
@@ -221,6 +226,9 @@ class ImHexClient:
                 error_msg = response.get("data", {}).get("error", "Unknown error")
                 logger.error(f"ImHex returned error: {error_msg}")
                 raise ImHexError(error_msg)
+
+            # Clean up connection (ImHex already closed it)
+            self.disconnect()
 
             return response
 
@@ -231,6 +239,7 @@ class ImHexClient:
 
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON response: {e}")
+            self.disconnect()
             raise ImHexError(f"Invalid JSON response from ImHex: {e}")
 
         except Exception as e:
