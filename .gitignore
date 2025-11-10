@@ -10,9 +10,10 @@ dist/
 venv/
 env/
 
-# ImHex build
-ImHex/build/
-ImHex/cmake-build-*/
+# ImHex (git submodule - users clone with --recurse-submodules)
+# The submodule is tracked in .gitmodules, but the actual directory
+# is excluded since patches are applied locally
+ImHex/
 
 # IDE
 .vscode/
@@ -31,3 +32,7 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Development/testing files
+mcp-server/test_endpoints_only.py
+mcp-server/test_with_manual_file.py
