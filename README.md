@@ -649,10 +649,11 @@ See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed guidelines.
 
 ## 📊 Version Compatibility
 
-| imhexMCP | ImHex | Python | MCP | Status |
-|----------|-------|--------|-----|--------|
-| **0.2.0** | 1.35+ | 3.10+ | 1.0+ | ✅ Current |
-| 0.1.0 | 1.35+ | 3.10+ | 1.0+ | ⚠️ Legacy |
+| imhexMCP | ImHex | Python | MCP | Status | Key Features |
+|----------|-------|--------|-----|--------|--------------|
+| **0.2.5** | 1.38+ | 3.10+ | 1.0+ | ✅ Current | Automated file opening, patch system |
+| 0.2.0 | 1.35+ | 3.10+ | 1.0+ | ⚠️ Legacy | Manual file opening only |
+| 0.1.0 | 1.35+ | 3.10+ | 1.0+ | 🗄️ Archived | Initial release |
 
 ---
 
@@ -785,30 +786,96 @@ When reporting issues, please include:
 
 ## 🗺️ Roadmap
 
-### v0.3.0 (Next Release)
+### v0.2.5 (Current - Just Completed! 🎉)
 
-- [ ] **Regex Search** - Full regex pattern support
-- [ ] **Streaming** - Handle files larger than 10MB
-- [ ] **Disassembly** - Complete Capstone integration
-- [ ] **Compression** - Support for compressed data
-- [ ] **More Encodings** - URL, Base32, Punycode, etc.
+- [x] **Automated File Opening** - Fully implemented via plugin architecture patches
+- [x] **Cross-Plugin Symbol Sharing** - Builtin plugin exported as shared library
+- [x] **Graceful Settings Handling** - Network interface works without full GUI
+- [x] **Comprehensive Testing** - 8/8 binary analysis tests passing
+- [x] **Clean Patch System** - 6 automated patches with scripts
 
-### v0.4.0 (Future)
+### v0.3.0 (Next - Q1 2025)
+
+**Focus: Enhanced Binary Analysis Capabilities**
+
+- [ ] **Multiple File Support** - Open and compare multiple files simultaneously
+  - Compare firmware versions side-by-side
+  - Cross-reference patterns across binaries
+  - Batch hash verification
+
+- [ ] **Advanced Search** - Pattern and string searching improvements
+  - Regex pattern support (via ImHex's existing regex)
+  - Multi-pattern search in single request
+  - Search result pagination (>10,000 matches)
+
+- [ ] **Data Export** - Extract and export binary data
+  - Export regions to separate files
+  - Extract embedded files/resources
+  - Save search results to CSV/JSON
+
+- [ ] **Enhanced Bookmarks** - Improve annotation capabilities
+  - Bookmark groups/categories
+  - Export/import bookmark sets
+  - Bookmark search and filtering
+
+### v0.4.0 (Future - Q2 2025)
+
+**Focus: Advanced Analysis & Automation**
+
+- [ ] **Binary Diffing** - Compare two binary files
+  - Byte-level diff visualization
+  - Identify changed/added/removed sections
+  - Diff multiple versions
 
 - [ ] **Pattern Templates** - Pre-built patterns for common formats
-- [ ] **Diff Mode** - Compare two binary files
-- [ ] **Scripting** - Python scripting API
-- [ ] **Visualization** - Export charts and graphs
+  - PE/ELF/Mach-O executable formats
+  - Common firmware formats (U-Boot, UEFI)
+  - File system structures (FAT, NTFS, ext4)
+  - Network protocols (TCP/IP headers, TLS records)
 
-### v1.0.0 (Long-term)
+- [ ] **Disassembly Integration** - Leverage ImHex's Capstone support
+  - Disassemble code regions
+  - Jump to addresses from disassembly
+  - Architecture auto-detection
 
-- [ ] **Multi-file Operations** - Work with multiple files
-- [ ] **Real-time Monitoring** - Watch file changes
-- [ ] **Authentication** - Secure remote access
-- [ ] **REST API** - Alternative to MCP
-- [ ] **Web Interface** - Browser-based access
+- [ ] **Streaming Large Files** - Handle files >128MB efficiently
+  - Chunked reading for multi-GB files
+  - Progressive hash calculation
+  - Indexed searching
 
-Vote on features in [GitHub Discussions](https://github.com/jmpnop/imhexMCP/discussions)!
+### v1.0.0 (Long-term - 2025)
+
+**Focus: Production Features & Ecosystem**
+
+- [ ] **Batch Operations** - Automate repetitive tasks
+  - Process directory of files
+  - Batch pattern extraction
+  - Report generation
+
+- [ ] **Enhanced Security** - Production-ready security
+  - Optional authentication for network interface
+  - Configurable port binding
+  - Access control and logging
+
+- [ ] **Integration Improvements** - Better MCP ecosystem integration
+  - Support for MCP sampling/resources
+  - Cached pattern compilation
+  - Background task support
+
+- [ ] **Documentation** - Complete documentation suite
+  - Video tutorials
+  - Common use case examples
+  - Best practices guide
+  - API reference improvements
+
+### Community Driven
+
+Have ideas? We'd love to hear them!
+
+- 💡 **Request features** in [GitHub Issues](https://github.com/jmpnop/imhexMCP/issues)
+- 💬 **Discuss ideas** in [GitHub Discussions](https://github.com/jmpnop/imhexMCP/discussions)
+- 🤝 **Contribute** - See [Contributing](#-contributing) section above
+- ⭐ **Star & Watch** to follow development progress
 
 ---
 
@@ -831,6 +898,6 @@ Vote on features in [GitHub Discussions](https://github.com/jmpnop/imhexMCP/disc
 
 ---
 
-**Version 0.2.0** | **Last Updated: 2025-11-08** | **Status: ✅ Production Ready**
+**Version 0.2.5** | **Last Updated: 2025-11-10** | **Status: ✅ Production Ready**
 
 </div>
