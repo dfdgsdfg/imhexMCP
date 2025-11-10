@@ -460,21 +460,62 @@ async def list_tools() -> List[Tool]:
         ),
         Tool(
             name="imhex_search",
-            description="Search for a pattern in the currently open file",
+            description="Search for a pattern in the currently open file (supports hex, text, and regex patterns with pagination)",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "pattern": {
                         "type": "string",
-                        "description": "Pattern to search for (hex string or text)"
+                        "description": "Pattern to search for (hex string, text, or regex pattern)"
                     },
                     "type": {
                         "type": "string",
-                        "enum": ["hex", "text"],
+                        "enum": ["hex", "text", "regex"],
                         "description": "Type of search to perform"
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "Skip first N results (pagination offset, default: 0)",
+                        "minimum": 0
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of results to return (default: 10000)",
+                        "minimum": 1,
+                        "maximum": 100000
                     }
                 },
                 "required": ["pattern", "type"]
+            }
+        ),
+        Tool(
+            name="imhex_multi_search",
+            description="Search for multiple patterns simultaneously in the currently open file",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "patterns": {
+                        "type": "array",
+                        "description": "Array of patterns to search for",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "pattern": {"type": "string"},
+                                "type": {"type": "string", "enum": ["hex", "text"]}
+                            },
+                            "required": ["pattern", "type"]
+                        },
+                        "minItems": 1,
+                        "maxItems": 20
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum results per pattern (default: 10000)",
+                        "minimum": 1,
+                        "maximum": 100000
+                    }
+                },
+                "required": ["patterns"]
             }
         ),
         Tool(
@@ -703,26 +744,76 @@ async def call_tool(name: str, arguments: Any) -> List[TextContent | ImageConten
         elif name == "imhex_search":
             pattern = arguments.get("pattern")
             search_type = arguments.get("type")
+            offset = arguments.get("offset", 0)
+            limit = arguments.get("limit", 10000)
 
-            response = imhex_client.send_command("search/find", {
+            params = {
                 "pattern": pattern,
                 "type": search_type
-            })
+            }
+            if offset > 0:
+                params["offset"] = offset
+            if limit != 10000:
+                params["limit"] = limit
+
+            response = imhex_client.send_command("search/find", params)
             data = response.get("data", {})
 
             matches = data.get("matches", [])
             count = data.get("count", 0)
+            total_matches = data.get("total_matches", count)
+            has_more = data.get("has_more", False)
 
             result = f"Search for '{pattern}' ({search_type})\n"
-            result += f"Found {count} match(es)\n\n"
+            result += f"Total matches: {total_matches}\n"
+            result += f"Showing results {offset + 1}-{offset + count} (limit: {limit})\n\n"
 
             if matches:
                 result += "Matches:\n"
                 for i, match in enumerate(matches[:100], 1):  # Limit display to 100
-                    result += f"  {i}. Offset: 0x{match:X} ({match})\n"
+                    result += f"  {offset + i}. Offset: 0x{match:X} ({match})\n"
 
                 if count > 100:
-                    result += f"\n... and {count - 100} more matches"
+                    result += f"\n... and {count - 100} more matches in this page"
+
+                if has_more:
+                    result += f"\n\nUse offset={offset + count} to see more results"
+
+            return [TextContent(type="text", text=result)]
+
+        elif name == "imhex_multi_search":
+            patterns = arguments.get("patterns", [])
+            limit = arguments.get("limit", 10000)
+
+            response = imhex_client.send_command("search/multi", {
+                "patterns": patterns,
+                "limit": limit
+            })
+            data = response.get("data", {})
+
+            pattern_results = data.get("patterns", [])
+            total_patterns = data.get("total_patterns", 0)
+
+            result = f"Multi-Pattern Search ({total_patterns} patterns)\n\n"
+
+            for i, pattern_data in enumerate(pattern_results, 1):
+                pattern = pattern_data.get("pattern", "")
+                search_type = pattern_data.get("type", "")
+                matches = pattern_data.get("matches", [])
+                count = pattern_data.get("count", 0)
+
+                result += f"[Pattern {i}] '{pattern}' ({search_type})\n"
+                result += f"  Matches: {count}\n"
+
+                if matches and count > 0:
+                    result += "  First matches:\n"
+                    for j, match in enumerate(matches[:5], 1):
+                        result += f"    {j}. Offset: 0x{match:X}\n"
+
+                    if count > 5:
+                        result += f"    ... and {count - 5} more\n"
+
+                result += "\n"
 
             return [TextContent(type="text", text=result)]
 
