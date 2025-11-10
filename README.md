@@ -112,7 +112,19 @@ pip install -r requirements.txt
 
 ### Verify Installation
 
-Ask Claude:
+**Option 1: Automated Verification Script**
+```bash
+./verify-setup.sh
+```
+
+This will check:
+- ✅ Repository structure (ImHex, patches, scripts)
+- ✅ Build artifacts (plugins, binaries)
+- ✅ MCP server setup
+- ✅ ImHex process running
+- ✅ Network interface listening on port 31337
+
+**Option 2: Ask Claude**
 ```
 Can you check if ImHex is working? Use the capabilities tool.
 ```
