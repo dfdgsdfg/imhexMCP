@@ -215,9 +215,17 @@ ninja -j$(sysctl -n hw.ncpu)   # Rebuild
 
 ### Test Results
 
-All 8 comprehensive binary analysis tests pass:
+All 8 comprehensive binary analysis tests pass with 100% success rate:
 
 ```
+======================================================================
+Test Summary
+======================================================================
+Total tests run: 8
+✓ Passed: 8
+✗ Failed: 0
+
+Tests Executed:
 ✓ File Opening - Programmatic file opening via MCP
 ✓ Header Reading - Read and verified magic bytes
 ✓ Data Inspection - Type interpretation at offsets
@@ -227,15 +235,54 @@ All 8 comprehensive binary analysis tests pass:
 ✓ Bookmark Creation - Added annotations to file regions
 ✓ Multi-Hash - MD5, SHA-1, SHA-256 generation
 
-🎉 8/8 tests passed!
+🎉 All binary analysis tests passed!
+======================================================================
 ```
+
+Run the test suite yourself:
+```bash
+# Ensure ImHex is running with Network Interface enabled
+cd mcp-server
+./venv/bin/python test_binary_analysis.py
+```
+
+### Troubleshooting
+
+**Issue: "Connection refused" when running tests**
+- Solution: Start ImHex and enable Network Interface
+- Location: Extras → Settings → **General** → Enable "Network Interface"
+- Port: 31337 (hardcoded, localhost only)
+- Restart ImHex after enabling
+
+**Issue: ImHex crashes on startup with "Failed to add shortcut"**
+- Cause: Duplicate builtin plugin files (both `.hexplug` and `.hexpluglib`)
+- Solution: Remove old module file:
+  ```bash
+  rm ImHex/build/plugins/builtin.hexplug
+  ```
+- Only `builtin.hexpluglib` should exist
+
+**Issue: "Settings not available" messages in ImHex logs**
+- Status: Normal - these are debug messages showing graceful fallback to defaults
+- Impact: None - functionality works correctly
+- Reason: Network interface doesn't require full GUI initialization
+
+**Issue: Patches fail to apply**
+- Cause: ImHex source has diverged from patch base (commit b1e2185)
+- Solution: See `patches/README.md` for manual modification instructions
+- Check current commit: `cd ImHex && git rev-parse HEAD`
+
+**Issue: Tests fail after rebuild**
+- Solution: Ensure old `builtin.hexplug` file is removed
+- Verify: `ls ImHex/build/plugins/` should show `builtin.hexpluglib` not `builtin.hexplug`
+- Restart ImHex after rebuilding
 
 ### Documentation
 
-- **[IMPLEMENTATION_SUCCESS.md](IMPLEMENTATION_SUCCESS.md)** - Complete implementation report with technical details
-- **[patches/README.md](patches/README.md)** - Detailed patch documentation
+- **[patches/README.md](patches/README.md)** - Patch documentation and application guide
+- **[CLAUDE_CONTEXT.md](mcp-server/CLAUDE_CONTEXT.md)** - Context for other Claude sessions
 - **[apply-patches.sh](apply-patches.sh)** - Automated patch application script
-- **[revert-patches.sh](revert-patches.sh)** - Revert patches if needed
+- **[revert-patches.sh](revert-patches.sh)** - Patch reversion script
 
 ---
 
@@ -492,7 +539,6 @@ imhexMCP/                              # Your lightweight repo
 |----------|-------------|
 | [QUICKSTART.md](docs/QUICKSTART.md) | Get started in 5 minutes |
 | [BUILD_MCP.md](docs/BUILD_MCP.md) | Detailed build instructions & troubleshooting |
-| [IMPLEMENTATION_SUCCESS.md](IMPLEMENTATION_SUCCESS.md) | **NEW!** Complete implementation report & technical details |
 | [patches/README.md](patches/README.md) | **NEW!** Patch documentation & application guide |
 | [CLAUDE_CONTEXT.md](mcp-server/CLAUDE_CONTEXT.md) | **NEW!** Context for other Claude sessions |
 | [IMPROVEMENTS.md](docs/IMPROVEMENTS.md) | What's new in v0.2.0 |
