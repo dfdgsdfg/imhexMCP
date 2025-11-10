@@ -556,6 +556,66 @@ async def list_tools() -> List[Tool]:
                 "required": []
             }
         ),
+        Tool(
+            name="imhex_export_data",
+            description="Export a region of data to a file in various formats (binary, hex, or base64)",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "offset": {
+                        "type": "integer",
+                        "description": "Offset to start exporting from",
+                        "minimum": 0
+                    },
+                    "length": {
+                        "type": "integer",
+                        "description": "Number of bytes to export",
+                        "minimum": 1,
+                        "maximum": 104857600  # 100MB max
+                    },
+                    "output_path": {
+                        "type": "string",
+                        "description": "Path where the exported file will be saved"
+                    },
+                    "format": {
+                        "type": "string",
+                        "enum": ["binary", "hex", "base64"],
+                        "description": "Export format (default: binary)"
+                    }
+                },
+                "required": ["offset", "length", "output_path"]
+            }
+        ),
+        Tool(
+            name="imhex_export_search_results",
+            description="Export search results to CSV or JSON format with optional context bytes",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "matches": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                        "description": "Array of offset matches to export"
+                    },
+                    "output_path": {
+                        "type": "string",
+                        "description": "Path where the results file will be saved"
+                    },
+                    "format": {
+                        "type": "string",
+                        "enum": ["json", "csv"],
+                        "description": "Export format (default: json)"
+                    },
+                    "context_bytes": {
+                        "type": "integer",
+                        "description": "Number of bytes to include as context (default: 0)",
+                        "minimum": 0,
+                        "maximum": 256
+                    }
+                },
+                "required": ["matches", "output_path"]
+            }
+        ),
     ]
 
 
@@ -738,6 +798,51 @@ async def call_tool(name: str, arguments: Any) -> List[TextContent | ImageConten
             result += f"Writable: {data.get('writable', False)}\n"
             result += f"Readable: {data.get('readable', False)}\n"
             result += f"Modified: {data.get('dirty', False)}\n"
+
+            return [TextContent(type="text", text=result)]
+
+        elif name == "imhex_export_data":
+            offset = arguments.get("offset")
+            length = arguments.get("length")
+            output_path = arguments.get("output_path")
+            format_type = arguments.get("format", "binary")
+
+            response = imhex_client.send_command("data/export", {
+                "offset": offset,
+                "length": length,
+                "output_path": output_path,
+                "format": format_type
+            })
+
+            data = response.get("data", {})
+            result = "Data Export Successful:\n\n"
+            result += f"Offset: 0x{data.get('offset', 0):X}\n"
+            result += f"Length: {data.get('length', 0):,} bytes\n"
+            result += f"Output: {data.get('output_path', 'Unknown')}\n"
+            result += f"Format: {data.get('format', 'binary')}\n"
+
+            return [TextContent(type="text", text=result)]
+
+        elif name == "imhex_export_search_results":
+            matches = arguments.get("matches", [])
+            output_path = arguments.get("output_path")
+            format_type = arguments.get("format", "json")
+            context_bytes = arguments.get("context_bytes", 0)
+
+            response = imhex_client.send_command("search/export", {
+                "matches": matches,
+                "output_path": output_path,
+                "format": format_type,
+                "context_bytes": context_bytes
+            })
+
+            data = response.get("data", {})
+            result = "Search Results Export Successful:\n\n"
+            result += f"Matches: {data.get('match_count', 0)}\n"
+            result += f"Output: {data.get('output_path', 'Unknown')}\n"
+            result += f"Format: {data.get('format', 'json')}\n"
+            if context_bytes > 0:
+                result += f"Context: {context_bytes} bytes per match\n"
 
             return [TextContent(type="text", text=result)]
 
