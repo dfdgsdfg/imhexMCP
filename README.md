@@ -125,15 +125,70 @@ You should see ImHex version and available commands! 🎉
 
 **Big Update**: Automated file opening is now fully implemented! Files can be opened programmatically via MCP without any manual GUI interaction.
 
-### How It Works
+### Why ImHex Needed Patching
 
-We modified ImHex's plugin architecture to enable cross-plugin symbol sharing:
+**The Problem**: ImHex plugins are **isolated shared libraries** by design. Each plugin (`.hexplug`) is loaded independently and cannot access symbols from other plugins. The `FileProvider` class that handles file opening lives in the `builtin` plugin, making it inaccessible to the `mcp` plugin.
+
+**Original Limitation**: Without these patches, the MCP workflow required:
+1. 🖱️ **Manual GUI interaction** - User must click "File → Open" in ImHex
+2. 🔄 **Context switching** - Switch between Claude and ImHex windows
+3. ⏱️ **Slower analysis** - Wait for manual file loading before AI can proceed
+4. 🚫 **No automation** - Cannot batch process multiple files
+5. 💬 **Verbose communication** - "Please open file X in ImHex, then I'll analyze it..."
+
+This broke the AI workflow entirely - Claude couldn't autonomously analyze binary files.
+
+### How The Patches Solve It
+
+We modified ImHex's plugin architecture to enable **controlled cross-plugin symbol sharing**:
 
 1. **Builtin Plugin as Library** - Export `builtin` plugin as shared library (`.hexpluglib`)
+   - Exposes FileProvider symbols for linking
+   - Still works as a plugin (dual-purpose)
+
 2. **Public FileProvider API** - Made `FileProvider::open(bool)` public
+   - External plugins can call file opening methods
+   - Maintains encapsulation of internal methods
+
 3. **Graceful Settings Handling** - Handle missing settings with defaults
+   - Works when ImHex settings system isn't initialized
+   - Network interface doesn't require full GUI startup
+
 4. **MCP Plugin Linking** - Link MCP plugin against builtin library
+   - Resolves FileProvider symbols at build time
+   - Clean dependency management
+
 5. **Direct FileProvider Usage** - Create and open files directly
+   - Bypasses event system that caused deadlocks
+   - Immediate file loading without GUI interaction
+
+### Workflow Benefits
+
+**Before Patches** (Manual Workflow):
+```
+User: "Analyze firmware.bin"
+Claude: "Please open firmware.bin in ImHex first"
+User: [Switches to ImHex, clicks File → Open, selects file]
+User: "OK, it's open"
+Claude: [Now can read and analyze the file]
+```
+
+**After Patches** (Automated Workflow):
+```
+User: "Analyze firmware.bin"
+Claude: [Opens file automatically]
+Claude: [Reads file automatically]
+Claude: [Analyzes and reports results]
+Done! ✨
+```
+
+**Key Benefits**:
+- ✅ **Zero manual interaction** - AI handles everything
+- ✅ **Batch processing** - Analyze multiple files automatically
+- ✅ **Faster workflow** - No context switching or waiting
+- ✅ **True automation** - Compare files, hunt patterns, extract data autonomously
+- ✅ **Better UX** - Just ask Claude, it handles the rest
+- ✅ **Scriptable** - Build automated binary analysis pipelines
 
 ### Apply Patches
 

@@ -2,9 +2,32 @@
 
 This directory contains patch files that modify ImHex source code to enable automated file opening via the MCP network interface.
 
-## Overview
+## Why These Patches Are Needed
 
-The patches modify ImHex's plugin architecture to allow cross-plugin symbol sharing, specifically enabling the MCP plugin to access `FileProvider` methods from the builtin plugin.
+### The Problem
+ImHex plugins are **isolated shared libraries** by design. Each plugin (`.hexplug`) cannot access symbols from other plugins. The `FileProvider` class that handles file opening lives in the `builtin` plugin, making it impossible for the `mcp` plugin to programmatically open files.
+
+**Without patches**: Users must manually click "File → Open" in ImHex for every file analysis, completely breaking AI automation.
+
+**With patches**: Claude AI can open files automatically via MCP, enabling true autonomous binary analysis.
+
+### The Solution
+The patches modify ImHex's plugin architecture to enable **controlled cross-plugin symbol sharing**, specifically allowing the MCP plugin to access `FileProvider` methods from the builtin plugin.
+
+**Key Benefits**:
+- ✅ **Zero manual interaction** - AI opens files automatically
+- ✅ **Batch processing** - Analyze multiple files without human intervention
+- ✅ **Faster workflow** - No context switching or waiting
+- ✅ **True automation** - Compare, search, extract data autonomously
+- ✅ **Scriptable pipelines** - Build automated binary analysis workflows
+
+### How It Works
+The patches accomplish cross-plugin symbol sharing through:
+1. Exporting builtin plugin as a shared library (`.hexpluglib`)
+2. Making FileProvider methods public for external access
+3. Linking MCP plugin against builtin library
+4. Gracefully handling missing settings for network interface usage
+5. Implementing direct FileProvider construction and usage
 
 ## Patch Files
 
