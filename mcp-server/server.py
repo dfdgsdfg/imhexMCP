@@ -418,6 +418,65 @@ async def list_tools() -> List[Tool]:
             }
         ),
         Tool(
+            name="imhex_list_files",
+            description="List all currently open files in ImHex",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        ),
+        Tool(
+            name="imhex_switch_file",
+            description="Switch the active file/provider in ImHex",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "provider_id": {
+                        "type": "integer",
+                        "description": "ID of the provider/file to switch to",
+                        "minimum": 0
+                    }
+                },
+                "required": ["provider_id"]
+            }
+        ),
+        Tool(
+            name="imhex_close_file",
+            description="Close a specific file/provider in ImHex",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "provider_id": {
+                        "type": "integer",
+                        "description": "ID of the provider/file to close",
+                        "minimum": 0
+                    }
+                },
+                "required": ["provider_id"]
+            }
+        ),
+        Tool(
+            name="imhex_compare_files",
+            description="Compare two files side-by-side (compares up to 1MB for similarity)",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "provider_id_1": {
+                        "type": "integer",
+                        "description": "ID of the first provider/file",
+                        "minimum": 0
+                    },
+                    "provider_id_2": {
+                        "type": "integer",
+                        "description": "ID of the second provider/file",
+                        "minimum": 0
+                    }
+                },
+                "required": ["provider_id_1", "provider_id_2"]
+            }
+        ),
+        Tool(
             name="imhex_read_hex",
             description="Read hex data from the currently open file",
             inputSchema={
@@ -703,6 +762,89 @@ async def call_tool(name: str, arguments: Any) -> List[TextContent | ImageConten
                 result += f"Size: {data['size']:,} bytes\n"
             if "name" in data:
                 result += f"Name: {data['name']}\n"
+
+            return [TextContent(type="text", text=result)]
+
+        # List all open files
+        elif name == "imhex_list_files":
+            response = imhex_client.send_command("file/list", {})
+            data = response.get("data", {})
+
+            files = data.get("files", [])
+            count = data.get("count", 0)
+
+            if count == 0:
+                return [TextContent(type="text", text="No files are currently open")]
+
+            result = f"Open files ({count}):\n\n"
+            for file_info in files:
+                provider_id = file_info.get("id")
+                name = file_info.get("name")
+                size = file_info.get("size", 0)
+                is_active = file_info.get("is_active", False)
+                readable = file_info.get("readable", False)
+                writable = file_info.get("writable", False)
+
+                active_marker = " [ACTIVE]" if is_active else ""
+                result += f"ID {provider_id}: {name}{active_marker}\n"
+                result += f"  Size: {size:,} bytes\n"
+                result += f"  Readable: {readable}, Writable: {writable}\n\n"
+
+            return [TextContent(type="text", text=result)]
+
+        # Switch active file
+        elif name == "imhex_switch_file":
+            provider_id = arguments.get("provider_id")
+
+            response = imhex_client.send_command("file/switch", {"provider_id": provider_id})
+            data = response.get("data", {})
+
+            name = data.get("name", "")
+            size = data.get("size", 0)
+
+            result = f"Switched to file (ID {provider_id}): {name}\n"
+            result += f"Size: {size:,} bytes"
+
+            return [TextContent(type="text", text=result)]
+
+        # Close a file
+        elif name == "imhex_close_file":
+            provider_id = arguments.get("provider_id")
+
+            response = imhex_client.send_command("file/close", {"provider_id": provider_id})
+            data = response.get("data", {})
+
+            name = data.get("name", "")
+
+            result = f"Closed file (ID {provider_id}): {name}"
+
+            return [TextContent(type="text", text=result)]
+
+        # Compare two files
+        elif name == "imhex_compare_files":
+            provider_id_1 = arguments.get("provider_id_1")
+            provider_id_2 = arguments.get("provider_id_2")
+
+            response = imhex_client.send_command("file/compare", {
+                "provider_id_1": provider_id_1,
+                "provider_id_2": provider_id_2
+            })
+            data = response.get("data", {})
+
+            file1 = data.get("file1", {})
+            file2 = data.get("file2", {})
+            comparison = data.get("comparison", {})
+
+            result = "File Comparison:\n\n"
+            result += f"File 1 (ID {file1.get('id')}): {file1.get('name')}\n"
+            result += f"  Size: {file1.get('size', 0):,} bytes\n\n"
+            result += f"File 2 (ID {file2.get('id')}): {file2.get('name')}\n"
+            result += f"  Size: {file2.get('size', 0):,} bytes\n\n"
+            result += "Comparison Results:\n"
+            result += f"  Sizes match: {comparison.get('size_match', False)}\n"
+            result += f"  Bytes compared: {comparison.get('bytes_compared', 0):,}\n"
+            result += f"  Differences found: {comparison.get('differences', 0):,}\n"
+            result += f"  Similarity: {comparison.get('similarity_percent', 0):.2f}%\n"
 
             return [TextContent(type="text", text=result)]
 
