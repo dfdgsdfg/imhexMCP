@@ -19,6 +19,7 @@
 #include <regex>
 #include <sstream>
 #include <iomanip>
+#include <fstream>
 
 namespace hex::plugin::mcp {
 
@@ -122,7 +123,7 @@ namespace hex::plugin::mcp {
         /**
          * Base64 decode
          */
-        std::vector<u8> base64_decode(const std::string &encoded_string) {
+        [[maybe_unused]] std::vector<u8> base64_decode(const std::string &encoded_string) {
             size_t in_len = encoded_string.size();
             int i = 0;
             int j = 0;
@@ -198,7 +199,7 @@ namespace hex::plugin::mcp {
 
                     return result;
                 } catch (const std::exception &e) {
-                    throw std::runtime_error(hex::format("Failed to open file: {}", e.what()));
+                    throw std::runtime_error(fmt::format("Failed to open file: {}", e.what()));
                 }
             });
 
@@ -219,7 +220,7 @@ namespace hex::plugin::mcp {
 
                     // Validate offset and length
                     if (offset >= provider->getActualSize()) {
-                        throw std::runtime_error(hex::format("Offset 0x{:X} is beyond file size 0x{:X}", offset, provider->getActualSize()));
+                        throw std::runtime_error(fmt::format("Offset 0x{:X} is beyond file size 0x{:X}", offset, provider->getActualSize()));
                     }
 
                     if (offset + length > provider->getActualSize()) {
@@ -230,7 +231,7 @@ namespace hex::plugin::mcp {
                     // Limit read size to prevent memory issues
                     const u64 maxReadSize = 10 * 1024 * 1024; // 10 MB
                     if (length > maxReadSize) {
-                        throw std::runtime_error(hex::format("Read length {} exceeds maximum of {} bytes", length, maxReadSize));
+                        throw std::runtime_error(fmt::format("Read length {} exceeds maximum of {} bytes", length, maxReadSize));
                     }
 
                     // Read data
@@ -244,7 +245,7 @@ namespace hex::plugin::mcp {
 
                     return result;
                 } catch (const std::exception &e) {
-                    throw std::runtime_error(hex::format("Failed to read data: {}", e.what()));
+                    throw std::runtime_error(fmt::format("Failed to read data: {}", e.what()));
                 }
             });
 
@@ -272,7 +273,7 @@ namespace hex::plugin::mcp {
 
                     // Validate offset
                     if (offset >= provider->getActualSize()) {
-                        throw std::runtime_error(hex::format("Offset 0x{:X} is beyond file size 0x{:X}", offset, provider->getActualSize()));
+                        throw std::runtime_error(fmt::format("Offset 0x{:X} is beyond file size 0x{:X}", offset, provider->getActualSize()));
                     }
 
                     if (offset + bytes.size() > provider->getActualSize()) {
@@ -292,7 +293,7 @@ namespace hex::plugin::mcp {
 
                     return result;
                 } catch (const std::exception &e) {
-                    throw std::runtime_error(hex::format("Failed to write data: {}", e.what()));
+                    throw std::runtime_error(fmt::format("Failed to write data: {}", e.what()));
                 }
             });
 
@@ -312,7 +313,7 @@ namespace hex::plugin::mcp {
 
                     // Validate offset
                     if (offset >= provider->getActualSize()) {
-                        throw std::runtime_error(hex::format("Offset 0x{:X} is beyond file size 0x{:X}", offset, provider->getActualSize()));
+                        throw std::runtime_error(fmt::format("Offset 0x{:X} is beyond file size 0x{:X}", offset, provider->getActualSize()));
                     }
 
                     nlohmann::json result;
@@ -438,7 +439,7 @@ namespace hex::plugin::mcp {
 
                     return result;
                 } catch (const std::exception &e) {
-                    throw std::runtime_error(hex::format("Failed to inspect data: {}", e.what()));
+                    throw std::runtime_error(fmt::format("Failed to inspect data: {}", e.what()));
                 }
             });
 
@@ -478,7 +479,7 @@ namespace hex::plugin::mcp {
 
                     return result;
                 } catch (const std::exception &e) {
-                    throw std::runtime_error(hex::format("Failed to add bookmark: {}", e.what()));
+                    throw std::runtime_error(fmt::format("Failed to add bookmark: {}", e.what()));
                 }
             });
 
@@ -519,19 +520,25 @@ namespace hex::plugin::mcp {
                     std::transform(algoLower.begin(), algoLower.end(), algoLower.begin(), ::tolower);
 
                     if (algoLower == "md5") {
-                        hashResult = crypt::md5(buffer);
+                        auto hash = crypt::md5(buffer);
+                        hashResult.assign(hash.begin(), hash.end());
                     } else if (algoLower == "sha1") {
-                        hashResult = crypt::sha1(buffer);
+                        auto hash = crypt::sha1(buffer);
+                        hashResult.assign(hash.begin(), hash.end());
                     } else if (algoLower == "sha224") {
-                        hashResult = crypt::sha224(buffer);
+                        auto hash = crypt::sha224(buffer);
+                        hashResult.assign(hash.begin(), hash.end());
                     } else if (algoLower == "sha256") {
-                        hashResult = crypt::sha256(buffer);
+                        auto hash = crypt::sha256(buffer);
+                        hashResult.assign(hash.begin(), hash.end());
                     } else if (algoLower == "sha384") {
-                        hashResult = crypt::sha384(buffer);
+                        auto hash = crypt::sha384(buffer);
+                        hashResult.assign(hash.begin(), hash.end());
                     } else if (algoLower == "sha512") {
-                        hashResult = crypt::sha512(buffer);
+                        auto hash = crypt::sha512(buffer);
+                        hashResult.assign(hash.begin(), hash.end());
                     } else {
-                        throw std::runtime_error(hex::format("Unsupported hash algorithm: {}", algorithm));
+                        throw std::runtime_error(fmt::format("Unsupported hash algorithm: {}", algorithm));
                     }
 
                     std::string hashHex = bytesToHexString(hashResult);
@@ -546,7 +553,7 @@ namespace hex::plugin::mcp {
 
                     return result;
                 } catch (const std::exception &e) {
-                    throw std::runtime_error(hex::format("Failed to calculate hash: {}", e.what()));
+                    throw std::runtime_error(fmt::format("Failed to calculate hash: {}", e.what()));
                 }
             });
 
@@ -572,7 +579,7 @@ namespace hex::plugin::mcp {
                     } else if (searchType == "text") {
                         searchBytes.assign(pattern.begin(), pattern.end());
                     } else {
-                        throw std::runtime_error(hex::format("Unsupported search type: {}", searchType));
+                        throw std::runtime_error(fmt::format("Unsupported search type: {}", searchType));
                     }
 
                     if (searchBytes.empty()) {
@@ -619,7 +626,7 @@ namespace hex::plugin::mcp {
 
                     return result;
                 } catch (const std::exception &e) {
-                    throw std::runtime_error(hex::format("Failed to search: {}", e.what()));
+                    throw std::runtime_error(fmt::format("Failed to search: {}", e.what()));
                 }
             });
 
@@ -655,12 +662,12 @@ namespace hex::plugin::mcp {
                         }
                         result["decoded"] = binary;
                     } else {
-                        throw std::runtime_error(hex::format("Unsupported encoding: {}", encoding));
+                        throw std::runtime_error(fmt::format("Unsupported encoding: {}", encoding));
                     }
 
                     return result;
                 } catch (const std::exception &e) {
-                    throw std::runtime_error(hex::format("Failed to decode data: {}", e.what()));
+                    throw std::runtime_error(fmt::format("Failed to decode data: {}", e.what()));
                 }
             });
 
@@ -692,7 +699,313 @@ namespace hex::plugin::mcp {
                 return result;
             });
 
-            log::info("MCP plugin (improved) loaded - registered {} network endpoints", 9);
+            // File operations: List all open files/providers
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("file/list", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    (void)data;
+                    auto providers = ImHexApi::Provider::getProviders();
+                    auto currentProvider = ImHexApi::Provider::get();
+
+                    nlohmann::json filesList = nlohmann::json::array();
+
+                    for (const auto &provider : providers) {
+                        nlohmann::json fileInfo;
+                        fileInfo["id"] = provider->getID();
+                        fileInfo["name"] = provider->getName();
+                        fileInfo["size"] = provider->getActualSize();
+                        fileInfo["readable"] = provider->isReadable();
+                        fileInfo["writable"] = provider->isWritable();
+                        fileInfo["is_active"] = (provider == currentProvider);
+                        filesList.push_back(fileInfo);
+                    }
+
+                    nlohmann::json result;
+                    result["count"] = filesList.size();
+                    result["files"] = filesList;
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Failed to list files: {}", e.what()));
+                }
+            });
+
+            // File operations: Switch active file/provider
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("file/switch", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    u32 providerID = data.at("provider_id").get<u32>();
+                    auto providers = ImHexApi::Provider::getProviders();
+
+                    for (auto *provider : providers) {
+                        if (provider->getID() == providerID) {
+                            ImHexApi::Provider::setCurrentProvider(providerID);
+
+                            nlohmann::json result;
+                            result["id"] = providerID;
+                            result["name"] = provider->getName();
+                            result["size"] = provider->getActualSize();
+                            return result;
+                        }
+                    }
+
+                    throw std::runtime_error(fmt::format("Provider with ID {} not found", providerID));
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Failed to switch file: {}", e.what()));
+                }
+            });
+
+            // File operations: Close a file/provider
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("file/close", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    u32 providerID = data.at("provider_id").get<u32>();
+                    auto providers = ImHexApi::Provider::getProviders();
+
+                    for (auto *provider : providers) {
+                        if (provider->getID() == providerID) {
+                            std::string name = provider->getName();
+                            ImHexApi::Provider::remove(provider);
+
+                            nlohmann::json result;
+                            result["id"] = providerID;
+                            result["name"] = name;
+                            result["closed"] = true;
+                            return result;
+                        }
+                    }
+
+                    throw std::runtime_error(fmt::format("Provider with ID {} not found", providerID));
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Failed to close file: {}", e.what()));
+                }
+            });
+
+            // File operations: Compare two files
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("file/compare", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    u32 providerID1 = data.at("provider_id_1").get<u32>();
+                    u32 providerID2 = data.at("provider_id_2").get<u32>();
+
+                    auto providers = ImHexApi::Provider::getProviders();
+                    prv::Provider* provider1 = nullptr;
+                    prv::Provider* provider2 = nullptr;
+
+                    for (auto *provider : providers) {
+                        if (provider->getID() == providerID1) provider1 = provider;
+                        if (provider->getID() == providerID2) provider2 = provider;
+                    }
+
+                    if (!provider1 || !provider2) {
+                        throw std::runtime_error("One or both providers not found");
+                    }
+
+                    u64 size1 = provider1->getActualSize();
+                    u64 size2 = provider2->getActualSize();
+                    u64 compareBytes = std::min({size1, size2, static_cast<u64>(1024 * 1024)});
+                    u64 differences = 0;
+
+                    std::vector<u8> buffer1(1024);
+                    std::vector<u8> buffer2(1024);
+
+                    for (u64 offset = 0; offset < compareBytes; offset += 1024) {
+                        u64 chunkSize = std::min(static_cast<u64>(1024), compareBytes - offset);
+                        provider1->read(offset, buffer1.data(), chunkSize);
+                        provider2->read(offset, buffer2.data(), chunkSize);
+
+                        for (size_t i = 0; i < chunkSize; i++) {
+                            if (buffer1[i] != buffer2[i]) differences++;
+                        }
+                    }
+
+                    double similarity = 100.0 * (1.0 - (static_cast<double>(differences) / static_cast<double>(compareBytes)));
+
+                    nlohmann::json result;
+                    result["file1"] = {{"id", providerID1}, {"name", provider1->getName()}, {"size", size1}};
+                    result["file2"] = {{"id", providerID2}, {"name", provider2->getName()}, {"size", size2}};
+                    result["comparison"] = {
+                        {"size_match", size1 == size2},
+                        {"bytes_compared", compareBytes},
+                        {"differences", differences},
+                        {"similarity_percent", similarity}
+                    };
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Failed to compare files: {}", e.what()));
+                }
+            });
+
+            // Data operations: Export data to file (binary/hex/base64)
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("data/export", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    if (!ImHexApi::Provider::isValid()) {
+                        throw std::runtime_error("No file is currently open");
+                    }
+
+                    auto provider = ImHexApi::Provider::get();
+                    u64 offset = data.at("offset").get<u64>();
+                    u64 length = data.at("length").get<u64>();
+                    std::string outputPath = data.at("output_path").get<std::string>();
+                    std::string format = data.value("format", "binary");
+
+                    const u64 maxExport = 100 * 1024 * 1024; // 100MB
+                    if (length > maxExport) {
+                        throw std::runtime_error(fmt::format("Export size {} exceeds maximum of {} bytes", length, maxExport));
+                    }
+
+                    std::vector<u8> buffer(length);
+                    provider->read(offset, buffer.data(), length);
+
+                    std::ofstream outFile(outputPath, std::ios::binary);
+                    if (!outFile) {
+                        throw std::runtime_error("Failed to open output file");
+                    }
+
+                    if (format == "binary") {
+                        outFile.write(reinterpret_cast<const char*>(buffer.data()), length);
+                    } else if (format == "hex") {
+                        for (size_t i = 0; i < buffer.size(); i++) {
+                            outFile << fmt::format("{:02X}", buffer[i]);
+                            if ((i + 1) % 16 == 0) outFile << "\n";
+                            else if ((i + 1) < buffer.size()) outFile << " ";
+                        }
+                    } else if (format == "base64") {
+                        std::string b64 = base64_encode(buffer);
+                        for (size_t i = 0; i < b64.length(); i += 76) {
+                            outFile << b64.substr(i, 76) << "\n";
+                        }
+                    }
+
+                    nlohmann::json result;
+                    result["offset"] = offset;
+                    result["length"] = length;
+                    result["format"] = format;
+                    result["output_path"] = outputPath;
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Failed to export data: {}", e.what()));
+                }
+            });
+
+            // Search operations: Export search results (CSV/JSON)
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("search/export", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    auto matches = data.at("matches").get<std::vector<u64>>();
+                    std::string outputPath = data.at("output_path").get<std::string>();
+                    std::string format = data.value("format", "json");
+                    u64 contextBytes = data.value("context_bytes", 0);
+
+                    std::ofstream outFile(outputPath);
+                    if (!outFile) {
+                        throw std::runtime_error("Failed to open output file");
+                    }
+
+                    if (format == "csv") {
+                        outFile << "Match,Offset_Hex,Offset_Dec";
+                        if (contextBytes > 0) outFile << ",Context_Hex,Context_ASCII";
+                        outFile << "\n";
+
+                        for (size_t i = 0; i < matches.size(); i++) {
+                            outFile << (i + 1) << ",0x" << fmt::format("{:X}", matches[i]) << "," << matches[i];
+                            if (contextBytes > 0) {
+                                // Add context data
+                            }
+                            outFile << "\n";
+                        }
+                    } else if (format == "json") {
+                        nlohmann::json exportData;
+                        exportData["match_count"] = matches.size();
+                        nlohmann::json matchArray = nlohmann::json::array();
+                        for (auto offset : matches) {
+                            matchArray.push_back({{"offset", offset}, {"offset_hex", fmt::format("0x{:X}", offset)}});
+                        }
+                        exportData["matches"] = matchArray;
+                        outFile << exportData.dump(2);
+                    }
+
+                    nlohmann::json result;
+                    result["match_count"] = matches.size();
+                    result["format"] = format;
+                    result["output_path"] = outputPath;
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Failed to export search results: {}", e.what()));
+                }
+            });
+
+            // Search operations: Multi-pattern search
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("search/multi", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    if (!ImHexApi::Provider::isValid()) {
+                        throw std::runtime_error("No file is currently open");
+                    }
+
+                    auto provider = ImHexApi::Provider::get();
+                    auto patternsArray = data.at("patterns");
+
+                    nlohmann::json results = nlohmann::json::array();
+
+                    for (const auto &patternObj : patternsArray) {
+                        std::string pattern = patternObj.at("pattern").get<std::string>();
+                        std::string type = patternObj.at("type").get<std::string>();
+
+                        std::vector<u8> searchBytes;
+                        if (type == "hex") {
+                            searchBytes = hexStringToBytes(pattern);
+                        } else {
+                            searchBytes.assign(pattern.begin(), pattern.end());
+                        }
+
+                        std::vector<u64> matches;
+                        const size_t chunkSize = 1024 * 1024;
+                        std::vector<u8> buffer(chunkSize + searchBytes.size());
+                        u64 fileSize = provider->getActualSize();
+
+                        for (u64 offset = 0; offset < fileSize && matches.size() < 1000; offset += chunkSize) {
+                            size_t readSize = std::min(chunkSize + searchBytes.size(), static_cast<size_t>(fileSize - offset));
+                            provider->read(offset, buffer.data(), readSize);
+
+                            for (size_t i = 0; i <= readSize - searchBytes.size() && matches.size() < 1000; i++) {
+                                bool found = true;
+                                for (size_t j = 0; j < searchBytes.size(); j++) {
+                                    if (buffer[i + j] != searchBytes[j]) {
+                                        found = false;
+                                        break;
+                                    }
+                                }
+                                if (found) matches.push_back(offset + i);
+                            }
+                        }
+
+                        nlohmann::json patternResult;
+                        patternResult["pattern"] = pattern;
+                        patternResult["type"] = type;
+                        patternResult["matches"] = matches;
+                        patternResult["count"] = matches.size();
+                        results.push_back(patternResult);
+                    }
+
+                    nlohmann::json result;
+                    result["patterns_searched"] = patternsArray.size();
+                    result["results"] = results;
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Failed multi-pattern search: {}", e.what()));
+                }
+            });
+
+            // Bookmark operations: Remove bookmark
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("bookmark/remove", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    u64 bookmarkId = data.at("id").get<u64>();
+                    ImHexApi::Bookmarks::remove(bookmarkId);
+
+                    nlohmann::json result;
+                    result["id"] = bookmarkId;
+                    result["status"] = "removed";
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Failed to remove bookmark: {}", e.what()));
+                }
+            });
+
+            log::info("MCP plugin (improved) loaded - registered {} network endpoints", 17);
         }
 
     }
@@ -703,7 +1016,7 @@ namespace hex::plugin::mcp {
 IMHEX_PLUGIN_SETUP("MCP Integration", "ImHex Contributors", "Improved MCP server integration for AI assistant access") {
     using namespace hex::plugin::mcp;
 
-    log::info("Initializing MCP plugin (improved version)...");
+    hex::log::info("Initializing MCP plugin (improved version)...");
 
     // Register all MCP network endpoints
     registerMCPEndpoints();
