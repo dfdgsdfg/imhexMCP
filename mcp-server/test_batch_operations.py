@@ -334,6 +334,15 @@ def main():
         print("="*70)
         print()
 
+        # Setup: Reopen all files for Phase 2 tests
+        print("[SETUP] Reopening all files for Phase 2 tests...")
+        client.send_command("batch/open_directory", {
+            "directory": test_dir,
+            "pattern": "*",
+            "max_files": 100
+        })
+        print()
+
         print("[TEST 7.1] Search for 'TEST' string across all open files")
         try:
             response = client.send_command("batch/search", {
@@ -395,12 +404,12 @@ def main():
                 print(f"    Patterns: {summary.get('patterns_searched')}")
                 print(f"    Total matches: {summary.get('total_matches')}")
 
-                # Should find PE signature in test3.exe and ELF in test4.elf
-                if summary.get('total_matches', 0) >= 3:  # At least 3 matches across patterns
-                    print(f"  ✓ Found expected matches")
+                # Should find PE signature in test3.exe, ELF in test4.elf, and TEST in test1/test2
+                if summary.get('total_matches', 0) >= 4:  # At least 4 matches across patterns
+                    print(f"  ✓ Found expected matches (PE, ELF, TEST patterns)")
                     passed += 1
                 else:
-                    print(f"  ✗ Expected at least 3 matches, got {summary.get('total_matches', 0)}")
+                    print(f"  ✗ Expected at least 4 matches, got {summary.get('total_matches', 0)}")
                     failed += 1
             else:
                 print(f"  ✗ Multi-pattern search failed: {response}")
@@ -432,8 +441,8 @@ def main():
                 # Verify all files have sha256 hash
                 all_have_sha256 = all('sha256' in h.get('hashes', {}) for h in hashes)
 
-                if all_have_sha256 and total >= 3:  # Should have hashed at least 3 files
-                    print(f"  ✓ All files have SHA256 hash")
+                if all_have_sha256 and total == 7:  # Should have hashed all 7 files
+                    print(f"  ✓ All 7 files have SHA256 hash")
 
                     # Show first hash as example
                     if hashes:
@@ -442,7 +451,7 @@ def main():
 
                     passed += 1
                 else:
-                    print(f"  ✗ Hash verification failed")
+                    print(f"  ✗ Expected 7 files with SHA256, got {total}")
                     failed += 1
             else:
                 print(f"  ✗ Batch hash failed: {response}")
@@ -478,11 +487,11 @@ def main():
                     for h in hashes
                 )
 
-                if all_have_both and total >= 3:
-                    print(f"  ✓ All files have both MD5 and SHA256 hashes")
+                if all_have_both and total == 7:
+                    print(f"  ✓ All 7 files have both MD5 and SHA256 hashes")
                     passed += 1
                 else:
-                    print(f"  ✗ Multi-algorithm hash verification failed")
+                    print(f"  ✗ Expected 7 files with both hashes, got {total}")
                     failed += 1
             else:
                 print(f"  ✗ Multi-algorithm hash failed: {response}")
