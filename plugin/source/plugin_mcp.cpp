@@ -3,6 +3,8 @@
 #include <hex/api/imhex_api/provider.hpp>
 #include <hex/api/imhex_api/bookmarks.hpp>
 #include <hex/api/content_registry/communication_interface.hpp>
+#include <hex/api/content_registry/diffing.hpp>
+#include <hex/api/content_registry/disassemblers.hpp>
 #include <hex/api/events/requests_interaction.hpp>
 #include <hex/providers/provider.hpp>
 
@@ -1005,7 +1007,252 @@ namespace hex::plugin::mcp {
                 }
             });
 
-            log::info("MCP plugin (improved) loaded - registered {} network endpoints", 17);
+            // v0.4.0 ENDPOINTS
+
+            // Binary Diffing: Enhanced diff with detailed regions
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("diff/analyze", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    u32 providerID1 = data.at("provider_id_1").get<u32>();
+                    u32 providerID2 = data.at("provider_id_2").get<u32>();
+                    std::string algorithm = data.value("algorithm", "simple");
+
+                    auto providers = ImHexApi::Provider::getProviders();
+                    prv::Provider* provider1 = nullptr;
+                    prv::Provider* provider2 = nullptr;
+
+                    for (auto *provider : providers) {
+                        if (provider->getID() == providerID1) provider1 = provider;
+                        if (provider->getID() == providerID2) provider2 = provider;
+                    }
+
+                    if (!provider1 || !provider2) {
+                        throw std::runtime_error("One or both providers not found");
+                    }
+
+                    // Get available diffing algorithms
+                    auto &algorithms = ContentRegistry::Diffing::impl::getAlgorithms();
+                    ContentRegistry::Diffing::Algorithm* selectedAlgo = nullptr;
+
+                    for (auto &algo : algorithms) {
+                        std::string algoName = algo->getUnlocalizedName().get();
+                        std::transform(algoName.begin(), algoName.end(), algoName.begin(), ::tolower);
+                        if (algoName.find(algorithm) != std::string::npos) {
+                            selectedAlgo = algo.get();
+                            break;
+                        }
+                    }
+
+                    if (!selectedAlgo && !algorithms.empty()) {
+                        selectedAlgo = algorithms[0].get(); // Default to first algorithm
+                    }
+
+                    if (!selectedAlgo) {
+                        throw std::runtime_error("No diffing algorithms available");
+                    }
+
+                    // Run diff analysis
+                    auto diffTrees = selectedAlgo->analyze(provider1, provider2);
+
+                    // Convert diff trees to JSON regions
+                    nlohmann::json regions = nlohmann::json::array();
+
+                    if (!diffTrees.empty()) {
+                        auto &tree = diffTrees[0];
+                        size_t regionCount = 0;
+                        const size_t maxRegions = 10000;
+
+                        for (auto it = tree.begin(); it != tree.end() && regionCount < maxRegions; ++it) {
+                            regionCount++;
+
+                            u64 intervalStart = it->first;
+                            u64 intervalEnd = it->second.first;
+                            auto type = it->second.second;
+
+                            nlohmann::json region;
+                            region["start"] = intervalStart;
+                            region["end"] = intervalEnd;
+                            region["size"] = intervalEnd - intervalStart + 1;
+
+                            switch (type) {
+                                case ContentRegistry::Diffing::DifferenceType::Match:
+                                    region["type"] = "match";
+                                    break;
+                                case ContentRegistry::Diffing::DifferenceType::Mismatch:
+                                    region["type"] = "mismatch";
+                                    break;
+                                case ContentRegistry::Diffing::DifferenceType::Insertion:
+                                    region["type"] = "insertion";
+                                    break;
+                                case ContentRegistry::Diffing::DifferenceType::Deletion:
+                                    region["type"] = "deletion";
+                                    break;
+                            }
+
+                            regions.push_back(region);
+                        }
+                    }
+
+                    nlohmann::json result;
+                    result["algorithm"] = selectedAlgo->getUnlocalizedName().get();
+                    result["provider1_id"] = providerID1;
+                    result["provider2_id"] = providerID2;
+                    result["provider1_size"] = provider1->getActualSize();
+                    result["provider2_size"] = provider2->getActualSize();
+                    result["regions"] = regions;
+                    result["region_count"] = regions.size();
+
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Failed to analyze diff: {}", e.what()));
+                }
+            });
+
+            // Disassembly: Disassemble code with architecture selection
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("disasm/disassemble", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    if (!ImHexApi::Provider::isValid()) {
+                        throw std::runtime_error("No file is currently open");
+                    }
+
+                    auto provider = ImHexApi::Provider::get();
+                    u64 offset = data.at("offset").get<u64>();
+                    u64 length = data.value("length", 256);
+                    std::string architecture = data.value("architecture", "x86_64");
+
+                    // Limit disassembly size
+                    const u64 maxLength = 64 * 1024; // 64KB
+                    if (length > maxLength) {
+                        throw std::runtime_error(fmt::format("Length {} exceeds maximum of {}", length, maxLength));
+                    }
+
+                    // Read data to disassemble
+                    std::vector<u8> code(length);
+                    provider->read(offset, code.data(), length);
+
+                    // Get available disassemblers (they are stored as creator functions)
+                    auto &architectures = ContentRegistry::Disassemblers::impl::getArchitectures();
+                    std::unique_ptr<ContentRegistry::Disassemblers::Architecture> selectedArch;
+
+                    for (auto &[name, creator] : architectures) {
+                        std::string archName = name;
+                        std::transform(archName.begin(), archName.end(), archName.begin(), ::tolower);
+                        if (archName.find(architecture) != std::string::npos) {
+                            selectedArch = creator();
+                            break;
+                        }
+                    }
+
+                    if (!selectedArch) {
+                        throw std::runtime_error(fmt::format("Architecture '{}' not found", architecture));
+                    }
+
+                    // Initialize disassembler
+                    if (!selectedArch->start()) {
+                        throw std::runtime_error("Failed to initialize disassembler");
+                    }
+
+                    // Disassemble instructions
+                    nlohmann::json instructions = nlohmann::json::array();
+                    u64 currentOffset = offset;
+                    size_t codeIndex = 0;
+                    size_t maxInstructions = 1000;
+
+                    while (codeIndex < code.size() && instructions.size() < maxInstructions) {
+                        auto instr = selectedArch->disassemble(offset, currentOffset, currentOffset,
+                                                              std::span<const u8>(code.data() + codeIndex, code.size() - codeIndex));
+
+                        if (!instr.has_value()) break;
+
+                        nlohmann::json instrJson;
+                        instrJson["address"] = instr->address;
+                        instrJson["offset"] = instr->offset;
+                        instrJson["size"] = instr->size;
+                        instrJson["bytes"] = instr->bytes;
+                        instrJson["mnemonic"] = instr->mnemonic;
+                        instrJson["operands"] = instr->operators;
+
+                        instructions.push_back(instrJson);
+
+                        currentOffset += instr->size;
+                        codeIndex += instr->size;
+                    }
+
+                    nlohmann::json result;
+                    result["architecture"] = selectedArch->getName();
+                    result["start_offset"] = offset;
+                    result["bytes_disassembled"] = codeIndex;
+                    result["instruction_count"] = instructions.size();
+                    result["instructions"] = instructions;
+
+                    // Cleanup disassembler
+                    selectedArch->end();
+
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Failed to disassemble: {}", e.what()));
+                }
+            });
+
+            // Chunked Read: Stream large file regions
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("data/read_chunked", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    if (!ImHexApi::Provider::isValid()) {
+                        throw std::runtime_error("No file is currently open");
+                    }
+
+                    auto provider = ImHexApi::Provider::get();
+                    u64 offset = data.at("offset").get<u64>();
+                    u64 totalLength = data.at("length").get<u64>();
+                    u64 chunkSize = data.value("chunk_size", 1024 * 1024); // Default 1MB chunks
+                    size_t chunkIndex = data.value("chunk_index", 0);
+                    std::string encoding = data.value("encoding", "hex");
+
+                    // Calculate this chunk's parameters
+                    u64 chunkOffset = offset + (chunkIndex * chunkSize);
+                    u64 thisChunkSize = std::min(chunkSize, totalLength - (chunkIndex * chunkSize));
+
+                    if (chunkOffset >= provider->getActualSize()) {
+                        throw std::runtime_error("Chunk offset beyond file size");
+                    }
+
+                    if (thisChunkSize == 0) {
+                        throw std::runtime_error("No data left to read");
+                    }
+
+                    // Read this chunk
+                    std::vector<u8> chunk(thisChunkSize);
+                    provider->read(chunkOffset, chunk.data(), thisChunkSize);
+
+                    // Encode data based on requested format
+                    std::string encodedData;
+                    if (encoding == "hex") {
+                        encodedData = bytesToHexString(chunk);
+                    } else if (encoding == "base64") {
+                        encodedData = base64_encode(chunk);
+                    } else {
+                        throw std::runtime_error(fmt::format("Unsupported encoding: {}", encoding));
+                    }
+
+                    u64 totalChunks = (totalLength + chunkSize - 1) / chunkSize;
+                    bool hasMore = (chunkIndex + 1) < totalChunks;
+
+                    nlohmann::json result;
+                    result["chunk_index"] = chunkIndex;
+                    result["chunk_offset"] = chunkOffset;
+                    result["chunk_size"] = thisChunkSize;
+                    result["encoding"] = encoding;
+                    result["data"] = encodedData;
+                    result["total_chunks"] = totalChunks;
+                    result["has_more"] = hasMore;
+                    result["bytes_remaining"] = totalLength - ((chunkIndex + 1) * chunkSize);
+
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Failed chunked read: {}", e.what()));
+                }
+            });
+
+            log::info("MCP plugin (improved) loaded - registered {} network endpoints", 20);
         }
 
     }
