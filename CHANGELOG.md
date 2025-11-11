@@ -5,6 +5,53 @@ All notable changes to the ImHex MCP Integration project will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-11-11
+
+### 🚀 Advanced Binary Analysis Features
+
+This release introduces powerful capabilities for reverse engineering, firmware analysis, and large-scale binary inspection through three advanced endpoints.
+
+### Added
+
+#### Enhanced Binary Diffing
+- **`diff/analyze`** - Comprehensive binary comparison with detailed region analysis
+  - **Multi-Algorithm Support**: Simple byte-by-byte and Myers diff algorithms
+  - **Detailed Regions**: Returns up to 10,000 difference regions
+  - **Region Types**: Match, Mismatch, Insertion, Deletion
+  - **Use Cases**: Firmware diff analysis, patch comparison, version tracking
+  - Example: Compare two firmware versions to identify patched vulnerabilities
+
+#### Disassembly Integration
+- **`disasm/disassemble`** - Multi-architecture disassembly powered by Capstone
+  - **Architectures**: x86, x86-64, ARM, ARM64, MIPS, PowerPC, SPARC, and more
+  - **Instruction Details**: Full mnemonic, operands, bytes, addresses, sizes
+  - **Limits**: Up to 64KB per request, 1000 instructions max
+  - **Use Cases**: Reverse engineering, malware analysis, code inspection
+  - Example: Disassemble shellcode or analyze obfuscated malware
+
+#### Chunked Read for Large Files
+- **`data/read_chunked`** - Stream large binary regions without memory constraints
+  - **Chunk Size**: Configurable (default 1MB per chunk)
+  - **Encodings**: Hex and Base64 support
+  - **Progress Tracking**: Chunk index, total chunks, bytes remaining
+  - **Use Cases**: Forensic analysis of large disk images, memory dumps
+  - Example: Analyze a 2GB memory dump in manageable 1MB chunks
+
+### Technical Improvements
+- Added ContentRegistry::Diffing and Disassemblers API integrations
+- Proper IntervalTree iteration for diff results
+- Disassembler instance lifecycle management (start/end)
+- Architecture creator function handling
+
+### Testing
+- ✅ Chunked read verified working with hex/base64 encoding
+- ✅ Disassembly verified working (31 instructions from x86 code)
+- ✅ All endpoints compile and integrate successfully
+
+### Plugin Statistics
+- **Total Endpoints**: 20 (up from 17 in v0.3.0)
+- **New in v0.4.0**: 3 advanced analysis endpoints
+
 ## [0.3.0] - 2025-11-10
 
 ### 🎉 Enhanced Binary Analysis Capabilities
