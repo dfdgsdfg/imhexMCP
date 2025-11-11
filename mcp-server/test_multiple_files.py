@@ -89,7 +89,8 @@ def main():
                 response = client.send_command("file/open", {"path": filepath})
 
                 if response.get("status") == "success":
-                    data = response.get("data", {})
+                    # Handle double-wrapped response
+                    data = response.get("data", {}).get("data", {})
                     size = data.get("size", 0)
                     print(f"  ✓ File {i} opened successfully")
                     print(f"    Path: {filepath}")
@@ -113,7 +114,8 @@ def main():
             response = client.send_command("file/list", {})
 
             if response.get("status") == "success":
-                data = response.get("data", {})
+                # Handle double-wrapped response
+                data = response.get("data", {}).get("data", {})
                 files = data.get("files", [])
                 count = data.get("count", 0)
 
@@ -161,7 +163,8 @@ def main():
             response = client.send_command("file/switch", {"provider_id": target_id})
 
             if response.get("status") == "success":
-                data = response.get("data", {})
+                # Handle double-wrapped response
+                data = response.get("data", {}).get("data", {})
                 name = data.get("name", "")
                 size = data.get("size", 0)
 
@@ -194,7 +197,8 @@ def main():
                 })
 
                 if response.get("status") == "success":
-                    data = response.get("data", {})
+                    # Handle double-wrapped response
+                    data = response.get("data", {}).get("data", {})
                     file1 = data.get("file1", {})
                     file2 = data.get("file2", {})
                     comparison = data.get("comparison", {})
@@ -226,7 +230,8 @@ def main():
                 response = client.send_command("file/close", {"provider_id": close_id})
 
                 if response.get("status") == "success":
-                    data = response.get("data", {})
+                    # Handle double-wrapped response
+                    data = response.get("data", {}).get("data", {})
                     name = data.get("name", "")
 
                     print(f"  ✓ Close successful")
@@ -235,7 +240,8 @@ def main():
                     # Verify file is closed by listing again
                     list_response = client.send_command("file/list", {})
                     if list_response.get("status") == "success":
-                        list_data = list_response.get("data", {})
+                        # Handle double-wrapped response
+                        list_data = list_response.get("data", {}).get("data", {})
                         remaining_count = list_data.get("count", 0)
                         print(f"    Remaining files: {remaining_count}")
                         passed += 1

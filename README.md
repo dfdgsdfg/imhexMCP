@@ -910,6 +910,6 @@ Have ideas? We'd love to hear them!
 
 ---
 
-**Version 0.2.5** | **Last Updated: 2025-11-10** | **Status: ✅ Production Ready**
+**Version 0.3.0** | **Last Updated: 2025-11-10** | **Status: ✅ Production Ready**
 
 </div>

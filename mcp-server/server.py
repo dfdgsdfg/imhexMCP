@@ -327,7 +327,7 @@ Examples:
     parser.add_argument(
         "--version",
         action="version",
-        version="ImHex MCP Server 0.2.0"
+        version="ImHex MCP Server 0.3.0"
     )
 
     return parser.parse_args()
@@ -1141,7 +1141,7 @@ async def main():
     # Setup logging
     setup_logging(args)
 
-    logger.info("Starting ImHex MCP Server v0.2.0")
+    logger.info("Starting ImHex MCP Server v0.3.0")
     logger.info(f"Connecting to ImHex at {args.host}:{args.port}")
 
     # Create configuration
