@@ -86,7 +86,11 @@ git clone --recurse-submodules https://github.com/jmpnop/imhexMCP
 cd imhexMCP
 
 # 2. Build ImHex with plugin
+# For x86_64:
 ./scripts/build.sh
+
+# For ARM64 (Apple Silicon - recommended for M1/M2/M3 Macs):
+./scripts/build-arm64.zsh
 
 # 3. Install MCP server
 cd mcp-server
@@ -109,6 +113,27 @@ pip install -r requirements.txt
 ```
 
 </details>
+
+### Building for Apple Silicon (ARM64)
+
+**For M1/M2/M3 Mac users**, we provide a native ARM64 build script that eliminates Rosetta 2 translation for better performance:
+
+```bash
+./scripts/build-arm64.zsh
+```
+
+**Benefits of ARM64 build:**
+- ✅ Native Apple Silicon performance (no Rosetta 2)
+- ✅ Lower power consumption
+- ✅ Faster execution
+- ✅ All dependencies from ARM64 Homebrew (/opt/homebrew)
+
+The script automatically:
+1. Verifies ARM64 Homebrew installation
+2. Installs all ARM64 dependencies (cmake, ninja, llvm, capstone, yara, libmagic, libssh2)
+3. Configures CMake with ARM64-specific flags
+4. Builds ImHex and all plugins for ARM64
+5. Verifies architecture of output binaries
 
 ### Verify Installation
 
@@ -133,129 +158,59 @@ You should see ImHex version and available commands! 🎉
 
 ---
 
-## 🎯 Automated File Opening - Now Fully Working!
+## 🎯 Automated File Opening - Fully Implemented!
 
-**Big Update**: Automated file opening is now fully implemented! Files can be opened programmatically via MCP without any manual GUI interaction.
+**Files can be opened programmatically via MCP without any manual GUI interaction.**
 
-### Why ImHex Needed Patching
+### Threading-Safe File Operations
 
-**The Problem**: ImHex plugins are **isolated shared libraries** by design. Each plugin (`.hexplug`) is loaded independently and cannot access symbols from other plugins. The `FileProvider` class that handles file opening lives in the `builtin` plugin, making it inaccessible to the `mcp` plugin.
+The MCP plugin implements **thread-safe file operations** using ImHex's `TaskManager::doLater()` API:
 
-**Original Limitation**: Without these patches, the MCP workflow required:
-1. 🖱️ **Manual GUI interaction** - User must click "File → Open" in ImHex
-2. 🔄 **Context switching** - Switch between Claude and ImHex windows
-3. ⏱️ **Slower analysis** - Wait for manual file loading before AI can proceed
-4. 🚫 **No automation** - Cannot batch process multiple files
-5. 💬 **Verbose communication** - "Please open file X in ImHex, then I'll analyze it..."
+- **file/open** - Opens files asynchronously on the main thread
+- **file/close** - Closes files asynchronously on the main thread
+- **list/providers** - Lists all open files with metadata
 
-This broke the AI workflow entirely - Claude couldn't autonomously analyze binary files.
+**Why Threading Matters:**
+- Network endpoint callbacks run on background threads
+- ImHex APIs (including event system) require main thread
+- Direct calls caused "Terminating from non-main thread" crashes
 
-### How The Patches Solve It
+**Solution:**
+```cpp
+// Schedule ImHex API calls on main thread
+TaskManager::doLater([path]() {
+    RequestOpenFile::post(path);
+});
 
-We modified ImHex's plugin architecture to enable **controlled cross-plugin symbol sharing**:
-
-1. **Builtin Plugin as Library** - Export `builtin` plugin as shared library (`.hexpluglib`)
-   - Exposes FileProvider symbols for linking
-   - Still works as a plugin (dual-purpose)
-
-2. **Public FileProvider API** - Made `FileProvider::open(bool)` public
-   - External plugins can call file opening methods
-   - Maintains encapsulation of internal methods
-
-3. **Graceful Settings Handling** - Handle missing settings with defaults
-   - Works when ImHex settings system isn't initialized
-   - Network interface doesn't require full GUI startup
-
-4. **MCP Plugin Linking** - Link MCP plugin against builtin library
-   - Resolves FileProvider symbols at build time
-   - Clean dependency management
-
-5. **Direct FileProvider Usage** - Create and open files directly
-   - Bypasses event system that caused deadlocks
-   - Immediate file loading without GUI interaction
+// Return immediately with async status
+return {"status": "async", "message": "File opening scheduled on main thread"};
+```
 
 ### Workflow Benefits
 
-**Before Patches** (Manual Workflow):
+**Automated Workflow:**
 ```
 User: "Analyze firmware.bin"
-Claude: "Please open firmware.bin in ImHex first"
-User: [Switches to ImHex, clicks File → Open, selects file]
-User: "OK, it's open"
-Claude: [Now can read and analyze the file]
-```
-
-**After Patches** (Automated Workflow):
-```
-User: "Analyze firmware.bin"
-Claude: [Opens file automatically]
-Claude: [Reads file automatically]
-Claude: [Analyzes and reports results]
+Claude: [Opens file automatically via file/open]
+Claude: [Waits for file to open by polling list/providers]
+Claude: [Reads and analyzes the file]
 Done! ✨
 ```
 
 **Key Benefits**:
 - ✅ **Zero manual interaction** - AI handles everything
+- ✅ **Thread-safe** - No crashes from background threads
 - ✅ **Batch processing** - Analyze multiple files automatically
-- ✅ **Faster workflow** - No context switching or waiting
 - ✅ **True automation** - Compare files, hunt patterns, extract data autonomously
-- ✅ **Better UX** - Just ask Claude, it handles the rest
-- ✅ **Scriptable** - Build automated binary analysis pipelines
-
-### Apply Patches
-
-The implementation requires 6 patches to ImHex source code. Apply them automatically:
-
-```bash
-cd /path/to/imhexMCP-standalone
-./apply-patches.sh
-```
-
-The script will:
-- ✅ Check which patches are already applied
-- ✅ Dry-run verify before applying
-- ✅ Apply patches in correct order
-- ✅ Provide next steps for building
-
-After applying patches, rebuild ImHex:
-
-```bash
-cd ImHex/build
-rm -f plugins/builtin.hexplug  # Remove old module
-ninja -j$(sysctl -n hw.ncpu)   # Rebuild
-```
 
 ### Test Results
 
-All 8 comprehensive binary analysis tests pass with 100% success rate:
-
-```
-======================================================================
-Test Summary
-======================================================================
-Total tests run: 8
-✓ Passed: 8
-✗ Failed: 0
-
-Tests Executed:
-✓ File Opening - Programmatic file opening via MCP
-✓ Header Reading - Read and verified magic bytes
-✓ Data Inspection - Type interpretation at offsets
-✓ SHA-256 Hashing - Hash calculation and verification
-✓ Pattern Search - Found hex patterns in binary data
-✓ ASCII Text Reading - Text extraction from binary
-✓ Bookmark Creation - Added annotations to file regions
-✓ Multi-Hash - MD5, SHA-1, SHA-256 generation
-
-🎉 All binary analysis tests passed!
-======================================================================
-```
-
-Run the test suite yourself:
+All file operation tests pass with 100% success rate. Run the test suite:
 ```bash
 # Ensure ImHex is running with Network Interface enabled
 cd mcp-server
-./venv/bin/python test_binary_analysis.py
+./venv/bin/python test_file_open_threading.py  # Test threading fix
+./venv/bin/python test_complete.py              # End-to-end integration
 ```
 
 ### Troubleshooting
@@ -266,35 +221,15 @@ cd mcp-server
 - Port: 31337 (hardcoded, localhost only)
 - Restart ImHex after enabling
 
-**Issue: ImHex crashes on startup with "Failed to add shortcut"**
-- Cause: Duplicate builtin plugin files (both `.hexplug` and `.hexpluglib`)
-- Solution: Remove old module file:
-  ```bash
-  rm ImHex/build/plugins/builtin.hexplug
-  ```
-- Only `builtin.hexpluglib` should exist
+**Issue: ARM64 build fails with libssh2 linking errors**
+- Cause: CMake finding x86_64 libssh2 from /usr/local instead of ARM64 from /opt/homebrew
+- Solution: Use the `build-arm64.zsh` script which sets correct paths
+- Manual fix: Specify `-DLIBSSH2_LIBRARY=/opt/homebrew/lib/libssh2.dylib`
 
-**Issue: "Settings not available" messages in ImHex logs**
-- Status: Normal - these are debug messages showing graceful fallback to defaults
-- Impact: None - functionality works correctly
-- Reason: Network interface doesn't require full GUI initialization
-
-**Issue: Patches fail to apply**
-- Cause: ImHex source has diverged from patch base (commit b1e2185)
-- Solution: See `patches/README.md` for manual modification instructions
-- Check current commit: `cd ImHex && git rev-parse HEAD`
-
-**Issue: Tests fail after rebuild**
-- Solution: Ensure old `builtin.hexplug` file is removed
-- Verify: `ls ImHex/build/plugins/` should show `builtin.hexpluglib` not `builtin.hexplug`
-- Restart ImHex after rebuilding
-
-### Documentation
-
-- **[patches/README.md](patches/README.md)** - Patch documentation and application guide
-- **[CLAUDE_CONTEXT.md](mcp-server/CLAUDE_CONTEXT.md)** - Context for other Claude sessions
-- **[apply-patches.sh](apply-patches.sh)** - Automated patch application script
-- **[revert-patches.sh](revert-patches.sh)** - Patch reversion script
+**Issue: Build succeeds but ImHex still uses Rosetta**
+- Check architecture: `file ImHex/build/imhex`
+- Should show: "Mach-O 64-bit executable arm64"
+- If showing x86_64: Clean build directory and use `build-arm64.zsh`
 
 ---
 
