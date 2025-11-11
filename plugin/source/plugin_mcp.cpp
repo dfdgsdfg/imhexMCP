@@ -1523,7 +1523,409 @@ namespace hex::plugin::mcp {
                 }
             });
 
-            log::info("MCP plugin (improved) loaded - registered {} network endpoints", 21);
+            // ==================== Phase 4: Advanced Batch Operations ====================
+
+            // batch/hash - Hash multiple files/providers in one operation
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("batch/hash", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    std::string algorithm = data.value("algorithm", "sha256");
+                    std::vector<nlohmann::json> results;
+
+                    // Get provider IDs - can be array or "all"
+                    std::vector<u32> provider_ids;
+                    if (data.contains("provider_ids")) {
+                        if (data["provider_ids"].is_string() && data["provider_ids"].get<std::string>() == "all") {
+                            auto providers = ImHexApi::Provider::getProviders();
+                            for (auto& prov : providers) {
+                                provider_ids.push_back(prov->getID());
+                            }
+                        } else if (data["provider_ids"].is_array()) {
+                            auto ids = data["provider_ids"].get<std::vector<int>>();
+                            for (int id : ids) {
+                                provider_ids.push_back(static_cast<u32>(id));
+                            }
+                        }
+                    }
+
+                    // Hash each provider
+                    for (u32 prov_id : provider_ids) {
+                        auto providers = ImHexApi::Provider::getProviders();
+                        prv::Provider *provider = nullptr;
+
+                        for (auto *prov : providers) {
+                            if (prov->getID() == prov_id) {
+                                provider = prov;
+                                break;
+                            }
+                        }
+
+                        if (!provider) {
+                            nlohmann::json errorResult;
+                            errorResult["provider_id"] = prov_id;
+                            errorResult["status"] = "error";
+                            errorResult["error"] = "Provider not found";
+                            results.push_back(errorResult);
+                            continue;
+                        }
+
+                        u64 offset = 0;
+                        u64 size = provider->getActualSize();
+
+                        // Apply optional offset/size limits
+                        if (data.contains("offset")) {
+                            offset = data["offset"].get<u64>();
+                        }
+                        if (data.contains("size")) {
+                            size = std::min(size, data["size"].get<u64>());
+                        }
+
+                        // Size limit: 100MB
+                        if (size > 100 * 1024 * 1024) {
+                            nlohmann::json errorResult;
+                            errorResult["provider_id"] = prov_id;
+                            errorResult["status"] = "error";
+                            errorResult["error"] = "Size exceeds 100MB limit";
+                            results.push_back(errorResult);
+                            continue;
+                        }
+
+                        // Read data
+                        std::vector<u8> buffer(size);
+                        provider->read(offset, buffer.data(), size);
+
+                        // Calculate hash
+                        std::vector<u8> hash;
+                        if (algorithm == "md5") {
+                            auto result = crypt::md5(buffer);
+                            hash.assign(result.begin(), result.end());
+                        } else if (algorithm == "sha1") {
+                            auto result = crypt::sha1(buffer);
+                            hash.assign(result.begin(), result.end());
+                        } else if (algorithm == "sha224") {
+                            auto result = crypt::sha224(buffer);
+                            hash.assign(result.begin(), result.end());
+                        } else if (algorithm == "sha256") {
+                            auto result = crypt::sha256(buffer);
+                            hash.assign(result.begin(), result.end());
+                        } else if (algorithm == "sha384") {
+                            auto result = crypt::sha384(buffer);
+                            hash.assign(result.begin(), result.end());
+                        } else if (algorithm == "sha512") {
+                            auto result = crypt::sha512(buffer);
+                            hash.assign(result.begin(), result.end());
+                        }
+
+                        // Convert to hex string
+                        std::stringstream ss;
+                        for (auto byte : hash) {
+                            ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte);
+                        }
+
+                        nlohmann::json hashResult;
+                        hashResult["provider_id"] = prov_id;
+                        hashResult["provider_name"] = provider->getName();
+                        hashResult["algorithm"] = algorithm;
+                        hashResult["hash"] = ss.str();
+                        hashResult["offset"] = offset;
+                        hashResult["size"] = size;
+                        hashResult["status"] = "success";
+
+                        results.push_back(hashResult);
+                    }
+
+                    nlohmann::json result;
+                    result["hashes"] = results;
+                    result["total"] = results.size();
+                    result["algorithm"] = algorithm;
+
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Batch hash failed: {}", e.what()));
+                }
+            });
+
+            // batch/search - Search pattern across multiple providers
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("batch/search", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    std::string pattern_hex = data.at("pattern").get<std::string>();
+                    size_t max_matches = data.value("max_matches_per_file", 1000);
+
+                    // Parse hex pattern
+                    std::vector<u8> pattern;
+                    for (size_t i = 0; i < pattern_hex.length(); i += 2) {
+                        std::string byteString = pattern_hex.substr(i, 2);
+                        u8 byte = static_cast<u8>(std::stoul(byteString, nullptr, 16));
+                        pattern.push_back(byte);
+                    }
+
+                    // Get provider IDs
+                    std::vector<u32> provider_ids;
+                    if (data.contains("provider_ids")) {
+                        if (data["provider_ids"].is_string() && data["provider_ids"].get<std::string>() == "all") {
+                            auto providers = ImHexApi::Provider::getProviders();
+                            for (auto& prov : providers) {
+                                provider_ids.push_back(prov->getID());
+                            }
+                        } else if (data["provider_ids"].is_array()) {
+                            auto ids = data["provider_ids"].get<std::vector<int>>();
+                            for (int id : ids) {
+                                provider_ids.push_back(static_cast<u32>(id));
+                            }
+                        }
+                    }
+
+                    nlohmann::json allResults = nlohmann::json::array();
+                    size_t totalMatches = 0;
+
+                    // Search in each provider
+                    for (u32 prov_id : provider_ids) {
+                        auto providers = ImHexApi::Provider::getProviders();
+                        prv::Provider *provider = nullptr;
+
+                        for (auto *prov : providers) {
+                            if (prov->getID() == prov_id) {
+                                provider = prov;
+                                break;
+                            }
+                        }
+
+                        if (!provider) continue;
+
+                        nlohmann::json providerResult;
+                        providerResult["provider_id"] = prov_id;
+                        providerResult["provider_name"] = provider->getName();
+
+                        std::vector<u64> matches;
+                        u64 size = provider->getActualSize();
+
+                        // Simple Boyer-Moore-like search
+                        std::vector<u8> buffer(std::min(size, static_cast<u64>(10 * 1024 * 1024))); // 10MB chunks
+                        u64 offset = 0;
+
+                        while (offset < size && matches.size() < max_matches) {
+                            u64 chunk_size = std::min(static_cast<u64>(buffer.size()), size - offset);
+                            provider->read(offset, buffer.data(), chunk_size);
+
+                            // Search in this chunk
+                            for (u64 i = 0; i <= chunk_size - pattern.size(); i++) {
+                                bool found = true;
+                                for (size_t j = 0; j < pattern.size(); j++) {
+                                    if (buffer[i + j] != pattern[j]) {
+                                        found = false;
+                                        break;
+                                    }
+                                }
+
+                                if (found) {
+                                    matches.push_back(offset + i);
+                                    if (matches.size() >= max_matches) break;
+                                }
+                            }
+
+                            offset += chunk_size;
+                            if (offset >= size) break;
+                            offset -= pattern.size(); // Overlap to catch boundary matches
+                        }
+
+                        providerResult["matches"] = matches;
+                        providerResult["match_count"] = matches.size();
+                        providerResult["has_more"] = matches.size() >= max_matches;
+
+                        allResults.push_back(providerResult);
+                        totalMatches += matches.size();
+                    }
+
+                    nlohmann::json result;
+                    result["results"] = allResults;
+                    result["total_matches"] = totalMatches;
+                    result["total_files"] = provider_ids.size();
+                    result["pattern_size"] = pattern.size();
+
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Batch search failed: {}", e.what()));
+                }
+            });
+
+            // data/entropy - Calculate Shannon entropy for data analysis
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("data/entropy", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    u32 provider_id = data.value("provider_id", 0);
+                    u64 offset = data.value("offset", 0);
+                    u64 size = data.value("size", 256);
+
+                    // Get provider
+                    prv::Provider* provider = nullptr;
+                    if (provider_id == 0) {
+                        // Use current provider if ID not specified
+                        provider = ImHexApi::Provider::get();
+                    } else {
+                        // Find provider by ID
+                        auto providers = ImHexApi::Provider::getProviders();
+                        for (auto& prov : providers) {
+                            if (prov->getID() == provider_id) {
+                                provider = prov;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!provider) {
+                        throw std::runtime_error(fmt::format("Provider {} not found", provider_id));
+                    }
+
+                    // Size limit: 10MB for entropy calculation
+                    if (size > 10 * 1024 * 1024) {
+                        throw std::runtime_error("Size exceeds 10MB limit for entropy calculation");
+                    }
+
+                    // Read data
+                    std::vector<u8> buffer(size);
+                    provider->read(offset, buffer.data(), size);
+
+                    // Calculate byte frequency
+                    std::array<size_t, 256> frequency = {};
+                    for (u8 byte : buffer) {
+                        frequency[byte]++;
+                    }
+
+                    // Calculate Shannon entropy
+                    double entropy = 0.0;
+                    for (size_t count : frequency) {
+                        if (count > 0) {
+                            double probability = static_cast<double>(count) / size;
+                            entropy -= probability * std::log2(probability);
+                        }
+                    }
+
+                    // Entropy interpretation
+                    std::string interpretation;
+                    if (entropy < 1.0) {
+                        interpretation = "Very low (highly repetitive/structured data)";
+                    } else if (entropy < 3.0) {
+                        interpretation = "Low (text/structured data)";
+                    } else if (entropy < 5.0) {
+                        interpretation = "Medium (mixed data)";
+                    } else if (entropy < 7.0) {
+                        interpretation = "High (compressed/encrypted data)";
+                    } else {
+                        interpretation = "Very high (random/encrypted data)";
+                    }
+
+                    nlohmann::json result;
+                    result["entropy"] = entropy;
+                    result["max_entropy"] = 8.0;
+                    result["percentage"] = (entropy / 8.0) * 100.0;
+                    result["interpretation"] = interpretation;
+                    result["offset"] = offset;
+                    result["size"] = size;
+
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Entropy calculation failed: {}", e.what()));
+                }
+            });
+
+            // data/statistics - Byte frequency analysis and statistics
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("data/statistics", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    u32 provider_id = data.value("provider_id", 0);
+                    u64 offset = data.value("offset", 0);
+                    u64 size = data.value("size", 256);
+                    bool include_distribution = data.value("include_distribution", false);
+
+                    // Get provider
+                    prv::Provider* provider = nullptr;
+                    if (provider_id == 0) {
+                        // Use current provider if ID not specified
+                        provider = ImHexApi::Provider::get();
+                    } else {
+                        // Find provider by ID
+                        auto providers = ImHexApi::Provider::getProviders();
+                        for (auto& prov : providers) {
+                            if (prov->getID() == provider_id) {
+                                provider = prov;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!provider) {
+                        throw std::runtime_error(fmt::format("Provider {} not found", provider_id));
+                    }
+
+                    // Size limit: 10MB
+                    if (size > 10 * 1024 * 1024) {
+                        throw std::runtime_error("Size exceeds 10MB limit");
+                    }
+
+                    // Read data
+                    std::vector<u8> buffer(size);
+                    provider->read(offset, buffer.data(), size);
+
+                    // Calculate statistics
+                    std::array<size_t, 256> frequency = {};
+                    for (u8 byte : buffer) {
+                        frequency[byte]++;
+                    }
+
+                    // Find most/least common bytes
+                    u8 most_common_byte = 0;
+                    size_t max_count = 0;
+                    size_t unique_bytes = 0;
+                    size_t printable_chars = 0;
+                    size_t null_bytes = 0;
+
+                    for (size_t i = 0; i < 256; i++) {
+                        if (frequency[i] > max_count) {
+                            max_count = frequency[i];
+                            most_common_byte = static_cast<u8>(i);
+                        }
+                        if (frequency[i] > 0) {
+                            unique_bytes++;
+                        }
+                        if (i == 0) {
+                            null_bytes = frequency[i];
+                        }
+                        if (i >= 32 && i <= 126) {
+                            printable_chars += frequency[i];
+                        }
+                    }
+
+                    nlohmann::json result;
+                    result["offset"] = offset;
+                    result["size"] = size;
+                    result["unique_bytes"] = unique_bytes;
+                    result["most_common_byte"] = most_common_byte;
+                    result["most_common_count"] = max_count;
+                    result["most_common_percentage"] = (static_cast<double>(max_count) / size) * 100.0;
+                    result["null_bytes"] = null_bytes;
+                    result["null_percentage"] = (static_cast<double>(null_bytes) / size) * 100.0;
+                    result["printable_chars"] = printable_chars;
+                    result["printable_percentage"] = (static_cast<double>(printable_chars) / size) * 100.0;
+
+                    // Optional: include full byte distribution
+                    if (include_distribution) {
+                        nlohmann::json distribution = nlohmann::json::array();
+                        for (size_t i = 0; i < 256; i++) {
+                            if (frequency[i] > 0) {
+                                nlohmann::json entry;
+                                entry["byte"] = i;
+                                entry["count"] = frequency[i];
+                                entry["percentage"] = (static_cast<double>(frequency[i]) / size) * 100.0;
+                                distribution.push_back(entry);
+                            }
+                        }
+                        result["distribution"] = distribution;
+                    }
+
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Statistics calculation failed: {}", e.what()));
+                }
+            });
+
+            log::info("MCP plugin (improved) loaded - registered {} network endpoints", 25);
         }
 
     }
