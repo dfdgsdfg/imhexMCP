@@ -825,6 +825,30 @@ async def list_tools() -> List[Tool]:
                 "required": ["patterns"]
             }
         ),
+        Tool(
+            name="imhex_batch_hash",
+            description="Calculate cryptographic hashes for all open files simultaneously. Supports multiple hash algorithms (md5, sha1, sha256, etc.). Useful for generating hash manifests and file comparison.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "algorithms": {
+                        "type": "array",
+                        "description": "List of hash algorithms to calculate",
+                        "items": {
+                            "type": "string",
+                            "enum": ["md5", "sha1", "sha224", "sha256", "sha384", "sha512"]
+                        },
+                        "minItems": 1
+                    },
+                    "provider_ids": {
+                        "type": "array",
+                        "description": "Optional: specific file provider IDs to hash. If not specified, hashes all open files",
+                        "items": {"type": "integer"}
+                    }
+                },
+                "required": ["algorithms"]
+            }
+        ),
     ]
 
 
@@ -1303,6 +1327,45 @@ async def call_tool(name: str, arguments: Any) -> List[TextContent | ImageConten
                             result += "\n"
             else:
                 result += "No matches found.\n"
+
+            return [TextContent(type="text", text=result)]
+
+        elif name == "imhex_batch_hash":
+            algorithms = arguments.get("algorithms", [])
+            provider_ids = arguments.get("provider_ids")
+
+            params = {
+                "algorithms": algorithms
+            }
+            if provider_ids is not None:
+                params["provider_ids"] = provider_ids
+
+            response = imhex_client.send_command("batch/hash", params)
+
+            data = response.get("data", {})
+            hashes = data.get("hashes", [])
+            total_files = data.get("total_files", 0)
+
+            result = "Batch Hash - Results:\n\n"
+            result += f"Total Files: {total_files}\n"
+            result += f"Algorithms: {', '.join(algorithms)}\n\n"
+
+            if hashes:
+                result += "Hash Results:\n"
+                for file_hash in hashes:
+                    file_name = file_hash.get("file", "Unknown")
+                    provider_id = file_hash.get("provider_id", "?")
+                    file_size = file_hash.get("size", 0)
+                    hash_values = file_hash.get("hashes", {})
+
+                    result += f"\n  File: {file_name} (ID: {provider_id})\n"
+                    result += f"  Size: {file_size:,} bytes\n"
+                    result += "  Hashes:\n"
+
+                    for algo, hash_value in hash_values.items():
+                        result += f"    {algo.upper()}: {hash_value}\n"
+            else:
+                result += "No files hashed.\n"
 
             return [TextContent(type="text", text=result)]
 
