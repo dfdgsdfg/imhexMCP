@@ -1,6 +1,6 @@
 # ImHex MCP Plugin - Complete Endpoint Reference
 
-**Total Endpoints**: 25
+**Total Endpoints**: 28
 **Plugin Version**: 1.38.0 (ARM64 Native)
 **Last Updated**: 2025-11-11
 
@@ -13,6 +13,7 @@
 - [Bookmarks & Annotations](#bookmarks--annotations) (3 endpoints)
 - [Batch Operations (Phase 4)](#batch-operations-phase-4) (4 endpoints)
 - [Advanced Analysis (Phase 4)](#advanced-analysis-phase-4) (2 endpoints)
+- [Advanced Features (Options H & I)](#advanced-features-options-h--i) (3 endpoints)
 
 ---
 
@@ -573,6 +574,161 @@ batch/hash -> all, sha256
 
 ---
 
+## Advanced Features (Options H & I)
+
+### 26. `data/strings`
+**✨ Extract ASCII and UTF-16 strings from binary data**
+
+```json
+{
+  "command": "data/strings",
+  "data": {
+    "provider_id": 0,
+    "offset": 0,
+    "size": 0,
+    "min_length": 4,
+    "type": "ascii",
+    "max_strings": 1000
+  }
+}
+```
+
+**Types**: `ascii`, `utf16le`, `all`
+**Max Size**: 100MB scan
+**Returns**: `{strings: [{offset, length, type, value}], count, truncated}`
+
+**Use Cases**:
+- Find embedded text, URLs, file paths in executables
+- Extract error messages and debug strings
+- Locate API endpoints and configuration strings
+- Firmware and malware analysis
+
+**Example Output**:
+```json
+{
+  "strings": [
+    {"offset": 4096, "length": 15, "type": "ascii", "value": "http://api.com"},
+    {"offset": 8192, "length": 24, "type": "utf16le", "value": "C:\\Windows\\System32"}
+  ],
+  "count": 247,
+  "truncated": false
+}
+```
+
+---
+
+### 27. `data/magic`
+**✨ Detect file type using magic number signatures**
+
+```json
+{
+  "command": "data/magic",
+  "data": {
+    "provider_id": 0,
+    "offset": 0,
+    "size": 512
+  }
+}
+```
+
+**Signatures**: 30+ built-in file type detectors
+**Returns**: `{matches: [{type, description, offset, confidence}], match_count}`
+
+**Supported Types**:
+- **Executables**: PE (MZ), ELF, Mach-O, Java class
+- **Archives**: ZIP, RAR, TAR, GZIP, BZIP2
+- **Images**: JPEG, PNG, GIF, BMP
+- **Documents**: PDF, DOC, DOCX, RTF, XML
+- **Media**: MP3, MP4, AVI, WAV
+
+**Use Cases**:
+- Identify embedded or obfuscated files
+- Detect file type mismatches
+- Find packed/encrypted executables
+- Validate file headers
+
+**Example Output**:
+```json
+{
+  "matches": [
+    {
+      "type": "PE",
+      "description": "DOS/Windows executable (MZ)",
+      "offset": 0,
+      "confidence": "high"
+    }
+  ],
+  "match_count": 1
+}
+```
+
+---
+
+### 28. `data/disassemble`
+**✨ Disassemble machine code into assembly instructions**
+
+```json
+{
+  "command": "data/disassemble",
+  "data": {
+    "provider_id": 0,
+    "offset": 0,
+    "size": 64,
+    "architecture": "x86_64",
+    "base_address": 0
+  }
+}
+```
+
+**Max Size**: 4KB / 100 instructions
+**Returns**: `{instructions: [{address, offset, size, bytes, mnemonic, operands}], count, architecture}`
+
+**Architectures**: Uses ImHex disassembler registry (x86, x86_64, ARM, MIPS, etc.)
+
+**Use Cases**:
+- Reverse engineering and code analysis
+- Malware behavior analysis
+- Entry point inspection
+- Shellcode analysis
+
+**Example Output**:
+```json
+{
+  "instructions": [
+    {
+      "address": "0x401000",
+      "offset": 0,
+      "size": 3,
+      "bytes": "4889E5",
+      "mnemonic": "mov",
+      "operands": "rbp, rsp"
+    },
+    {
+      "address": "0x401003",
+      "offset": 3,
+      "size": 5,
+      "bytes": "E800000000",
+      "mnemonic": "call",
+      "operands": "0x401008"
+    }
+  ],
+  "count": 2,
+  "architecture": "x86_64",
+  "base_address": "0x401000"
+}
+```
+
+**Error Handling**:
+If architecture not found, returns available architectures:
+```json
+{
+  "error": "Architecture 'invalid' not found",
+  "available_architectures": ["x86_64", "x86", "ARM", "ARM64", ...]
+}
+```
+
+---
+
 ## MCP Tool Names
 
 When using via MCP (Model Context Protocol):
@@ -581,6 +737,9 @@ When using via MCP (Model Context Protocol):
 - `imhex_data_entropy` → `data/entropy`
 - `imhex_data_statistics` → `data/statistics`
 - `imhex_batch_diff` → `batch/diff`
+- `imhex_data_strings` → `data/strings` ✨
+- `imhex_data_magic` → `data/magic` ✨
+- `imhex_data_disassemble` → `data/disassemble` ✨
 - (All other tools follow `imhex_<category>_<operation>` pattern)
 
 ---

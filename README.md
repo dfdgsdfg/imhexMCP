@@ -21,9 +21,12 @@
 
 ## 🌟 Highlights
 
-- ✨ **25 Network Endpoints** - Complete binary analysis toolkit ([Full Reference](ENDPOINTS.md))
+- ✨ **28 Network Endpoints** - Complete binary analysis toolkit ([Full Reference](ENDPOINTS.md))
 - 🔬 **Phase 4 Advanced Analysis** - Entropy calculation, byte statistics, batch operations
 - 🚀 **Multi-File Operations** - Batch hash, batch search, batch diff across files
+- 🔤 **String Extraction** - Extract ASCII/UTF-16 strings from executables and firmware
+- 🎯 **File Type Detection** - Identify formats via 30+ magic number signatures
+- ⚙️ **Code Disassembly** - Multi-architecture disassembler (x86, x86_64, ARM, etc.)
 - 💻 **ARM64 Native** - Apple Silicon optimized (no Rosetta 2 required)
 - 🧵 **Threading-Safe** - All operations properly scheduled on main thread
 - 🤖 **Automated File Opening** - Fully async file operations (no manual GUI!)
@@ -47,9 +50,11 @@ This project adds **Model Context Protocol (MCP)** support to [ImHex](https://gi
 🔬 **Analyze** - Identify file formats, extract headers, find signatures, calculate entropy
 📊 **Parse** - Generate and execute pattern language for complex formats
 🔎 **Search** - Find patterns across single or multiple files simultaneously
+🔤 **Extract Strings** - Pull ASCII/UTF-16 strings from binaries and firmware
+🎯 **Detect Types** - Identify file formats via magic numbers (PE, ELF, ZIP, PDF, etc.)
+⚙️ **Disassemble** - Convert machine code to assembly across multiple architectures
 ✏️ **Annotate** - Add intelligent bookmarks and comments
 🔐 **Verify** - Calculate and compare hashes (single file or batch)
-🎯 **Extract** - Pull data from specific offsets with type awareness
 📈 **Statistics** - Byte frequency, entropy analysis, data composition
 🔀 **Compare** - Diff files, calculate similarity, find variants
 
