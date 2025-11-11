@@ -783,6 +783,48 @@ async def list_tools() -> List[Tool]:
                 "required": ["directory"]
             }
         ),
+        Tool(
+            name="imhex_batch_search",
+            description="Search for multiple patterns across all open files simultaneously. Supports hex and string patterns. Returns matches with offsets for each file and pattern.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "patterns": {
+                        "type": "array",
+                        "description": "List of patterns to search for",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "value": {
+                                    "type": "string",
+                                    "description": "Pattern value (hex string like '4D5A' or plain text)"
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "description": "Pattern type: 'hex' or 'string'",
+                                    "enum": ["hex", "string", "text"]
+                                }
+                            },
+                            "required": ["value", "type"]
+                        },
+                        "minItems": 1
+                    },
+                    "provider_ids": {
+                        "type": "array",
+                        "description": "Optional: specific file provider IDs to search. If not specified, searches all open files",
+                        "items": {"type": "integer"}
+                    },
+                    "max_matches_per_file": {
+                        "type": "integer",
+                        "description": "Maximum number of matches to return per file (default 1000)",
+                        "minimum": 1,
+                        "maximum": 10000,
+                        "default": 1000
+                    }
+                },
+                "required": ["patterns"]
+            }
+        ),
     ]
 
 
@@ -1200,6 +1242,67 @@ async def call_tool(name: str, arguments: Any) -> List[TextContent | ImageConten
                     result += f"  - {error}\n"
                 if len(errors) > 10:
                     result += f"  ... and {len(errors) - 10} more errors\n"
+
+            return [TextContent(type="text", text=result)]
+
+        elif name == "imhex_batch_search":
+            patterns = arguments.get("patterns", [])
+            provider_ids = arguments.get("provider_ids")
+            max_matches_per_file = arguments.get("max_matches_per_file", 1000)
+
+            params = {
+                "patterns": patterns,
+                "max_matches_per_file": max_matches_per_file
+            }
+            if provider_ids is not None:
+                params["provider_ids"] = provider_ids
+
+            response = imhex_client.send_command("batch/search", params)
+
+            data = response.get("data", {})
+            results = data.get("results", [])
+            summary = data.get("summary", {})
+
+            result = "Batch Search - Results:\n\n"
+            result += f"Files Searched: {summary.get('files_searched', 0)}\n"
+            result += f"Patterns: {summary.get('patterns_searched', 0)}\n"
+            result += f"Total Matches: {summary.get('total_matches', 0)}\n\n"
+
+            if results:
+                result += "Results by File:\n"
+                for file_result in results:
+                    file_name = file_result.get("file", "Unknown")
+                    provider_id = file_result.get("provider_id", "?")
+                    total_matches = file_result.get("total_matches", 0)
+
+                    result += f"\n  File: {file_name} (ID: {provider_id})\n"
+                    result += f"  Total Matches: {total_matches}\n"
+
+                    pattern_results = file_result.get("patterns", [])
+                    for pattern_result in pattern_results:
+                        pattern = pattern_result.get("pattern", "?")
+                        pattern_type = pattern_result.get("type", "?")
+                        match_count = pattern_result.get("match_count", 0)
+                        matches = pattern_result.get("matches", [])
+                        limited = pattern_result.get("limited", False)
+
+                        result += f"    Pattern: {pattern} ({pattern_type})\n"
+                        result += f"    Matches: {match_count}"
+                        if limited:
+                            result += " (limited)\n"
+                        else:
+                            result += "\n"
+
+                        # Show first 10 match offsets
+                        if matches:
+                            result += f"    Offsets: "
+                            offsets_str = ", ".join([f"0x{offset:X}" for offset in matches[:10]])
+                            result += offsets_str
+                            if len(matches) > 10:
+                                result += f", ... ({len(matches) - 10} more)"
+                            result += "\n"
+            else:
+                result += "No matches found.\n"
 
             return [TextContent(type="text", text=result)]
 
