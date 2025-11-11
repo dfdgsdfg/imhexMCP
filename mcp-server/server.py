@@ -633,6 +633,21 @@ async def list_tools() -> List[Tool]:
             }
         ),
         Tool(
+            name="imhex_remove_bookmark",
+            description="Remove a bookmark by its ID",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "description": "ID of the bookmark to remove",
+                        "minimum": 0
+                    }
+                },
+                "required": ["id"]
+            }
+        ),
+        Tool(
             name="imhex_inspect_data",
             description="Inspect data at a specific offset with various data types",
             inputSchema={
@@ -1000,6 +1015,18 @@ async def call_tool(name: str, arguments: Any) -> List[TextContent | ImageConten
             return [TextContent(
                 type="text",
                 text=f"Bookmark added: '{name_str}' at 0x{offset:X} (ID: {bookmark_id})"
+            )]
+
+        # Remove bookmark
+        elif name == "imhex_remove_bookmark":
+            bookmark_id = arguments.get("id")
+
+            response = imhex_client.send_command("bookmark/remove", {"id": bookmark_id})
+            data = response.get("data", {})
+
+            return [TextContent(
+                type="text",
+                text=f"Bookmark removed (ID: {bookmark_id})"
             )]
 
         # Inspect data
