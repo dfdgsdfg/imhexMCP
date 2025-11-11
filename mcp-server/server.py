@@ -731,6 +731,58 @@ async def list_tools() -> List[Tool]:
                 "required": ["matches", "output_path"]
             }
         ),
+        Tool(
+            name="imhex_batch_open_directory",
+            description="Open multiple binary files from a directory for batch analysis. Supports glob patterns and filtering by size/extension.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "directory": {
+                        "type": "string",
+                        "description": "Directory path to scan for binary files"
+                    },
+                    "pattern": {
+                        "type": "string",
+                        "description": "Glob pattern for file matching (e.g., '*.bin', '*.exe'). Default: '*'",
+                        "default": "*"
+                    },
+                    "recursive": {
+                        "type": "boolean",
+                        "description": "Search subdirectories recursively. Default: false",
+                        "default": False
+                    },
+                    "max_files": {
+                        "type": "integer",
+                        "description": "Maximum number of files to open (safety limit). Default: 100",
+                        "minimum": 1,
+                        "maximum": 1000,
+                        "default": 100
+                    },
+                    "filters": {
+                        "type": "object",
+                        "description": "Optional file filters",
+                        "properties": {
+                            "min_size": {
+                                "type": "integer",
+                                "description": "Minimum file size in bytes",
+                                "minimum": 0
+                            },
+                            "max_size": {
+                                "type": "integer",
+                                "description": "Maximum file size in bytes",
+                                "minimum": 0
+                            },
+                            "extensions": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "List of allowed file extensions (e.g., ['.bin', '.exe', '.elf'])"
+                            }
+                        }
+                    }
+                },
+                "required": ["directory"]
+            }
+        ),
     ]
 
 
@@ -1103,6 +1155,51 @@ async def call_tool(name: str, arguments: Any) -> List[TextContent | ImageConten
             result += f"Format: {data.get('format', 'json')}\n"
             if context_bytes > 0:
                 result += f"Context: {context_bytes} bytes per match\n"
+
+            return [TextContent(type="text", text=result)]
+
+        elif name == "imhex_batch_open_directory":
+            directory = arguments.get("directory")
+            pattern = arguments.get("pattern", "*")
+            recursive = arguments.get("recursive", False)
+            max_files = arguments.get("max_files", 100)
+            filters = arguments.get("filters", {})
+
+            response = imhex_client.send_command("batch/open_directory", {
+                "directory": directory,
+                "pattern": pattern,
+                "recursive": recursive,
+                "max_files": max_files,
+                "filters": filters
+            })
+
+            data = response.get("data", {})
+            opened_files = data.get("opened_files", [])
+            total_opened = data.get("total_opened", 0)
+            skipped = data.get("skipped", 0)
+            errors = data.get("errors", [])
+            files_found = data.get("files_found", 0)
+
+            result = "Batch Open Directory - Results:\n\n"
+            result += f"Directory: {directory}\n"
+            result += f"Pattern: {pattern}\n"
+            result += f"Files Found: {files_found}\n"
+            result += f"Successfully Opened: {total_opened}\n"
+            result += f"Skipped: {skipped}\n\n"
+
+            if opened_files:
+                result += "Opened Files:\n"
+                for file_info in opened_files[:20]:  # Show first 20
+                    result += f"  - {file_info.get('name')} (ID: {file_info.get('id')}, Size: {file_info.get('size')} bytes)\n"
+                if len(opened_files) > 20:
+                    result += f"  ... and {len(opened_files) - 20} more files\n"
+
+            if errors:
+                result += f"\nErrors ({len(errors)}):\n"
+                for error in errors[:10]:  # Show first 10 errors
+                    result += f"  - {error}\n"
+                if len(errors) > 10:
+                    result += f"  ... and {len(errors) - 10} more errors\n"
 
             return [TextContent(type="text", text=result)]
 
