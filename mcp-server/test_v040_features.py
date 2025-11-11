@@ -181,7 +181,7 @@ def main():
             response = client.send_command("disasm/disassemble", {
                 "offset": 8,  # After 'V040TEST' header
                 "length": 64,
-                "architecture": "x86_64"
+                "architecture": "x86"  # ImHex calls it "Intel x86", not "x86_64"
             })
 
             if response.get("status") == "success":
