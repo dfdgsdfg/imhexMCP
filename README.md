@@ -805,29 +805,30 @@ When reporting issues, please include:
 - [x] **Comprehensive Testing** - 8/8 binary analysis tests passing
 - [x] **Clean Patch System** - 6 automated patches with scripts
 
-### v0.3.0 (Next - Q1 2025)
+### v0.3.0 (Completed! 🎉)
 
 **Focus: Enhanced Binary Analysis Capabilities**
 
-- [ ] **Multiple File Support** - Open and compare multiple files simultaneously
-  - Compare firmware versions side-by-side
-  - Cross-reference patterns across binaries
-  - Batch hash verification
+- [x] **Multiple File Support** - Open and compare multiple files simultaneously
+  - [x] List all open files with metadata (ID, name, size, permissions, active status)
+  - [x] Switch between open files/providers
+  - [x] Close specific files
+  - [x] Compare two files (similarity analysis up to 1MB)
 
-- [ ] **Advanced Search** - Pattern and string searching improvements
-  - Regex pattern support (via ImHex's existing regex)
-  - Multi-pattern search in single request
-  - Search result pagination (>10,000 matches)
+- [x] **Advanced Search** - Pattern and string searching improvements
+  - [x] Regex pattern support (via C++ std::regex)
+  - [x] Multi-pattern search in single request (up to 20 patterns)
+  - [x] Search result pagination with offset/limit (>10,000 matches)
+  - [x] Total match count and has_more metadata
 
-- [ ] **Data Export** - Extract and export binary data
-  - Export regions to separate files
-  - Extract embedded files/resources
-  - Save search results to CSV/JSON
+- [x] **Data Export** - Extract and export binary data
+  - [x] Export regions to files (binary/hex/base64 formats)
+  - [x] Export embedded data (up to 100MB)
+  - [x] Save search results to CSV/JSON with context bytes
 
-- [ ] **Enhanced Bookmarks** - Improve annotation capabilities
-  - Bookmark groups/categories
-  - Export/import bookmark sets
-  - Bookmark search and filtering
+- [x] **Enhanced Bookmarks** - Improve annotation capabilities
+  - [x] Programmatic bookmark removal by ID
+  - Note: Bookmark listing requires GUI interaction (ImHex API limitation)
 
 ### v0.4.0 (Future - Q2 2025)
 

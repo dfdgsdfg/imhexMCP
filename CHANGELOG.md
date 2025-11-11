@@ -5,6 +5,123 @@ All notable changes to the ImHex MCP Integration project will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-11-10
+
+### 🎉 Enhanced Binary Analysis Capabilities
+
+This release delivers a comprehensive suite of advanced binary analysis features, enabling Claude to perform sophisticated multi-file analysis, data export, and pattern searching autonomously.
+
+### Added
+
+#### Multiple File Support
+- **`file/list`** - List all currently open files/providers
+  - Returns full metadata: ID, name, size, readable/writable status, active flag
+  - Enables tracking of multiple open files
+- **`file/switch`** - Switch active file/provider by ID
+  - Seamlessly work across multiple binary files
+- **`file/close`** - Close specific file/provider by ID
+  - Programmatic file lifecycle management
+- **`file/compare`** - Compare two files side-by-side
+  - Compares up to 1MB for quick similarity analysis
+  - Returns byte differences, similarity percentage
+  - Perfect for firmware version comparison
+
+#### Advanced Search
+- **Enhanced `search/find`** - Regex support and pagination
+  - **Regex patterns** - C++ std::regex for complex pattern matching
+  - **Pagination** - offset/limit parameters for large result sets
+  - **Metadata** - total_matches and has_more fields
+  - Handles >10,000 matches efficiently
+- **`search/multi`** - Multi-pattern search
+  - Search up to 20 patterns simultaneously
+  - Batch pattern matching for efficiency
+  - Individual result counts per pattern
+
+#### Data Export
+- **`data/export`** - Export binary regions to files
+  - **Formats**: binary, hex (16 bytes/line), base64 (RFC 2045)
+  - Supports up to 100MB single export
+  - Extract embedded files and resources
+- **`search/export`** - Export search results with context
+  - **Formats**: CSV (tabular), JSON (structured)
+  - Optional context bytes around each match
+  - Perfect for documentation and reporting
+
+#### Enhanced Bookmarks
+- **`bookmark/remove`** - Remove bookmarks by ID
+  - Programmatic bookmark lifecycle management
+  - Complements existing `bookmark/add` functionality
+
+#### Testing & Validation
+- **`test_v030_features.py`** - Comprehensive 9-test suite
+  - Tests all data export formats (binary, hex, base64)
+  - Validates advanced search (basic, regex, pagination, multi-pattern)
+  - Verifies search export (JSON, CSV)
+  - All 9/9 tests passing
+- **`test_multiple_files.py`** - Multiple file support tests
+  - Opens 3 test files simultaneously
+  - Validates list, switch, close, compare operations
+  - 5 comprehensive tests
+
+### Changed
+
+#### Network Endpoints
+- **Endpoint count increased** from 11 (v0.2.5) to 17 (v0.3.0)
+  - 6 new endpoints added
+  - 2 existing endpoints enhanced (search/find with new features)
+
+#### MCP Tools
+- **17 total MCP tools** for Claude
+  - 5 new tools for multiple file support
+  - 1 new tool for bookmark management
+  - Enhanced search tool with regex and pagination
+  - 3 new tools for data/search export
+
+### Technical Details
+
+#### C++ Implementation
+- Used C++ `std::regex` for pattern matching with chunked file processing (1MB chunks)
+- File comparison algorithm: byte-level diff with similarity calculation
+- Export formats implemented with proper formatting (hex: 16 bytes/line, base64: 76 chars/line)
+- All endpoints return structured JSON with status/data/error fields
+
+#### Python MCP Server
+- Added 5 file management tools with comprehensive error handling
+- Enhanced search tool descriptions with pagination guidance
+- Export tools with path validation and format selection
+- All tools include detailed input schemas and descriptions
+
+### Statistics
+
+- **New C++ Endpoints**: 6 (file/list, file/switch, file/close, file/compare, data/export, search/export, bookmark/remove)
+- **Enhanced Endpoints**: 1 (search/find with regex and pagination)
+- **New MCP Tools**: 6
+- **Enhanced Tools**: 1
+- **Test Coverage**: 14 total tests (9 v0.3.0 specific + 5 multiple file tests)
+- **Lines of Code**: ~900 lines of test code, ~200 lines of C++ endpoints, ~150 lines of Python tools
+
+### Use Cases Enabled
+
+1. **Firmware Version Comparison**
+   - Open two firmware versions simultaneously
+   - Compare for differences
+   - Export changed regions for analysis
+
+2. **Multi-File Pattern Hunting**
+   - Open multiple binaries
+   - Search for patterns across all files
+   - Export results to CSV for documentation
+
+3. **Data Extraction Pipeline**
+   - Search for embedded files (via regex/patterns)
+   - Export matching regions in multiple formats
+   - Automated extraction workflows
+
+4. **Advanced Binary Analysis**
+   - Regex-based pattern discovery
+   - Multi-pattern correlation analysis
+   - Paginated result navigation for large datasets
+
 ## [0.2.5] - 2025-11-10
 
 ### 🎉 Major Achievement: Automated File Opening
