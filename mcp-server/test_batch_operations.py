@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Test Suite for v1.0.0 Batch Operations
-Tests: batch/open_directory endpoint
+Test Suite for v1.0.0 Batch Operations (Phase 1 & 2)
+Tests: batch/open_directory, batch/search, batch/hash endpoints
 """
 
 import os
@@ -43,7 +43,7 @@ def create_test_directory():
 def main():
     """Run batch operations tests."""
     print("="*70)
-    print("ImHex MCP v1.0.0 - Batch Operations Tests")
+    print("ImHex MCP v1.0.0 - Batch Operations Tests (Phase 1 & 2)")
     print("="*70)
     print()
 
@@ -323,6 +323,169 @@ def main():
                     failed += 1
             else:
                 print(f"  ✗ Combined filters failed: {response}")
+                failed += 1
+        except Exception as e:
+            print(f"  ✗ Exception: {e}")
+            failed += 1
+        print()
+
+        print("="*70)
+        print("TEST 7: BATCH SEARCH - SINGLE PATTERN")
+        print("="*70)
+        print()
+
+        print("[TEST 7.1] Search for 'TEST' string across all open files")
+        try:
+            response = client.send_command("batch/search", {
+                "patterns": [
+                    {"value": "TEST", "type": "string"}
+                ],
+                "max_matches_per_file": 100
+            })
+
+            if response.get("status") == "success":
+                data = response.get("data", {})
+                summary = data.get("summary", {})
+                results = data.get("results", [])
+
+                print(f"  ✓ Batch search successful")
+                print(f"    Files searched: {summary.get('files_searched')}")
+                print(f"    Total matches: {summary.get('total_matches')}")
+
+                # Count files with matches
+                files_with_matches = sum(1 for r in results if r.get('total_matches', 0) > 0)
+
+                if files_with_matches >= 2:  # Should find TEST1 and TEST2
+                    print(f"  ✓ Found matches in {files_with_matches} files")
+                    passed += 1
+                else:
+                    print(f"  ✗ Expected matches in at least 2 files, got {files_with_matches}")
+                    failed += 1
+            else:
+                print(f"  ✗ Batch search failed: {response}")
+                failed += 1
+        except Exception as e:
+            print(f"  ✗ Exception: {e}")
+            failed += 1
+        print()
+
+        print("="*70)
+        print("TEST 8: BATCH SEARCH - MULTIPLE PATTERNS")
+        print("="*70)
+        print()
+
+        print("[TEST 8.1] Search for multiple patterns (hex + string)")
+        try:
+            response = client.send_command("batch/search", {
+                "patterns": [
+                    {"value": "4D5A", "type": "hex"},  # PE signature
+                    {"value": "7F454C46", "type": "hex"},  # ELF signature
+                    {"value": "TEST", "type": "string"}
+                ],
+                "max_matches_per_file": 100
+            })
+
+            if response.get("status") == "success":
+                data = response.get("data", {})
+                summary = data.get("summary", {})
+                results = data.get("results", [])
+
+                print(f"  ✓ Multi-pattern search successful")
+                print(f"    Files searched: {summary.get('files_searched')}")
+                print(f"    Patterns: {summary.get('patterns_searched')}")
+                print(f"    Total matches: {summary.get('total_matches')}")
+
+                # Should find PE signature in test3.exe and ELF in test4.elf
+                if summary.get('total_matches', 0) >= 3:  # At least 3 matches across patterns
+                    print(f"  ✓ Found expected matches")
+                    passed += 1
+                else:
+                    print(f"  ✗ Expected at least 3 matches, got {summary.get('total_matches', 0)}")
+                    failed += 1
+            else:
+                print(f"  ✗ Multi-pattern search failed: {response}")
+                failed += 1
+        except Exception as e:
+            print(f"  ✗ Exception: {e}")
+            failed += 1
+        print()
+
+        print("="*70)
+        print("TEST 9: BATCH HASH - SINGLE ALGORITHM")
+        print("="*70)
+        print()
+
+        print("[TEST 9.1] Calculate SHA256 for all open files")
+        try:
+            response = client.send_command("batch/hash", {
+                "algorithms": ["sha256"]
+            })
+
+            if response.get("status") == "success":
+                data = response.get("data", {})
+                hashes = data.get("hashes", [])
+                total = data.get("total_files", 0)
+
+                print(f"  ✓ Batch hash successful")
+                print(f"    Files hashed: {total}")
+
+                # Verify all files have sha256 hash
+                all_have_sha256 = all('sha256' in h.get('hashes', {}) for h in hashes)
+
+                if all_have_sha256 and total >= 3:  # Should have hashed at least 3 files
+                    print(f"  ✓ All files have SHA256 hash")
+
+                    # Show first hash as example
+                    if hashes:
+                        first = hashes[0]
+                        print(f"    Example: {first.get('file')} -> {first.get('hashes', {}).get('sha256', '')[:16]}...")
+
+                    passed += 1
+                else:
+                    print(f"  ✗ Hash verification failed")
+                    failed += 1
+            else:
+                print(f"  ✗ Batch hash failed: {response}")
+                failed += 1
+        except Exception as e:
+            print(f"  ✗ Exception: {e}")
+            failed += 1
+        print()
+
+        print("="*70)
+        print("TEST 10: BATCH HASH - MULTIPLE ALGORITHMS")
+        print("="*70)
+        print()
+
+        print("[TEST 10.1] Calculate MD5 and SHA256 for all files")
+        try:
+            response = client.send_command("batch/hash", {
+                "algorithms": ["md5", "sha256"]
+            })
+
+            if response.get("status") == "success":
+                data = response.get("data", {})
+                hashes = data.get("hashes", [])
+                total = data.get("total_files", 0)
+
+                print(f"  ✓ Multi-algorithm hash successful")
+                print(f"    Files hashed: {total}")
+                print(f"    Algorithms: md5, sha256")
+
+                # Verify all files have both hashes
+                all_have_both = all(
+                    'md5' in h.get('hashes', {}) and 'sha256' in h.get('hashes', {})
+                    for h in hashes
+                )
+
+                if all_have_both and total >= 3:
+                    print(f"  ✓ All files have both MD5 and SHA256 hashes")
+                    passed += 1
+                else:
+                    print(f"  ✗ Multi-algorithm hash verification failed")
+                    failed += 1
+            else:
+                print(f"  ✗ Multi-algorithm hash failed: {response}")
                 failed += 1
         except Exception as e:
             print(f"  ✗ Exception: {e}")
