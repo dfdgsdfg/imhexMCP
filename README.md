@@ -21,18 +21,20 @@
 
 ## 🌟 Highlights
 
-- ✨ **20 MCP Tools** - Complete binary analysis toolkit for AI assistants
-- 🤖 **Automated File Opening** - Fully implemented programmatic file access (no manual GUI!)
-- 🚀 **Lightning Fast** - Enhanced connection management with retry logic
+- ✨ **25 Network Endpoints** - Complete binary analysis toolkit ([Full Reference](ENDPOINTS.md))
+- 🔬 **Phase 4 Advanced Analysis** - Entropy calculation, byte statistics, batch operations
+- 🚀 **Multi-File Operations** - Batch hash, batch search, batch diff across files
+- 💻 **ARM64 Native** - Apple Silicon optimized (no Rosetta 2 required)
+- 🧵 **Threading-Safe** - All operations properly scheduled on main thread
+- 🤖 **Automated File Opening** - Fully async file operations (no manual GUI!)
 - 🔍 **Deep Inspection** - 24+ data type interpretations (int, float, ASCII, binary, etc.)
-- 🔐 **Secure Hashing** - MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512
-- 📝 **Smart Search** - Find up to 10,000 pattern matches instantly
+- 🔐 **Secure Hashing** - MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512 (single & batch)
+- 📝 **Smart Search** - Pattern matching across single or multiple files
 - 🎨 **Visual Bookmarks** - AI-driven code annotation and highlighting
 - 🧩 **Pattern Language** - AI generates ImHex patterns for binary parsing
 - ⚡ **Data Decoding** - Base64, ASCII, binary, hex encoding support
-- 🔧 **Clean Patch System** - 6 automated patches for ImHex source modification
-- 🧪 **Fully Tested** - 8/8 binary analysis tests passing
-- 📦 **Lightweight** - Only 476 KB (ImHex via git submodule)
+- 🧪 **Fully Tested** - All Phase 1-4 tests passing
+- 📦 **Compact** - 530KB ARM64 plugin
 
 ---
 
@@ -42,12 +44,14 @@ This project adds **Model Context Protocol (MCP)** support to [ImHex](https://gi
 
 ### What Can AI Do With This?
 
-🔬 **Analyze** - Identify file formats, extract headers, find signatures
+🔬 **Analyze** - Identify file formats, extract headers, find signatures, calculate entropy
 📊 **Parse** - Generate and execute pattern language for complex formats
-🔎 **Search** - Find patterns, strings, magic numbers across files
+🔎 **Search** - Find patterns across single or multiple files simultaneously
 ✏️ **Annotate** - Add intelligent bookmarks and comments
-🔐 **Verify** - Calculate and compare hashes automatically
+🔐 **Verify** - Calculate and compare hashes (single file or batch)
 🎯 **Extract** - Pull data from specific offsets with type awareness
+📈 **Statistics** - Byte frequency, entropy analysis, data composition
+🔀 **Compare** - Diff files, calculate similarity, find variants
 
 ### Why Use MCP?
 
