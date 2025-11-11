@@ -2,6 +2,7 @@
 
 #include <hex/api/imhex_api/provider.hpp>
 #include <hex/api/imhex_api/bookmarks.hpp>
+#include <hex/api/task_manager.hpp>
 #include <hex/api/content_registry/communication_interface.hpp>
 #include <hex/api/content_registry/diffing.hpp>
 #include <hex/api/content_registry/disassemblers.hpp>
@@ -177,27 +178,18 @@ namespace hex::plugin::mcp {
                 try {
                     auto path = data.at("path").get<std::string>();
 
-                    log::info("MCP: Opening file '{}'", path);
+                    // Schedule file opening on main thread using TaskManager::doLater()
+                    // Network callbacks run on background threads, but ImHex APIs require main thread
+                    TaskManager::doLater([path]() {
+                        RequestOpenFile::post(path);
+                    });
 
-                    // Request to open file via event system
-                    RequestOpenFile::post(path);
-
-                    // Give ImHex time to process the request
-                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
+                    // Return immediately - file opening happens asynchronously on main thread
+                    // Client should poll list/providers to check when file is open
                     nlohmann::json result;
                     result["file"] = path;
-
-                    // Get file size if provider is available
-                    if (ImHexApi::Provider::isValid()) {
-                        auto provider = ImHexApi::Provider::get();
-                        if (provider != nullptr) {
-                            result["size"] = provider->getActualSize();
-                            result["name"] = provider->getName();
-                            result["readable"] = provider->isReadable();
-                            result["writable"] = provider->isWritable();
-                        }
-                    }
+                    result["status"] = "async";
+                    result["message"] = "File opening scheduled on main thread. Poll list/providers to check status.";
 
                     return result;
                 } catch (const std::exception &e) {
@@ -730,6 +722,35 @@ namespace hex::plugin::mcp {
                 }
             });
 
+            // Alias: list/providers (same as file/list but with different response format)
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("list/providers", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    (void)data;
+                    auto providers = ImHexApi::Provider::getProviders();
+                    auto currentProvider = ImHexApi::Provider::get();
+
+                    nlohmann::json providersList = nlohmann::json::array();
+
+                    for (const auto &provider : providers) {
+                        nlohmann::json providerInfo;
+                        providerInfo["id"] = provider->getID();
+                        providerInfo["name"] = provider->getName();
+                        providerInfo["path"] = provider->getName();  // Provider name often includes path
+                        providerInfo["size"] = provider->getActualSize();
+                        providerInfo["readable"] = provider->isReadable();
+                        providerInfo["writable"] = provider->isWritable();
+                        providerInfo["is_active"] = (provider == currentProvider);
+                        providersList.push_back(providerInfo);
+                    }
+
+                    nlohmann::json result;
+                    result["providers"] = providersList;
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Failed to list providers: {}", e.what()));
+                }
+            });
+
             // File operations: Switch active file/provider
             ContentRegistry::CommunicationInterface::registerNetworkEndpoint("file/switch", [](const nlohmann::json &data) -> nlohmann::json {
                 try {
@@ -758,22 +779,26 @@ namespace hex::plugin::mcp {
             ContentRegistry::CommunicationInterface::registerNetworkEndpoint("file/close", [](const nlohmann::json &data) -> nlohmann::json {
                 try {
                     u32 providerID = data.at("provider_id").get<u32>();
-                    auto providers = ImHexApi::Provider::getProviders();
 
-                    for (auto *provider : providers) {
-                        if (provider->getID() == providerID) {
-                            std::string name = provider->getName();
-                            ImHexApi::Provider::remove(provider);
-
-                            nlohmann::json result;
-                            result["id"] = providerID;
-                            result["name"] = name;
-                            result["closed"] = true;
-                            return result;
+                    // Schedule file closing on main thread using TaskManager::doLater()
+                    // Network callbacks run on background threads, but ImHex APIs require main thread
+                    TaskManager::doLater([providerID]() {
+                        auto providers = ImHexApi::Provider::getProviders();
+                        for (auto *provider : providers) {
+                            if (provider->getID() == providerID) {
+                                ImHexApi::Provider::remove(provider);
+                                return;
+                            }
                         }
-                    }
+                    });
 
-                    throw std::runtime_error(fmt::format("Provider with ID {} not found", providerID));
+                    // Return immediately - file closing happens asynchronously on main thread
+                    // Client should poll list/providers to verify file is closed
+                    nlohmann::json result;
+                    result["provider_id"] = providerID;
+                    result["status"] = "async";
+                    result["message"] = "File closing scheduled on main thread. Poll list/providers to verify.";
+                    return result;
                 } catch (const std::exception &e) {
                     throw std::runtime_error(fmt::format("Failed to close file: {}", e.what()));
                 }
@@ -1252,7 +1277,253 @@ namespace hex::plugin::mcp {
                 }
             });
 
-            log::info("MCP plugin (improved) loaded - registered {} network endpoints", 20);
+            // Batch Diff: Compare reference file against multiple targets
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("batch/diff", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    // Parse parameters
+                    u32 reference_id = data.at("reference_id").get<u32>();
+                    std::string algorithm = data.value("algorithm", "myers");
+                    size_t max_diff_regions = data.value("max_diff_regions", 1000);
+
+                    // Get target IDs - can be array or "all"
+                    std::vector<u32> target_ids;
+                    if (data.contains("target_ids")) {
+                        if (data["target_ids"].is_string() && data["target_ids"].get<std::string>() == "all") {
+                            // Get all providers except reference
+                            auto providers = ImHexApi::Provider::getProviders();
+                            for (auto& prov : providers) {
+                                u32 id = prov->getID();
+                                if (id != reference_id) {
+                                    target_ids.push_back(id);
+                                }
+                            }
+                        } else if (data["target_ids"].is_array()) {
+                            auto ids = data["target_ids"].get<std::vector<int>>();
+                            for (int id : ids) {
+                                target_ids.push_back(static_cast<u32>(id));
+                            }
+                        }
+                    }
+
+                    if (target_ids.empty()) {
+                        throw std::runtime_error("No target files specified");
+                    }
+
+                    // Find reference provider
+                    auto providers = ImHexApi::Provider::getProviders();
+                    prv::Provider* refProvider = nullptr;
+                    for (auto& prov : providers) {
+                        if (prov->getID() == reference_id) {
+                            refProvider = prov;
+                            break;
+                        }
+                    }
+
+                    if (!refProvider) {
+                        throw std::runtime_error(fmt::format("Reference provider {} not found", reference_id));
+                    }
+
+                    // Safety check for reference file size
+                    const u64 maxDiffSize = 100 * 1024 * 1024; // 100MB
+                    if (refProvider->getActualSize() > maxDiffSize) {
+                        throw std::runtime_error(fmt::format("Reference file too large (max {} MB)", maxDiffSize / (1024 * 1024)));
+                    }
+
+                    // Get diffing algorithm
+                    auto &algorithms = ContentRegistry::Diffing::impl::getAlgorithms();
+                    ContentRegistry::Diffing::Algorithm* selectedAlgo = nullptr;
+
+                    std::string algoLower = algorithm;
+                    std::transform(algoLower.begin(), algoLower.end(), algoLower.begin(), ::tolower);
+
+                    for (auto &algo : algorithms) {
+                        std::string algoName = algo->getUnlocalizedName().get();
+                        std::transform(algoName.begin(), algoName.end(), algoName.begin(), ::tolower);
+                        if (algoName.find(algoLower) != std::string::npos) {
+                            selectedAlgo = algo.get();
+                            break;
+                        }
+                    }
+
+                    if (!selectedAlgo && !algorithms.empty()) {
+                        selectedAlgo = algorithms[0].get();
+                    }
+
+                    if (!selectedAlgo) {
+                        throw std::runtime_error("No diffing algorithms available");
+                    }
+
+                    // Results storage
+                    std::vector<nlohmann::json> diffs;
+                    double totalSimilarity = 0.0;
+                    u32 mostSimilarId = 0;
+                    double highestSimilarity = 0.0;
+                    u32 leastSimilarId = 0;
+                    double lowestSimilarity = 100.0;
+
+                    // Compare reference against each target
+                    for (u32 target_id : target_ids) {
+                        // Find target provider
+                        prv::Provider* targetProvider = nullptr;
+                        for (auto& prov : providers) {
+                            if (prov->getID() == target_id) {
+                                targetProvider = prov;
+                                break;
+                            }
+                        }
+
+                        if (!targetProvider) {
+                            log::warn("MCP: Target provider {} not found, skipping", target_id);
+                            continue;
+                        }
+
+                        // Safety check for target file size
+                        if (targetProvider->getActualSize() > maxDiffSize) {
+                            log::warn("MCP: Target file {} too large, skipping", target_id);
+                            continue;
+                        }
+
+                        // Run diff analysis with TaskManager
+                        std::vector<ContentRegistry::Diffing::DiffTree> diffTrees;
+                        std::exception_ptr taskException;
+                        bool taskCompleted = false;
+
+                        auto commonSize = std::max(refProvider->getActualSize(), targetProvider->getActualSize());
+                        auto diffTask = TaskManager::createTask("MCP Batch Diff", commonSize, [&]([[maybe_unused]] Task &task) {
+                            try {
+                                diffTrees = selectedAlgo->analyze(refProvider, targetProvider);
+                                taskCompleted = true;
+                            } catch (...) {
+                                taskException = std::current_exception();
+                                taskCompleted = true;
+                            }
+                        });
+
+                        // Wait for task completion
+                        const int maxWaitMs = 30000;
+                        const int pollIntervalMs = 100;
+                        int totalWaitMs = 0;
+
+                        while (!taskCompleted && totalWaitMs < maxWaitMs) {
+                            std::this_thread::sleep_for(std::chrono::milliseconds(pollIntervalMs));
+                            totalWaitMs += pollIntervalMs;
+                        }
+
+                        if (!taskCompleted) {
+                            log::warn("MCP: Diff analysis timed out for target {}, skipping", target_id);
+                            continue;
+                        }
+
+                        if (taskException) {
+                            try {
+                                std::rethrow_exception(taskException);
+                            } catch (const std::exception &e) {
+                                log::warn("MCP: Diff analysis failed for target {}: {}", target_id, e.what());
+                                continue;
+                            }
+                        }
+
+                        // Calculate similarity from diff regions
+                        u64 totalBytes = std::max(refProvider->getActualSize(), targetProvider->getActualSize());
+                        u64 matchingBytes = 0;
+                        size_t diffRegions = 0;
+
+                        nlohmann::json regions = nlohmann::json::array();
+
+                        if (!diffTrees.empty()) {
+                            auto &tree = diffTrees[0];
+                            size_t regionCount = 0;
+
+                            for (auto it = tree.begin(); it != tree.end() && regionCount < max_diff_regions; ++it) {
+                                regionCount++;
+                                diffRegions++;
+
+                                u64 intervalStart = it->first;
+                                u64 intervalEnd = it->second.first;
+                                auto type = it->second.second;
+                                u64 size = intervalEnd - intervalStart + 1;
+
+                                if (type == ContentRegistry::Diffing::DifferenceType::Match) {
+                                    matchingBytes += size;
+                                }
+
+                                // Only include limited regions in response
+                                if (regionCount <= 100) {  // Limit regions per file to 100
+                                    nlohmann::json region;
+                                    region["start"] = intervalStart;
+                                    region["end"] = intervalEnd;
+                                    region["size"] = size;
+
+                                    switch (type) {
+                                        case ContentRegistry::Diffing::DifferenceType::Match:
+                                            region["type"] = "match";
+                                            break;
+                                        case ContentRegistry::Diffing::DifferenceType::Mismatch:
+                                            region["type"] = "mismatch";
+                                            break;
+                                        case ContentRegistry::Diffing::DifferenceType::Insertion:
+                                            region["type"] = "insertion";
+                                            break;
+                                        case ContentRegistry::Diffing::DifferenceType::Deletion:
+                                            region["type"] = "deletion";
+                                            break;
+                                    }
+
+                                    regions.push_back(region);
+                                }
+                            }
+                        }
+
+                        double similarity = totalBytes > 0 ? (matchingBytes * 100.0) / totalBytes : 0.0;
+
+                        nlohmann::json diffResult;
+                        diffResult["target_id"] = target_id;
+                        diffResult["target_file"] = targetProvider->getName();
+                        diffResult["similarity"] = similarity;
+                        diffResult["diff_regions"] = diffRegions;
+                        diffResult["regions"] = regions;
+                        diffResult["matching_bytes"] = matchingBytes;
+                        diffResult["total_bytes"] = totalBytes;
+
+                        diffs.push_back(diffResult);
+
+                        // Update statistics
+                        totalSimilarity += similarity;
+                        if (similarity > highestSimilarity) {
+                            highestSimilarity = similarity;
+                            mostSimilarId = target_id;
+                        }
+                        if (similarity < lowestSimilarity) {
+                            lowestSimilarity = similarity;
+                            leastSimilarId = target_id;
+                        }
+                    }
+
+                    double avgSimilarity = diffs.empty() ? 0.0 : totalSimilarity / diffs.size();
+
+                    nlohmann::json result;
+                    result["diffs"] = diffs;
+                    result["summary"] = {
+                        {"reference_id", reference_id},
+                        {"reference_file", refProvider->getName()},
+                        {"algorithm", selectedAlgo->getUnlocalizedName().get()},
+                        {"files_compared", diffs.size()},
+                        {"avg_similarity", avgSimilarity},
+                        {"most_similar", mostSimilarId},
+                        {"highest_similarity", highestSimilarity},
+                        {"least_similar", leastSimilarId},
+                        {"lowest_similarity", lowestSimilarity}
+                    };
+
+                    log::info("MCP: Batch diff complete - {} comparisons, avg similarity {:.1f}%", diffs.size(), avgSimilarity);
+
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Batch diff failed: {}", e.what()));
+                }
+            });
+
+            log::info("MCP plugin (improved) loaded - registered {} network endpoints", 21);
         }
 
     }

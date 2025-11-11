@@ -849,6 +849,45 @@ async def list_tools() -> List[Tool]:
                 "required": ["algorithms"]
             }
         ),
+        Tool(
+            name="imhex_batch_diff",
+            description="Compare a reference file against multiple target files simultaneously. Calculates similarity percentages and shows diff regions. Useful for comparing file variants or finding similar files.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "reference_id": {
+                        "type": "integer",
+                        "description": "Provider ID of the reference file to compare against"
+                    },
+                    "target_ids": {
+                        "description": "Target file provider IDs to compare. Can be an array of integers or the string 'all' for all other open files",
+                        "oneOf": [
+                            {
+                                "type": "array",
+                                "items": {"type": "integer"},
+                                "minItems": 1
+                            },
+                            {
+                                "type": "string",
+                                "enum": ["all"]
+                            }
+                        ]
+                    },
+                    "algorithm": {
+                        "type": "string",
+                        "description": "Diff algorithm to use (default: myers)",
+                        "enum": ["myers"],
+                        "default": "myers"
+                    },
+                    "max_diff_regions": {
+                        "type": "integer",
+                        "description": "Maximum number of diff regions to analyze per file (default: 1000)",
+                        "default": 1000
+                    }
+                },
+                "required": ["reference_id", "target_ids"]
+            }
+        ),
     ]
 
 
@@ -1366,6 +1405,72 @@ async def call_tool(name: str, arguments: Any) -> List[TextContent | ImageConten
                         result += f"    {algo.upper()}: {hash_value}\n"
             else:
                 result += "No files hashed.\n"
+
+            return [TextContent(type="text", text=result)]
+
+        elif name == "imhex_batch_diff":
+            reference_id = arguments.get("reference_id")
+            target_ids = arguments.get("target_ids")
+            algorithm = arguments.get("algorithm", "myers")
+            max_diff_regions = arguments.get("max_diff_regions", 1000)
+
+            params = {
+                "reference_id": reference_id,
+                "target_ids": target_ids,
+                "algorithm": algorithm,
+                "max_diff_regions": max_diff_regions
+            }
+
+            response = imhex_client.send_command("batch/diff", params)
+
+            data = response.get("data", {})
+            diffs = data.get("diffs", [])
+            summary = data.get("summary", {})
+
+            result = "Batch Diff - Results:\n\n"
+
+            # Summary section
+            result += "Summary:\n"
+            result += f"  Reference: {summary.get('reference_file', 'Unknown')} (ID: {summary.get('reference_id', '?')})\n"
+            result += f"  Algorithm: {summary.get('algorithm', 'Unknown')}\n"
+            result += f"  Files Compared: {summary.get('files_compared', 0)}\n"
+            result += f"  Average Similarity: {summary.get('avg_similarity', 0):.2f}%\n"
+
+            if summary.get('most_similar'):
+                result += f"  Most Similar: File ID {summary.get('most_similar')} ({summary.get('highest_similarity', 0):.2f}%)\n"
+            if summary.get('least_similar'):
+                result += f"  Least Similar: File ID {summary.get('least_similar')} ({summary.get('lowest_similarity', 0):.2f}%)\n"
+
+            result += "\n"
+
+            # Per-file results
+            if diffs:
+                result += "Comparison Results:\n"
+                for diff_data in diffs:
+                    target_id = diff_data.get("target_id", "?")
+                    target_file = diff_data.get("target_file", "Unknown")
+                    similarity = diff_data.get("similarity", 0)
+                    diff_regions = diff_data.get("diff_regions", 0)
+                    matching_bytes = diff_data.get("matching_bytes", 0)
+                    total_bytes = diff_data.get("total_bytes", 0)
+                    regions = diff_data.get("regions", [])
+
+                    result += f"\n  Target: {target_file} (ID: {target_id})\n"
+                    result += f"    Similarity: {similarity:.2f}%\n"
+                    result += f"    Matching Bytes: {matching_bytes:,} / {total_bytes:,}\n"
+                    result += f"    Diff Regions: {diff_regions}\n"
+
+                    # Show first few regions
+                    if regions:
+                        result += f"    Sample Regions (showing {min(5, len(regions))} of {len(regions)}):\n"
+                        for i, region in enumerate(regions[:5]):
+                            region_type = region.get("type", "unknown")
+                            start = region.get("start", 0)
+                            end = region.get("end", 0)
+                            size = region.get("size", 0)
+                            result += f"      {i+1}. [{region_type}] 0x{start:08X}-0x{end:08X} ({size:,} bytes)\n"
+            else:
+                result += "No comparisons performed.\n"
 
             return [TextContent(type="text", text=result)]
 
