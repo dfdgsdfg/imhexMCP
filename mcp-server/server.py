@@ -888,6 +888,147 @@ async def list_tools() -> List[Tool]:
                 "required": ["reference_id", "target_ids"]
             }
         ),
+        Tool(
+            name="imhex_batch_hash",
+            description="Calculate hashes for multiple files/providers simultaneously. Useful for verifying file integrity across multiple files or finding duplicates. Supports all major hash algorithms.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "provider_ids": {
+                        "description": "Provider IDs to hash. Can be an array of integers or the string 'all' for all open files",
+                        "oneOf": [
+                            {
+                                "type": "array",
+                                "items": {"type": "integer"},
+                                "minItems": 1
+                            },
+                            {
+                                "type": "string",
+                                "enum": ["all"]
+                            }
+                        ]
+                    },
+                    "algorithm": {
+                        "type": "string",
+                        "description": "Hash algorithm to use",
+                        "enum": ["md5", "sha1", "sha224", "sha256", "sha384", "sha512"],
+                        "default": "sha256"
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "Offset to start hashing from (default: 0)",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "size": {
+                        "type": "integer",
+                        "description": "Number of bytes to hash per file (default: entire file, max: 100MB)",
+                        "minimum": 1,
+                        "maximum": 104857600
+                    }
+                },
+                "required": ["provider_ids", "algorithm"]
+            }
+        ),
+        Tool(
+            name="imhex_batch_search",
+            description="Search for a hex pattern across multiple open files simultaneously. Useful for finding common patterns, signatures, or data across file collections. Returns matches with offsets for each file.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "provider_ids": {
+                        "description": "Provider IDs to search. Can be an array of integers or the string 'all' for all open files",
+                        "oneOf": [
+                            {
+                                "type": "array",
+                                "items": {"type": "integer"},
+                                "minItems": 1
+                            },
+                            {
+                                "type": "string",
+                                "enum": ["all"]
+                            }
+                        ]
+                    },
+                    "pattern": {
+                        "type": "string",
+                        "description": "Hex pattern to search for (e.g., '48656C6C6F' for 'Hello')",
+                        "pattern": "^[0-9A-Fa-f]+$"
+                    },
+                    "max_matches": {
+                        "type": "integer",
+                        "description": "Maximum matches per file (default: 1000)",
+                        "minimum": 1,
+                        "maximum": 10000,
+                        "default": 1000
+                    }
+                },
+                "required": ["provider_ids", "pattern"]
+            }
+        ),
+        Tool(
+            name="imhex_data_entropy",
+            description="Calculate Shannon entropy for a region of data. Entropy measures randomness/information density (0-8 bits/byte). High entropy indicates compressed/encrypted data, low entropy indicates structured/repetitive data. Useful for detecting encryption, compression, or analyzing data randomness.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "provider_id": {
+                        "type": "integer",
+                        "description": "Provider ID to analyze (0 = current file)",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "Offset to start analysis from (default: 0)",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "size": {
+                        "type": "integer",
+                        "description": "Number of bytes to analyze (default: 256, max: 10MB)",
+                        "minimum": 1,
+                        "maximum": 10485760,
+                        "default": 256
+                    }
+                },
+                "required": []
+            }
+        ),
+        Tool(
+            name="imhex_data_statistics",
+            description="Calculate byte frequency statistics for a region of data. Returns most common bytes, unique byte count, null byte percentage, printable character percentage. Optionally includes full byte distribution. Useful for understanding data composition and detecting patterns.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "provider_id": {
+                        "type": "integer",
+                        "description": "Provider ID to analyze (0 = current file)",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "Offset to start analysis from (default: 0)",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "size": {
+                        "type": "integer",
+                        "description": "Number of bytes to analyze (default: 256, max: 10MB)",
+                        "minimum": 1,
+                        "maximum": 10485760,
+                        "default": 256
+                    },
+                    "include_distribution": {
+                        "type": "boolean",
+                        "description": "Include full 256-byte distribution in results (default: false)",
+                        "default": false
+                    }
+                },
+                "required": []
+            }
+        ),
     ]
 
 
@@ -1471,6 +1612,229 @@ async def call_tool(name: str, arguments: Any) -> List[TextContent | ImageConten
                             result += f"      {i+1}. [{region_type}] 0x{start:08X}-0x{end:08X} ({size:,} bytes)\n"
             else:
                 result += "No comparisons performed.\n"
+
+            return [TextContent(type="text", text=result)]
+
+        elif name == "imhex_batch_hash":
+            provider_ids = arguments.get("provider_ids")
+            algorithm = arguments.get("algorithm", "sha256")
+            offset = arguments.get("offset", 0)
+            size = arguments.get("size")
+
+            params = {
+                "provider_ids": provider_ids,
+                "algorithm": algorithm,
+                "offset": offset
+            }
+            if size is not None:
+                params["size"] = size
+
+            response = imhex_client.send_command("batch/hash", params)
+
+            data = response.get("data", {})
+            hashes = data.get("hashes", [])
+            total = data.get("total", 0)
+
+            result = f"Batch Hash - {algorithm.upper()} Results:\n\n"
+            result += f"Total Files Hashed: {total}\n"
+            result += f"Algorithm: {algorithm}\n"
+            if offset > 0:
+                result += f"Offset: 0x{offset:08X}\n"
+            if size:
+                result += f"Size: {size:,} bytes\n"
+            result += "\n"
+
+            if hashes:
+                result += "Hash Results:\n"
+                for hash_data in hashes:
+                    provider_id = hash_data.get("provider_id", "?")
+                    provider_name = hash_data.get("provider_name", "Unknown")
+                    hash_value = hash_data.get("hash", "")
+                    hash_offset = hash_data.get("offset", 0)
+                    hash_size = hash_data.get("size", 0)
+                    status = hash_data.get("status", "unknown")
+
+                    result += f"\n  Provider {provider_id}: {provider_name}\n"
+                    result += f"    Hash: {hash_value}\n"
+                    result += f"    Region: 0x{hash_offset:08X} - 0x{hash_offset+hash_size:08X} ({hash_size:,} bytes)\n"
+                    result += f"    Status: {status}\n"
+            else:
+                result += "No files hashed.\n"
+
+            return [TextContent(type="text", text=result)]
+
+        elif name == "imhex_batch_search":
+            provider_ids = arguments.get("provider_ids")
+            pattern = arguments.get("pattern")
+            max_matches = arguments.get("max_matches", 1000)
+
+            params = {
+                "provider_ids": provider_ids,
+                "pattern": pattern,
+                "max_matches": max_matches
+            }
+
+            response = imhex_client.send_command("batch/search", params)
+
+            data = response.get("data", {})
+            results = data.get("results", [])
+            pattern_info = data.get("pattern", "")
+
+            result = f"Batch Search - Results:\n\n"
+            result += f"Pattern: {pattern_info}\n"
+            result += f"Max Matches Per File: {max_matches:,}\n"
+            result += f"Files Searched: {len(results)}\n\n"
+
+            total_matches = 0
+            files_with_matches = 0
+
+            if results:
+                result += "Search Results:\n"
+                for search_data in results:
+                    provider_id = search_data.get("provider_id", "?")
+                    file_name = search_data.get("file", "Unknown")
+                    matches = search_data.get("matches", [])
+                    match_count = len(matches)
+                    total_matches += match_count
+
+                    if match_count > 0:
+                        files_with_matches += 1
+                        result += f"\n  Provider {provider_id}: {file_name}\n"
+                        result += f"    Matches Found: {match_count}\n"
+
+                        # Show first 10 matches
+                        if matches:
+                            result += f"    First {min(10, match_count)} matches:\n"
+                            for i, offset in enumerate(matches[:10]):
+                                result += f"      {i+1}. 0x{offset:08X}\n"
+
+                            if match_count > 10:
+                                result += f"      ... and {match_count - 10} more\n"
+                    else:
+                        result += f"\n  Provider {provider_id}: {file_name} - No matches\n"
+
+                result += f"\n"
+                result += f"Summary: {total_matches:,} total matches across {files_with_matches} file(s)\n"
+            else:
+                result += "No files searched.\n"
+
+            return [TextContent(type="text", text=result)]
+
+        elif name == "imhex_data_entropy":
+            provider_id = arguments.get("provider_id", 0)
+            offset = arguments.get("offset", 0)
+            size = arguments.get("size", 256)
+
+            params = {
+                "provider_id": provider_id,
+                "offset": offset,
+                "size": size
+            }
+
+            response = imhex_client.send_command("data/entropy", params)
+
+            data = response.get("data", {})
+            entropy = data.get("entropy", 0)
+            max_entropy = data.get("max_entropy", 8.0)
+            percentage = data.get("percentage", 0)
+            interpretation = data.get("interpretation", "")
+            result_offset = data.get("offset", offset)
+            result_size = data.get("size", size)
+
+            result = f"Data Entropy Analysis:\n\n"
+            result += f"Region: 0x{result_offset:08X} - 0x{result_offset+result_size:08X} ({result_size:,} bytes)\n"
+            result += f"Entropy: {entropy:.4f} bits/byte (max: {max_entropy:.1f})\n"
+            result += f"Percentage: {percentage:.2f}%\n"
+            result += f"Interpretation: {interpretation}\n\n"
+
+            result += "What this means:\n"
+            if entropy < 1.0:
+                result += "  - Very low entropy: Data is highly repetitive or structured\n"
+                result += "  - Likely: Padding, zeros, repeated patterns\n"
+            elif entropy < 3.0:
+                result += "  - Low entropy: Data has structure and patterns\n"
+                result += "  - Likely: Text, structured data, formatted files\n"
+            elif entropy < 5.0:
+                result += "  - Medium entropy: Mixed data with some randomness\n"
+                result += "  - Likely: Mixed content, some compression\n"
+            elif entropy < 7.0:
+                result += "  - High entropy: Data appears random or compressed\n"
+                result += "  - Likely: Compressed data, encrypted sections\n"
+            else:
+                result += "  - Very high entropy: Data is highly random\n"
+                result += "  - Likely: Encrypted data, strong compression, true random data\n"
+
+            return [TextContent(type="text", text=result)]
+
+        elif name == "imhex_data_statistics":
+            provider_id = arguments.get("provider_id", 0)
+            offset = arguments.get("offset", 0)
+            size = arguments.get("size", 256)
+            include_distribution = arguments.get("include_distribution", False)
+
+            params = {
+                "provider_id": provider_id,
+                "offset": offset,
+                "size": size,
+                "include_distribution": include_distribution
+            }
+
+            response = imhex_client.send_command("data/statistics", params)
+
+            data = response.get("data", {})
+            result_offset = data.get("offset", offset)
+            result_size = data.get("size", size)
+            unique_bytes = data.get("unique_bytes", 0)
+            most_common = data.get("most_common_byte", 0)
+            most_common_count = data.get("most_common_count", 0)
+            most_common_pct = data.get("most_common_percentage", 0)
+            null_bytes = data.get("null_bytes", 0)
+            null_pct = data.get("null_percentage", 0)
+            printable_chars = data.get("printable_chars", 0)
+            printable_pct = data.get("printable_percentage", 0)
+
+            result = f"Data Statistics:\n\n"
+            result += f"Region: 0x{result_offset:08X} - 0x{result_offset+result_size:08X} ({result_size:,} bytes)\n\n"
+
+            result += f"Byte Diversity:\n"
+            result += f"  Unique Bytes: {unique_bytes}/256 ({unique_bytes/256*100:.1f}%)\n"
+            result += f"  Most Common: 0x{most_common:02X} ({most_common_count:,} occurrences, {most_common_pct:.2f}%)\n\n"
+
+            result += f"Data Composition:\n"
+            result += f"  Null Bytes: {null_bytes:,} ({null_pct:.2f}%)\n"
+            result += f"  Printable Characters: {printable_chars:,} ({printable_pct:.2f}%)\n"
+            result += f"  Non-Printable: {result_size - printable_chars:,} ({100-printable_pct:.2f}%)\n\n"
+
+            result += "Analysis:\n"
+            if printable_pct > 80:
+                result += "  - Likely contains text or ASCII data\n"
+            elif printable_pct > 50:
+                result += "  - Mixed content with significant text\n"
+            elif printable_pct > 20:
+                result += "  - Primarily binary with some text strings\n"
+            else:
+                result += "  - Binary data with minimal text\n"
+
+            if null_pct > 50:
+                result += "  - High null byte content (padding or sparse data)\n"
+            elif null_pct > 20:
+                result += "  - Moderate null byte presence\n"
+
+            if unique_bytes < 50:
+                result += "  - Low byte diversity (highly repetitive)\n"
+            elif unique_bytes > 200:
+                result += "  - High byte diversity (varied content)\n"
+
+            if include_distribution:
+                distribution = data.get("distribution", {})
+                if distribution:
+                    result += "\nByte Distribution (Top 10):\n"
+                    # Sort by count
+                    sorted_bytes = sorted(distribution.items(), key=lambda x: int(x[1]), reverse=True)[:10]
+                    for byte_val, count in sorted_bytes:
+                        byte_int = int(byte_val)
+                        pct = (count / result_size) * 100
+                        result += f"  0x{byte_int:02X}: {count:,} occurrences ({pct:.2f}%)\n"
 
             return [TextContent(type="text", text=result)]
 
