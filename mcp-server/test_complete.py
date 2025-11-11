@@ -60,29 +60,23 @@ try:
 
             if r.get("status") == "success":
                 data = r.get("data", {})
-                results = data.get("results", [])
+                results = data.get("diffs", [])  # batch/diff returns "diffs" not "results"
                 print(f"\n   ✓ Got {len(results)} diff results")
 
                 for result in results:
                     target_id = result.get("target_id")
-                    status = result.get("status")
+                    target_file = result.get("target_file", "unknown")
+                    similarity = result.get("similarity", 0)
+                    diff_regions = result.get("diff_regions", 0)
 
-                    if status == "success":
-                        similarity = result.get("similarity_percent", 0)
-                        diff_regions = len(result.get("diff_regions", []))
+                    print(f"\n   Target {target_id} ({target_file}):")
+                    print(f"     - Similarity: {similarity:.2f}%")
+                    print(f"     - Diff regions: {diff_regions}")
 
-                        print(f"\n   Target {target_id}:")
-                        print(f"     - Similarity: {similarity:.2f}%")
-                        print(f"     - Diff regions: {diff_regions}")
-
-                        # Show first 3 diff regions
-                        regions = result.get("diff_regions", [])[:3]
-                        if regions:
-                            print(f"     - First {len(regions)} diff regions:")
-                            for region in regions:
-                                print(f"       {region['type']}: offset=0x{region['offset']:04X}, size={region['size']}")
-                    else:
-                        print(f"\n   Target {target_id}: {status} - {result.get('message', '')}")
+                    # Show region count only (detailed format varies)
+                    regions = result.get("regions", [])
+                    if regions:
+                        print(f"     - Sample regions: {len(regions)} found")
 
                 print("\n" + "="*60)
                 print("✅ ALL TESTS PASSED!")
