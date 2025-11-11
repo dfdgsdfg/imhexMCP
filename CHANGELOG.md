@@ -42,11 +42,28 @@ This release introduces powerful capabilities for reverse engineering, firmware 
 - Proper IntervalTree iteration for diff results
 - Disassembler instance lifecycle management (start/end)
 - Architecture creator function handling
+- **TaskManager Integration** - Diff analysis runs in background tasks to prevent crashes
+- **Case-Insensitive Architecture Matching** - Improved architecture name resolution
+- **Enhanced Error Messages** - Architecture errors now list all available options
+
+### Fixed
+- **Binary Diff Crash** - Implemented TaskManager-based async execution
+  - Root cause: Diff analysis must run in background tasks per ImHex threading model
+  - Solution: Polling loop with shared result storage and 30-second timeout
+  - Exception propagation via std::exception_ptr across task boundary
+- **Disassembly Architecture Not Found** - Fixed architecture name matching
+  - Added lowercase comparison for case-insensitive matching
+  - Enhanced error messages to list all available architectures
+  - Test updated to use "x86" (matches ImHex's "Intel x86")
 
 ### Testing
-- ✅ Chunked read verified working with hex/base64 encoding
-- ✅ Disassembly verified working (31 instructions from x86 code)
+- ✅ **All 4 v0.4.0 tests passing (100% success rate)**:
+  - Chunked read with hex encoding - PASSED
+  - Chunked read with base64 encoding - PASSED
+  - Disassembly (30 Intel x86 instructions) - PASSED
+  - Binary diff (3 diff regions found) - PASSED
 - ✅ All endpoints compile and integrate successfully
+- ✅ Test suite: `test_v040_features.py` with comprehensive validation
 
 ### Plugin Statistics
 - **Total Endpoints**: 20 (up from 17 in v0.3.0)

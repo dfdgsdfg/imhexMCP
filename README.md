@@ -9,7 +9,7 @@
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![ImHex](https://img.shields.io/badge/ImHex-1.35%2B-orange.svg)](https://github.com/WerWolv/ImHex)
 [![MCP](https://img.shields.io/badge/MCP-1.0+-purple.svg)](https://modelcontextprotocol.io/)
-[![Version](https://img.shields.io/badge/version-0.2.5-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](CHANGELOG.md)
 
 *Enable AI assistants like Claude to perform advanced binary file analysis through ImHex*
 
@@ -21,7 +21,7 @@
 
 ## 🌟 Highlights
 
-- ✨ **11 MCP Tools** - Complete binary analysis toolkit for AI assistants
+- ✨ **20 MCP Tools** - Complete binary analysis toolkit for AI assistants
 - 🤖 **Automated File Opening** - Fully implemented programmatic file access (no manual GUI!)
 - 🚀 **Lightning Fast** - Enhanced connection management with retry logic
 - 🔍 **Deep Inspection** - 24+ data type interpretations (int, float, ASCII, binary, etc.)
@@ -493,6 +493,94 @@ At offset 0x1000, there's a structure. Can you tell me what it contains?
 3. Determine most likely data type
 4. Explain findings
 
+### Example 5: Firmware Diff Analysis (v0.4.0)
+
+**User:**
+```
+Compare firmware_v1.bin and firmware_v2.bin to identify what changed between versions.
+```
+
+**Claude will:**
+1. Open both firmware files
+2. Use `diff/analyze` with Myers algorithm
+3. Report diff regions:
+   - **Matches**: Unchanged code/data regions
+   - **Mismatches**: Modified bytes (patches, updates)
+   - **Insertions**: New code added in v2
+   - **Deletions**: Code removed from v1
+4. Highlight critical changes:
+   - Security patches at specific offsets
+   - Modified function implementations
+   - Updated configuration data
+5. Calculate similarity percentage
+6. Export changed regions for detailed analysis
+
+**Real Output:**
+```
+Found 3 diff regions:
+- 0x8-0x9: Mismatch (2 bytes) - Immediate value changed
+- 0x78-0x3FF: Match (904 bytes) - Identical padding
+- 0x400-0x72F: Mismatch (816 bytes) - Data pattern shift
+Similarity: 92.3%
+```
+
+### Example 6: Shellcode Disassembly (v0.4.0)
+
+**User:**
+```
+I found suspicious code at offset 0x2000 in this binary. Disassemble it to see what it does.
+```
+
+**Claude will:**
+1. Use `disasm/disassemble` with appropriate architecture (x86/ARM/etc.)
+2. Show instruction details:
+   ```
+   0x2000: mov     eax, 1        [B8 01 00 00 00]
+   0x2005: mov     ebx, 2        [BB 02 00 00 00]
+   0x200A: add     eax, ebx      [01 D8]
+   0x200C: ret                   [C3]
+   ```
+3. Analyze instruction flow:
+   - Identify function prologues/epilogues
+   - Detect system calls
+   - Find suspicious API calls
+   - Track control flow (jumps, calls)
+4. Explain what the code does
+5. Flag potential malicious behavior
+
+**Supported Architectures:**
+- x86, x86-64 (Intel/AMD)
+- ARM, ARM64 (AArch64)
+- MIPS, PowerPC, SPARC
+- And 10+ more via Capstone
+
+### Example 7: Large File Analysis (v0.4.0)
+
+**User:**
+```
+Analyze this 4GB memory dump for suspicious patterns, but my system has limited RAM.
+```
+
+**Claude will:**
+1. Use `data/read_chunked` with 1MB chunks
+2. Process memory dump incrementally:
+   - **Chunk 0**: Scan 0x000000-0x0FFFFF (1MB)
+   - **Chunk 1**: Scan 0x100000-0x1FFFFF (1MB)
+   - Continue through entire dump...
+3. Search each chunk for patterns:
+   - PE/ELF headers (injected code)
+   - Suspicious strings (URLs, IPs)
+   - Shellcode signatures
+4. Track progress: "Processing chunk 42/4096 (1.0%)"
+5. Report findings with offsets
+6. No memory constraints - handles multi-GB files
+
+**Benefits:**
+- **Memory Efficient**: Only 1MB in memory at a time
+- **Progress Tracking**: See chunk index and remaining bytes
+- **Flexible Encoding**: Hex or Base64 output
+- **Unlimited Size**: Handle disk images, memory dumps, large binaries
+
 ---
 
 ## 📦 Repository Structure
@@ -662,8 +750,10 @@ See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed guidelines.
 
 | imhexMCP | ImHex | Python | MCP | Status | Key Features |
 |----------|-------|--------|-----|--------|--------------|
-| **0.2.5** | 1.38+ | 3.10+ | 1.0+ | ✅ Current | Automated file opening, patch system |
-| 0.2.0 | 1.35+ | 3.10+ | 1.0+ | ⚠️ Legacy | Manual file opening only |
+| **0.4.0** | 1.38+ | 3.10+ | 1.0+ | ✅ Current | Binary diffing, disassembly, chunked read |
+| 0.3.0 | 1.38+ | 3.10+ | 1.0+ | ✅ Stable | Multi-file support, regex search, data export |
+| 0.2.5 | 1.38+ | 3.10+ | 1.0+ | ⚠️ Legacy | Automated file opening, patch system |
+| 0.2.0 | 1.35+ | 3.10+ | 1.0+ | 🗄️ Archived | Manual file opening only |
 | 0.1.0 | 1.35+ | 3.10+ | 1.0+ | 🗄️ Archived | Initial release |
 
 ---
@@ -676,8 +766,8 @@ See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed guidelines.
 | **Code Lines** | 6,353 | MCP integration only |
 | **Documentation** | 3,500+ | Comprehensive guides |
 | **Test Lines** | 400+ | Unit & integration tests |
-| **MCP Tools** | 11 | For AI assistants |
-| **Network Endpoints** | 9 | Plugin APIs |
+| **MCP Tools** | 20 | For AI assistants |
+| **Network Endpoints** | 20 | Plugin APIs |
 | **Data Types** | 24+ | Inspection modes |
 | **Hash Algorithms** | 6 | MD5, SHA family |
 | **Search Limit** | 10,000 | Pattern matches |
@@ -911,6 +1001,6 @@ Have ideas? We'd love to hear them!
 
 ---
 
-**Version 0.3.0** | **Last Updated: 2025-11-10** | **Status: ✅ Production Ready**
+**Version 0.4.0** | **Last Updated: 2025-11-11** | **Status: ✅ Production Ready**
 
 </div>
