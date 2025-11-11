@@ -1925,7 +1925,390 @@ namespace hex::plugin::mcp {
                 }
             });
 
-            log::info("MCP plugin (improved) loaded - registered {} network endpoints", 25);
+            // ========================================
+            // STRING EXTRACTION
+            // ========================================
+
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("data/strings", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    u32 provider_id = data.value("provider_id", 0);
+                    u64 offset = data.value("offset", 0);
+                    u64 size = data.value("size", 0);
+                    u32 min_length = data.value("min_length", 4);
+                    std::string type = data.value("type", "ascii");  // ascii, utf16le, utf16be, all
+                    u32 max_strings = data.value("max_strings", 1000);
+
+                    // Get provider
+                    prv::Provider* provider = nullptr;
+                    if (provider_id == 0) {
+                        provider = ImHexApi::Provider::get();
+                    } else {
+                        auto providers = ImHexApi::Provider::getProviders();
+                        for (auto& prov : providers) {
+                            if (prov->getID() == provider_id) {
+                                provider = prov;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!provider) {
+                        throw std::runtime_error(fmt::format("Provider {} not found", provider_id));
+                    }
+
+                    // If size is 0, use entire provider
+                    if (size == 0) {
+                        size = provider->getActualSize() - offset;
+                    }
+
+                    // Safety limit
+                    const u64 MAX_SCAN_SIZE = 100 * 1024 * 1024;  // 100MB
+                    if (size > MAX_SCAN_SIZE) {
+                        throw std::runtime_error(fmt::format("Size {} exceeds maximum {}", size, MAX_SCAN_SIZE));
+                    }
+
+                    // Read data
+                    std::vector<u8> buffer(size);
+                    provider->read(offset, buffer.data(), size);
+
+                    nlohmann::json result;
+                    nlohmann::json strings_json = nlohmann::json::array();
+                    u32 string_count = 0;
+
+                    // Helper lambda to check if char is printable ASCII
+                    auto is_printable = [](u8 c) -> bool {
+                        return c >= 32 && c <= 126;
+                    };
+
+                    // Extract ASCII strings
+                    if (type == "ascii" || type == "all") {
+                        std::string current_string;
+                        u64 string_start = 0;
+
+                        for (u64 i = 0; i < size; i++) {
+                            u8 c = buffer[i];
+
+                            if (is_printable(c)) {
+                                if (current_string.empty()) {
+                                    string_start = offset + i;
+                                }
+                                current_string += static_cast<char>(c);
+                            } else {
+                                if (current_string.length() >= min_length) {
+                                    nlohmann::json str_entry;
+                                    str_entry["offset"] = string_start;
+                                    str_entry["length"] = current_string.length();
+                                    str_entry["type"] = "ascii";
+                                    str_entry["value"] = current_string;
+                                    strings_json.push_back(str_entry);
+
+                                    string_count++;
+                                    if (string_count >= max_strings) {
+                                        break;
+                                    }
+                                }
+                                current_string.clear();
+                            }
+                        }
+
+                        // Don't forget last string
+                        if (current_string.length() >= min_length && string_count < max_strings) {
+                            nlohmann::json str_entry;
+                            str_entry["offset"] = string_start;
+                            str_entry["length"] = current_string.length();
+                            str_entry["type"] = "ascii";
+                            str_entry["value"] = current_string;
+                            strings_json.push_back(str_entry);
+                            string_count++;
+                        }
+                    }
+
+                    // Extract UTF-16LE strings
+                    if ((type == "utf16le" || type == "all") && string_count < max_strings) {
+                        std::string current_string;
+                        u64 string_start = 0;
+
+                        for (u64 i = 0; i + 1 < size; i += 2) {
+                            u16 c = buffer[i] | (static_cast<u16>(buffer[i+1]) << 8);
+
+                            if (c < 128 && is_printable(static_cast<u8>(c))) {
+                                if (current_string.empty()) {
+                                    string_start = offset + i;
+                                }
+                                current_string += static_cast<char>(c);
+                            } else {
+                                if (current_string.length() >= min_length) {
+                                    nlohmann::json str_entry;
+                                    str_entry["offset"] = string_start;
+                                    str_entry["length"] = current_string.length() * 2;  // Bytes, not chars
+                                    str_entry["type"] = "utf16le";
+                                    str_entry["value"] = current_string;
+                                    strings_json.push_back(str_entry);
+
+                                    string_count++;
+                                    if (string_count >= max_strings) {
+                                        break;
+                                    }
+                                }
+                                current_string.clear();
+                            }
+                        }
+
+                        // Don't forget last string
+                        if (current_string.length() >= min_length && string_count < max_strings) {
+                            nlohmann::json str_entry;
+                            str_entry["offset"] = string_start;
+                            str_entry["length"] = current_string.length() * 2;
+                            str_entry["type"] = "utf16le";
+                            str_entry["value"] = current_string;
+                            strings_json.push_back(str_entry);
+                            string_count++;
+                        }
+                    }
+
+                    result["strings"] = strings_json;
+                    result["count"] = string_count;
+                    result["truncated"] = string_count >= max_strings;
+
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("String extraction failed: {}", e.what()));
+                }
+            });
+
+            // ========================================
+            // FILE TYPE DETECTION (MAGIC NUMBERS)
+            // ========================================
+
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("data/magic", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    u32 provider_id = data.value("provider_id", 0);
+                    u64 offset = data.value("offset", 0);
+                    u64 size = data.value("size", 512);  // Default to reading first 512 bytes
+
+                    // Get provider
+                    prv::Provider* provider = nullptr;
+                    if (provider_id == 0) {
+                        provider = ImHexApi::Provider::get();
+                    } else {
+                        auto providers = ImHexApi::Provider::getProviders();
+                        for (auto& prov : providers) {
+                            if (prov->getID() == provider_id) {
+                                provider = prov;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!provider) {
+                        throw std::runtime_error(fmt::format("Provider {} not found", provider_id));
+                    }
+
+                    // Read header
+                    std::vector<u8> buffer(std::min(size, provider->getActualSize() - offset));
+                    provider->read(offset, buffer.data(), buffer.size());
+
+                    nlohmann::json result;
+                    nlohmann::json matches = nlohmann::json::array();
+
+                    // Common magic number signatures
+                    struct MagicSignature {
+                        std::vector<u8> signature;
+                        std::string type;
+                        std::string description;
+                        u64 offset;
+                    };
+
+                    std::vector<MagicSignature> signatures = {
+                        // Executables
+                        {{0x4D, 0x5A}, "PE", "DOS/Windows executable (MZ)", 0},
+                        {{0x7F, 0x45, 0x4C, 0x46}, "ELF", "Linux/Unix executable", 0},
+                        {{0xFE, 0xED, 0xFA, 0xCE}, "Mach-O", "macOS executable (32-bit)", 0},
+                        {{0xFE, 0xED, 0xFA, 0xCF}, "Mach-O", "macOS executable (64-bit)", 0},
+                        {{0xCF, 0xFA, 0xED, 0xFE}, "Mach-O", "macOS executable (32-bit, reverse)", 0},
+                        {{0xCE, 0xFA, 0xED, 0xFE}, "Mach-O", "macOS executable (64-bit, reverse)", 0},
+                        {{0xCA, 0xFE, 0xBA, 0xBE}, "Java", "Java class file", 0},
+
+                        // Archives
+                        {{0x50, 0x4B, 0x03, 0x04}, "ZIP", "ZIP archive", 0},
+                        {{0x50, 0x4B, 0x05, 0x06}, "ZIP", "ZIP archive (empty)", 0},
+                        {{0x52, 0x61, 0x72, 0x21, 0x1A, 0x07}, "RAR", "RAR archive", 0},
+                        {{0x1F, 0x8B}, "GZIP", "GZIP compressed", 0},
+                        {{0x42, 0x5A, 0x68}, "BZIP2", "BZIP2 compressed", 0},
+                        {{0x75, 0x73, 0x74, 0x61, 0x72}, "TAR", "TAR archive", 257},
+
+                        // Images
+                        {{0xFF, 0xD8, 0xFF}, "JPEG", "JPEG image", 0},
+                        {{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}, "PNG", "PNG image", 0},
+                        {{0x47, 0x49, 0x46, 0x38, 0x37, 0x61}, "GIF", "GIF image (87a)", 0},
+                        {{0x47, 0x49, 0x46, 0x38, 0x39, 0x61}, "GIF", "GIF image (89a)", 0},
+                        {{0x42, 0x4D}, "BMP", "BMP image", 0},
+
+                        // Documents
+                        {{0x25, 0x50, 0x44, 0x46}, "PDF", "PDF document", 0},
+                        {{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1}, "DOC", "Microsoft Office document", 0},
+                        {{0x50, 0x4B, 0x03, 0x04, 0x14, 0x00, 0x06, 0x00}, "DOCX", "Microsoft Office Open XML", 0},
+
+                        // Media
+                        {{0x49, 0x44, 0x33}, "MP3", "MP3 audio (ID3)", 0},
+                        {{0xFF, 0xFB}, "MP3", "MP3 audio (MPEG)", 0},
+                        {{0x66, 0x74, 0x79, 0x70}, "MP4", "MP4 video", 4},
+                        {{0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70}, "MP4", "MP4 video", 0},
+                        {{0x52, 0x49, 0x46, 0x46}, "AVI", "AVI video / WAV audio", 0},
+
+                        // Other
+                        {{0x7B, 0x5C, 0x72, 0x74, 0x66}, "RTF", "Rich Text Format", 0},
+                        {{0x3C, 0x3F, 0x78, 0x6D, 0x6C}, "XML", "XML document", 0},
+                        {{0x23, 0x21}, "Script", "Script file (shebang)", 0},
+                    };
+
+                    // Check each signature
+                    for (const auto& sig : signatures) {
+                        if (sig.offset + sig.signature.size() <= buffer.size()) {
+                            bool match = true;
+                            for (size_t i = 0; i < sig.signature.size(); i++) {
+                                if (buffer[sig.offset + i] != sig.signature[i]) {
+                                    match = false;
+                                    break;
+                                }
+                            }
+
+                            if (match) {
+                                nlohmann::json match_entry;
+                                match_entry["type"] = sig.type;
+                                match_entry["description"] = sig.description;
+                                match_entry["offset"] = sig.offset;
+                                match_entry["confidence"] = "high";
+                                matches.push_back(match_entry);
+                            }
+                        }
+                    }
+
+                    result["matches"] = matches;
+                    result["match_count"] = matches.size();
+
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Magic number detection failed: {}", e.what()));
+                }
+            });
+
+            // ========================================
+            // DISASSEMBLY
+            // ========================================
+
+            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("data/disassemble", [](const nlohmann::json &data) -> nlohmann::json {
+                try {
+                    u32 provider_id = data.value("provider_id", 0);
+                    u64 offset = data.value("offset", 0);
+                    u64 size = data.value("size", 64);
+                    std::string architecture = data.value("architecture", "x86_64");
+                    u64 base_address = data.value("base_address", 0);
+
+                    // Get provider
+                    prv::Provider* provider = nullptr;
+                    if (provider_id == 0) {
+                        provider = ImHexApi::Provider::get();
+                    } else {
+                        auto providers = ImHexApi::Provider::getProviders();
+                        for (auto& prov : providers) {
+                            if (prov->getID() == provider_id) {
+                                provider = prov;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!provider) {
+                        throw std::runtime_error(fmt::format("Provider {} not found", provider_id));
+                    }
+
+                    // Safety limit
+                    const u64 MAX_DISASM_SIZE = 4096;  // 4KB max
+                    if (size > MAX_DISASM_SIZE) {
+                        size = MAX_DISASM_SIZE;
+                    }
+
+                    // Read code
+                    std::vector<u8> buffer(size);
+                    provider->read(offset, buffer.data(), size);
+
+                    nlohmann::json result;
+                    nlohmann::json instructions_json = nlohmann::json::array();
+
+                    // Get available disassemblers
+                    const auto& architectures = ContentRegistry::Disassemblers::impl::getArchitectures();
+
+                    // Find matching architecture
+                    ContentRegistry::Disassemblers::impl::CreatorFunction creator = nullptr;
+                    for (const auto& [name, func] : architectures) {
+                        if (name == architecture) {
+                            creator = func;
+                            break;
+                        }
+                    }
+
+                    if (!creator) {
+                        // List available architectures
+                        nlohmann::json available = nlohmann::json::array();
+                        for (const auto& [name, _] : architectures) {
+                            available.push_back(name);
+                        }
+                        result["error"] = fmt::format("Architecture '{}' not found", architecture);
+                        result["available_architectures"] = available;
+                        return result;
+                    }
+
+                    // Create disassembler
+                    auto disassembler = creator();
+                    if (!disassembler->start()) {
+                        throw std::runtime_error("Failed to initialize disassembler");
+                    }
+
+                    // Disassemble instructions
+                    u64 current_offset = 0;
+                    u32 instruction_count = 0;
+                    const u32 MAX_INSTRUCTIONS = 100;
+
+                    while (current_offset < size && instruction_count < MAX_INSTRUCTIONS) {
+                        auto instr = disassembler->disassemble(
+                            base_address,
+                            base_address + current_offset,
+                            offset + current_offset,
+                            std::span<const u8>(buffer.data() + current_offset, size - current_offset)
+                        );
+
+                        if (!instr.has_value()) {
+                            break;  // Failed to disassemble
+                        }
+
+                        nlohmann::json instr_entry;
+                        instr_entry["address"] = fmt::format("0x{:X}", instr->address);
+                        instr_entry["offset"] = instr->offset;
+                        instr_entry["size"] = instr->size;
+                        instr_entry["bytes"] = instr->bytes;
+                        instr_entry["mnemonic"] = instr->mnemonic;
+                        instr_entry["operands"] = instr->operators;
+                        instructions_json.push_back(instr_entry);
+
+                        current_offset += instr->size;
+                        instruction_count++;
+                    }
+
+                    disassembler->end();
+
+                    result["instructions"] = instructions_json;
+                    result["count"] = instruction_count;
+                    result["architecture"] = architecture;
+                    result["base_address"] = fmt::format("0x{:X}", base_address);
+
+                    return result;
+                } catch (const std::exception &e) {
+                    throw std::runtime_error(fmt::format("Disassembly failed: {}", e.what()));
+                }
+            });
+
+            log::info("MCP plugin (improved) loaded - registered {} network endpoints", 28);
         }
 
     }

@@ -1029,6 +1029,123 @@ async def list_tools() -> List[Tool]:
                 "required": []
             }
         ),
+        Tool(
+            name="imhex_data_strings",
+            description="Extract ASCII and UTF-16 strings from binary data. Useful for finding embedded text, paths, URLs, and other readable content in executables, firmware, and binary files. Supports minimum length filtering and multiple encoding types.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "provider_id": {
+                        "type": "integer",
+                        "description": "Provider ID (0 = current file)",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "Starting offset (default: 0)",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "size": {
+                        "type": "integer",
+                        "description": "Bytes to scan (0 = entire file, max: 100MB)",
+                        "minimum": 0,
+                        "maximum": 104857600,
+                        "default": 0
+                    },
+                    "min_length": {
+                        "type": "integer",
+                        "description": "Minimum string length (default: 4)",
+                        "minimum": 1,
+                        "default": 4
+                    },
+                    "type": {
+                        "type": "string",
+                        "description": "String type to extract",
+                        "enum": ["ascii", "utf16le", "all"],
+                        "default": "ascii"
+                    },
+                    "max_strings": {
+                        "type": "integer",
+                        "description": "Maximum strings to return (default: 1000)",
+                        "minimum": 1,
+                        "maximum": 10000,
+                        "default": 1000
+                    }
+                },
+                "required": []
+            }
+        ),
+        Tool(
+            name="imhex_data_magic",
+            description="Detect file type based on magic number signatures. Identifies executables (PE, ELF, Mach-O), archives (ZIP, RAR, TAR), images (JPEG, PNG, GIF), documents (PDF, DOC), media files (MP3, MP4), and more. Returns all matching signatures with confidence levels.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "provider_id": {
+                        "type": "integer",
+                        "description": "Provider ID (0 = current file)",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "Offset to check from (default: 0)",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "size": {
+                        "type": "integer",
+                        "description": "Bytes to read for detection (default: 512)",
+                        "minimum": 8,
+                        "maximum": 4096,
+                        "default": 512
+                    }
+                },
+                "required": []
+            }
+        ),
+        Tool(
+            name="imhex_data_disassemble",
+            description="Disassemble machine code into assembly instructions. Supports multiple architectures (x86, x86_64, ARM, etc.). Returns mnemonic, operands, byte representation, and addresses for each instruction. Useful for reverse engineering and malware analysis.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "provider_id": {
+                        "type": "integer",
+                        "description": "Provider ID (0 = current file)",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "Code offset to disassemble from",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "size": {
+                        "type": "integer",
+                        "description": "Bytes to disassemble (max: 4096)",
+                        "minimum": 1,
+                        "maximum": 4096,
+                        "default": 64
+                    },
+                    "architecture": {
+                        "type": "string",
+                        "description": "CPU architecture (check available_architectures in response if unsure)",
+                        "default": "x86_64"
+                    },
+                    "base_address": {
+                        "type": "integer",
+                        "description": "Base address for instruction addresses (default: 0)",
+                        "minimum": 0,
+                        "default": 0
+                    }
+                },
+                "required": []
+            }
+        ),
     ]
 
 
@@ -1835,6 +1952,158 @@ async def call_tool(name: str, arguments: Any) -> List[TextContent | ImageConten
                         byte_int = int(byte_val)
                         pct = (count / result_size) * 100
                         result += f"  0x{byte_int:02X}: {count:,} occurrences ({pct:.2f}%)\n"
+
+            return [TextContent(type="text", text=result)]
+
+        elif name == "imhex_data_strings":
+            provider_id = arguments.get("provider_id", 0)
+            offset = arguments.get("offset", 0)
+            size = arguments.get("size", 0)
+            min_length = arguments.get("min_length", 4)
+            string_type = arguments.get("type", "ascii")
+            max_strings = arguments.get("max_strings", 1000)
+
+            params = {
+                "provider_id": provider_id,
+                "offset": offset,
+                "size": size,
+                "min_length": min_length,
+                "type": string_type,
+                "max_strings": max_strings
+            }
+
+            response = imhex_client.send_command("data/strings", params)
+            data = response.get("data", {})
+            strings = data.get("strings", [])
+            count = data.get("count", 0)
+            truncated = data.get("truncated", False)
+
+            result = f"String Extraction Results:\n\n"
+            result += f"Type: {string_type.upper()}\n"
+            result += f"Minimum Length: {min_length} characters\n"
+            result += f"Found: {count} strings"
+            if truncated:
+                result += f" (truncated to {max_strings})"
+            result += "\n\n"
+
+            if strings:
+                result += "Strings:\n"
+                for idx, s in enumerate(strings[:50], 1):  # Show first 50
+                    str_offset = s.get("offset", 0)
+                    str_type = s.get("type", "")
+                    str_value = s.get("value", "")
+                    str_length = s.get("length", 0)
+
+                    # Truncate very long strings for display
+                    display_value = str_value if len(str_value) <= 80 else str_value[:77] + "..."
+
+                    result += f"{idx}. [{str_type}] 0x{str_offset:08X} ({str_length} bytes): \"{display_value}\"\n"
+
+                if len(strings) > 50:
+                    result += f"\n... and {len(strings) - 50} more strings\n"
+            else:
+                result += "No strings found matching the criteria.\n"
+
+            return [TextContent(type="text", text=result)]
+
+        elif name == "imhex_data_magic":
+            provider_id = arguments.get("provider_id", 0)
+            offset = arguments.get("offset", 0)
+            size = arguments.get("size", 512)
+
+            params = {
+                "provider_id": provider_id,
+                "offset": offset,
+                "size": size
+            }
+
+            response = imhex_client.send_command("data/magic", params)
+            data = response.get("data", {})
+            matches = data.get("matches", [])
+            match_count = data.get("match_count", 0)
+
+            result = f"File Type Detection (Magic Numbers):\n\n"
+            result += f"Scanned: {size} bytes from offset 0x{offset:08X}\n"
+            result += f"Matches Found: {match_count}\n\n"
+
+            if matches:
+                result += "Detected Types:\n"
+                for idx, match in enumerate(matches, 1):
+                    file_type = match.get("type", "Unknown")
+                    description = match.get("description", "")
+                    match_offset = match.get("offset", 0)
+                    confidence = match.get("confidence", "medium")
+
+                    result += f"{idx}. {file_type} - {description}\n"
+                    result += f"   Offset: 0x{match_offset:08X} | Confidence: {confidence}\n"
+            else:
+                result += "No known file type signatures detected.\n"
+                result += "\nThis could indicate:\n"
+                result += "- Custom or proprietary file format\n"
+                result += "- Encrypted or obfuscated data\n"
+                result += "- Raw binary data without standard headers\n"
+
+            return [TextContent(type="text", text=result)]
+
+        elif name == "imhex_data_disassemble":
+            provider_id = arguments.get("provider_id", 0)
+            offset = arguments.get("offset", 0)
+            size = arguments.get("size", 64)
+            architecture = arguments.get("architecture", "x86_64")
+            base_address = arguments.get("base_address", 0)
+
+            params = {
+                "provider_id": provider_id,
+                "offset": offset,
+                "size": size,
+                "architecture": architecture,
+                "base_address": base_address
+            }
+
+            response = imhex_client.send_command("data/disassemble", params)
+            data = response.get("data", {})
+
+            # Check if there was an error (architecture not found)
+            if "error" in data:
+                error_msg = data.get("error", "Unknown error")
+                available_archs = data.get("available_architectures", [])
+
+                result = f"Disassembly Error:\n\n"
+                result += f"{error_msg}\n\n"
+                if available_archs:
+                    result += "Available Architectures:\n"
+                    for arch in available_archs:
+                        result += f"  - {arch}\n"
+                return [TextContent(type="text", text=result)]
+
+            instructions = data.get("instructions", [])
+            count = data.get("count", 0)
+            used_arch = data.get("architecture", architecture)
+            base_addr_str = data.get("base_address", f"0x{base_address:X}")
+
+            result = f"Disassembly Results:\n\n"
+            result += f"Architecture: {used_arch}\n"
+            result += f"Base Address: {base_addr_str}\n"
+            result += f"Instructions: {count}\n\n"
+
+            if instructions:
+                result += "Assembly:\n"
+                result += "-" * 60 + "\n"
+                for instr in instructions:
+                    address = instr.get("address", "")
+                    mnemonic = instr.get("mnemonic", "")
+                    operands = instr.get("operands", "")
+                    bytes_str = instr.get("bytes", "")
+
+                    # Format: address | bytes | mnemonic operands
+                    result += f"{address:16s} {bytes_str:24s} {mnemonic} {operands}\n"
+                result += "-" * 60 + "\n"
+            else:
+                result += "No instructions could be disassembled.\n"
+                result += "\nPossible reasons:\n"
+                result += "- Invalid or corrupt code\n"
+                result += "- Wrong architecture selected\n"
+                result += "- Not executable code (data region)\n"
 
             return [TextContent(type="text", text=result)]
 
