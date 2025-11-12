@@ -17,13 +17,13 @@ cd /path/to/ImHex/build
 
 ## Examples Overview
 
-| Example | Description | Use Case |
-|---------|-------------|----------|
-| [01-basic-file-analysis.py](01-basic-file-analysis.py) | Basic file operations | Learning the API |
-| [02-malware-scanning.py](02-malware-scanning.py) | Batch malware scanning | Security analysis |
-| [03-firmware-analysis.py](03-firmware-analysis.py) | Firmware reverse engineering | IoT/Embedded |
-| [04-diff-comparison.py](04-diff-comparison.py) | Binary diff comparison | Patch analysis |
-| [05-automated-pipeline.py](05-automated-pipeline.py) | Full analysis workflow | Automation |
+| Example | Description | Use Case | Status |
+|---------|-------------|----------|--------|
+| [01-basic-file-analysis.py](01-basic-file-analysis.py) | Basic file operations | Learning the API | ✅ |
+| [02-malware-scanning.py](02-malware-scanning.py) | Batch malware scanning | Security analysis | ✅ |
+| [03-firmware-analysis.py](03-firmware-analysis.py) | Firmware reverse engineering | IoT/Embedded | ✅ |
+| [04-diff-comparison.py](04-diff-comparison.py) | Binary diff comparison | Patch analysis | ✅ |
+| [05-automated-pipeline.py](05-automated-pipeline.py) | Full analysis workflow | Automation | 🚧 Coming |
 
 ## Running Examples
 
