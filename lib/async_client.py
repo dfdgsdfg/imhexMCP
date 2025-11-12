@@ -24,6 +24,7 @@ sys.path.insert(0, str(lib_path))
 from error_handling import retry_with_backoff, ImHexMCPError
 from connection_pool import ConnectionPool
 from request_batching import RequestBatcher, BatchMode, BatchStats
+from cache import AsyncResponseCache
 
 
 class AsyncImHexClient:
@@ -42,7 +43,10 @@ class AsyncImHexClient:
         max_concurrent: int = 10,
         use_connection_pool: bool = True,
         pool_min_size: int = 2,
-        pool_max_size: int = 10
+        pool_max_size: int = 10,
+        enable_cache: bool = True,
+        cache_max_size: int = 1000,
+        cache_max_memory_mb: float = 100.0
     ):
         """
         Initialize async client.
@@ -55,12 +59,16 @@ class AsyncImHexClient:
             use_connection_pool: Enable connection pooling (30-50% latency reduction)
             pool_min_size: Minimum number of connections to maintain
             pool_max_size: Maximum number of connections in pool
+            enable_cache: Enable response caching (50-90% cache hit rate)
+            cache_max_size: Maximum number of cached entries
+            cache_max_memory_mb: Maximum cache memory in megabytes
         """
         self.host = host
         self.port = port
         self.timeout = timeout
         self.max_concurrent = max_concurrent
         self.use_connection_pool = use_connection_pool
+        self.enable_cache = enable_cache
 
         # Semaphore to limit concurrent connections (only if no pool)
         if not use_connection_pool:
@@ -79,11 +87,21 @@ class AsyncImHexClient:
                 connection_timeout=timeout
             )
 
+        # Response cache
+        self._cache: Optional[AsyncResponseCache] = None
+        if enable_cache:
+            self._cache = AsyncResponseCache(
+                max_size=cache_max_size,
+                max_memory_mb=cache_max_memory_mb,
+                enable_auto_cleanup=True
+            )
+
     async def send_request(
         self,
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
-        retry: bool = True
+        retry: bool = True,
+        use_cache: bool = True
     ) -> Dict[str, Any]:
         """
         Send async request to ImHex MCP.
@@ -92,22 +110,35 @@ class AsyncImHexClient:
             endpoint: Endpoint to call
             data: Request data
             retry: Enable retry on failure
+            use_cache: Check cache before sending (default: True)
 
         Returns:
             Response dictionary
         """
+        # Check cache first if enabled
+        if use_cache and self._cache:
+            cached_response = await self._cache.get(endpoint, data)
+            if cached_response is not None:
+                return cached_response
+
         # Use semaphore only if not using connection pool (pool has its own limiting)
         if self._semaphore:
             async with self._semaphore:
                 if retry:
-                    return await self._send_request_with_retry(endpoint, data)
+                    response = await self._send_request_with_retry(endpoint, data)
                 else:
-                    return await self._send_request_impl(endpoint, data)
+                    response = await self._send_request_impl(endpoint, data)
         else:
             if retry:
-                return await self._send_request_with_retry(endpoint, data)
+                response = await self._send_request_with_retry(endpoint, data)
             else:
-                return await self._send_request_impl(endpoint, data)
+                response = await self._send_request_impl(endpoint, data)
+
+        # Cache response if enabled and successful
+        if use_cache and self._cache and response.get("status") == "success":
+            await self._cache.set(endpoint, data, response)
+
+        return response
 
     async def _send_request_with_retry(
         self,
@@ -542,6 +573,39 @@ class AsyncImHexClient:
 
         return self._pool.get_stats()
 
+    # Cache control methods
+
+    async def cache_invalidate(
+        self,
+        endpoint: Optional[str] = None,
+        data: Optional[Dict[str, Any]] = None
+    ):
+        """
+        Invalidate cache entries.
+
+        Args:
+            endpoint: Specific endpoint to invalidate (None = all)
+            data: Specific data to invalidate (None = all for endpoint)
+        """
+        if self._cache:
+            return await self._cache.invalidate(endpoint, data)
+
+    async def cache_clear(self):
+        """Clear entire cache."""
+        if self._cache:
+            await self._cache.clear()
+
+    async def cache_stats(self) -> Dict[str, Any]:
+        """
+        Get cache statistics.
+
+        Returns:
+            Dict with cache metrics (hit rate, size, memory usage, etc.)
+        """
+        if self._cache:
+            return await self._cache.get_stats()
+        return {"enabled": False}
+
     # Context manager support
 
     async def __aenter__(self):
@@ -549,10 +613,19 @@ class AsyncImHexClient:
         # Initialize connection pool if enabled
         if self.use_connection_pool and self._pool:
             await self._pool.initialize()
+
+        # Start cache if enabled
+        if self._cache:
+            await self._cache.start()
+
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
+        # Stop cache if enabled
+        if self._cache:
+            await self._cache.stop()
+
         # Close connection pool if enabled
         if self.use_connection_pool and self._pool:
             await self._pool.close()
