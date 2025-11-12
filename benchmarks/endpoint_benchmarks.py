@@ -21,18 +21,19 @@ import statistics
 from datetime import datetime
 from pathlib import Path
 import tempfile
+from typing import Dict, List, Optional, Any, Tuple
 
 
 class ImHexBenchmark:
     """Benchmark framework for ImHex MCP endpoints."""
 
-    def __init__(self, host="localhost", port=31337, timeout=30):
+    def __init__(self, host: str = "localhost", port: int = 31337, timeout: int = 30) -> None:
         self.host = host
         self.port = port
         self.timeout = timeout
-        self.results = {}
+        self.results: Dict[str, List[Dict[str, Any]]] = {}
 
-    def send_request(self, endpoint, data=None):
+    def send_request(self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> Tuple[Dict[str, Any], float]:
         """Send request to ImHex MCP and return response with timing."""
         start_time = time.perf_counter()
 
@@ -65,7 +66,8 @@ class ImHexBenchmark:
             latency = (end_time - start_time) * 1000
             return {"status": "error", "data": {"error": str(e)}}, latency
 
-    def benchmark_endpoint(self, name, endpoint, data=None, iterations=100, warmup=10):
+    def benchmark_endpoint(self, name: str, endpoint: str, data: Optional[Dict[str, Any]] = None,
+                          iterations: int = 100, warmup: int = 10) -> Dict[str, Any]:
         """Benchmark a single endpoint with multiple iterations."""
         print(f"  Benchmarking {name}...")
 
@@ -121,9 +123,9 @@ class ImHexBenchmark:
 
         return stats
 
-    def create_test_files(self):
+    def create_test_files(self) -> Dict[str, str]:
         """Create test files of various sizes."""
-        test_files = {}
+        test_files: Dict[str, str] = {}
 
         # Small file: 1KB
         small_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='_1kb.bin')
@@ -147,7 +149,7 @@ class ImHexBenchmark:
 
         return test_files
 
-    def cleanup_test_files(self, test_files):
+    def cleanup_test_files(self, test_files: Dict[str, str]) -> None:
         """Remove test files."""
         for file_path in test_files.values():
             try:
@@ -155,7 +157,7 @@ class ImHexBenchmark:
             except:
                 pass
 
-    def run_benchmarks(self, iterations=100, warmup=10):
+    def run_benchmarks(self, iterations: int = 100, warmup: int = 10) -> Optional[Dict[str, List[Dict[str, Any]]]]:
         """Run complete benchmark suite."""
         print(f"\n{'='*70}")
         print(f"ImHex MCP Endpoint Benchmarks")
@@ -288,7 +290,7 @@ class ImHexBenchmark:
 
         return self.results
 
-    def generate_report(self, output_file=None):
+    def generate_report(self, output_file: Optional[str] = None) -> Dict[str, Any]:
         """Generate benchmark report."""
         report = {
             "benchmark_version": "1.0",
@@ -310,7 +312,7 @@ class ImHexBenchmark:
 
         return report
 
-    def print_summary(self):
+    def print_summary(self) -> None:
         """Print benchmark summary."""
         print(f"\n{'='*70}")
         print(f"BENCHMARK SUMMARY")
@@ -332,7 +334,7 @@ class ImHexBenchmark:
             print()
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="ImHex MCP endpoint benchmarks")
     parser.add_argument("--output", help="Save report to JSON file")
     parser.add_argument("--iterations", type=int, default=100, help="Number of iterations per test (default: 100)")

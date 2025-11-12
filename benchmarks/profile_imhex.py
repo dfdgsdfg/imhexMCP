@@ -23,6 +23,7 @@ import argparse
 import time
 import subprocess
 from datetime import datetime
+from typing import Dict, List, Optional, Any
 
 try:
     import psutil
@@ -35,13 +36,13 @@ except ImportError:
 class ImHexProfiler:
     """Resource profiling tool for ImHex MCP."""
 
-    def __init__(self, host="localhost", port=31337):
+    def __init__(self, host: str = "localhost", port: int = 31337) -> None:
         self.host = host
         self.port = port
-        self.imhex_process = None
-        self.samples = []
+        self.imhex_process: Optional[psutil.Process] = None
+        self.samples: List[Dict[str, Any]] = []
 
-    def find_imhex_process(self):
+    def find_imhex_process(self) -> Optional[psutil.Process]:
         """Find running ImHex process."""
         for proc in psutil.process_iter(['pid', 'name', 'exe']):
             try:
@@ -51,7 +52,8 @@ class ImHexProfiler:
                 continue
         return None
 
-    def send_request(self, endpoint, data=None, timeout=10):
+    def send_request(self, endpoint: str, data: Optional[Dict[str, Any]] = None,
+                     timeout: int = 10) -> Dict[str, Any]:
         """Send request to ImHex MCP."""
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -75,7 +77,7 @@ class ImHexProfiler:
         except Exception as e:
             return {"status": "error", "data": {"error": str(e)}}
 
-    def sample_process(self):
+    def sample_process(self) -> Optional[Dict[str, Any]]:
         """Take a resource usage sample."""
         if not self.imhex_process:
             return None
@@ -106,7 +108,8 @@ class ImHexProfiler:
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             return None
 
-    def profile_operation(self, endpoint, data=None, iterations=1, sample_interval=0.1):
+    def profile_operation(self, endpoint: str, data: Optional[Dict[str, Any]] = None,
+                          iterations: int = 1, sample_interval: float = 0.1) -> Optional[Dict[str, Any]]:
         """Profile a specific operation with resource monitoring."""
         print(f"\n{'='*70}")
         print(f"Profiling Operation: {endpoint}")
@@ -173,7 +176,7 @@ class ImHexProfiler:
         # Analyze results
         return self.analyze_profile()
 
-    def analyze_profile(self):
+    def analyze_profile(self) -> Optional[Dict[str, Any]]:
         """Analyze profiling results."""
         if not self.samples:
             print("No samples collected")
@@ -224,7 +227,7 @@ class ImHexProfiler:
         self.print_analysis(analysis)
         return analysis
 
-    def print_analysis(self, analysis):
+    def print_analysis(self, analysis: Dict[str, Any]) -> None:
         """Print profiling analysis."""
         print(f"{'='*70}")
         print(f"PROFILING ANALYSIS")
@@ -262,7 +265,7 @@ class ImHexProfiler:
 
         print(f"\n{'='*70}\n")
 
-    def continuous_monitor(self, duration=60, interval=1.0):
+    def continuous_monitor(self, duration: int = 60, interval: float = 1.0) -> None:
         """Continuously monitor ImHex resource usage."""
         print(f"\n{'='*70}")
         print(f"Continuous Resource Monitoring")
@@ -313,7 +316,7 @@ class ImHexProfiler:
             print(f"{'='*70}\n")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="ImHex MCP profiler")
     parser.add_argument("--host", default="localhost", help="ImHex MCP host")
     parser.add_argument("--port", type=int, default=31337, help="ImHex MCP port")

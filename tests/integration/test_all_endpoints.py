@@ -23,26 +23,28 @@ import argparse
 import tempfile
 import time
 from pathlib import Path
+from typing import Dict, List, Optional, Any
 
 
 class ImHexMCPTest:
     """Integration test framework for ImHex MCP."""
 
-    def __init__(self, host="localhost", port=31337, verbose=False):
+    def __init__(self, host: str = "localhost", port: int = 31337, verbose: bool = False) -> None:
         self.host = host
         self.port = port
         self.verbose = verbose
         self.passed = 0
         self.failed = 0
-        self.test_files = {}
-        self.provider_ids = []
+        self.test_files: Dict[str, str] = {}
+        self.provider_ids: List[int] = []
 
-    def log(self, message):
+    def log(self, message: str) -> None:
         """Print message if verbose mode is enabled."""
         if self.verbose:
             print(f"  {message}")
 
-    def send_request(self, endpoint, data=None, timeout=10):
+    def send_request(self, endpoint: str, data: Optional[Dict[str, Any]] = None,
+                     timeout: int = 10) -> Dict[str, Any]:
         """Send request to ImHex MCP."""
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -74,7 +76,7 @@ class ImHexMCPTest:
         except Exception as e:
             return {"status": "error", "data": {"error": str(e)}}
 
-    def assert_success(self, result, test_name):
+    def assert_success(self, result: Dict[str, Any], test_name: str) -> bool:
         """Assert that result status is success."""
         if result.get("status") == "success":
             self.passed += 1
@@ -86,7 +88,7 @@ class ImHexMCPTest:
             print(f"  ✗ {test_name}: {error}")
             return False
 
-    def assert_field(self, result, field, test_name):
+    def assert_field(self, result: Dict[str, Any], field: str, test_name: str) -> bool:
         """Assert that result data contains a specific field."""
         if result.get("status") == "success" and field in result.get("data", {}):
             self.passed += 1
@@ -97,7 +99,7 @@ class ImHexMCPTest:
             print(f"  ✗ {test_name}: Field '{field}' not found")
             return False
 
-    def create_test_files(self):
+    def create_test_files(self) -> None:
         """Create test files of various sizes and types."""
         self.log("Creating test files...")
 
@@ -120,7 +122,7 @@ class ImHexMCPTest:
 
         self.log(f"Created {len(self.test_files)} test files")
 
-    def cleanup_test_files(self):
+    def cleanup_test_files(self) -> None:
         """Remove test files."""
         for file_path in self.test_files.values():
             try:
@@ -128,7 +130,7 @@ class ImHexMCPTest:
             except:
                 pass
 
-    def test_core_endpoints(self):
+    def test_core_endpoints(self) -> None:
         """Test core system endpoints."""
         print("\n[1/8] Testing Core Endpoints")
         print("-" * 70)
@@ -143,7 +145,7 @@ class ImHexMCPTest:
         result = self.send_request("status")
         self.assert_success(result, "status")
 
-    def test_file_operations(self):
+    def test_file_operations(self) -> None:
         """Test file operation endpoints."""
         print("\n[2/8] Testing File Operations")
         print("-" * 70)
@@ -181,7 +183,7 @@ class ImHexMCPTest:
                 size = result.get("data", {}).get("size")
                 self.log(f"File size: {size} bytes")
 
-    def test_data_operations(self):
+    def test_data_operations(self) -> None:
         """Test data operation endpoints."""
         print("\n[3/8] Testing Data Operations")
         print("-" * 70)
@@ -216,7 +218,7 @@ class ImHexMCPTest:
             size = result.get("data", {}).get("size")
             self.log(f"Provider size: {size} bytes")
 
-    def test_hashing_operations(self):
+    def test_hashing_operations(self) -> None:
         """Test hashing endpoints."""
         print("\n[4/8] Testing Hashing Operations")
         print("-" * 70)
@@ -240,7 +242,7 @@ class ImHexMCPTest:
                 hash_value = result.get("data", {}).get("hash", "")
                 self.log(f"{algorithm.upper()}: {hash_value[:16]}...")
 
-    def test_search_operations(self):
+    def test_search_operations(self) -> None:
         """Test search endpoints."""
         print("\n[5/8] Testing Search Operations")
         print("-" * 70)
@@ -269,7 +271,7 @@ class ImHexMCPTest:
         })
         self.assert_success(result, "data/search (string pattern)")
 
-    def test_analysis_operations(self):
+    def test_analysis_operations(self) -> None:
         """Test advanced analysis endpoints."""
         print("\n[6/8] Testing Analysis Operations")
         print("-" * 70)
@@ -329,7 +331,7 @@ class ImHexMCPTest:
             instructions = result.get("data", {}).get("instructions", [])
             self.log(f"Disassembled {len(instructions)} instructions")
 
-    def test_bookmark_operations(self):
+    def test_bookmark_operations(self) -> None:
         """Test bookmark endpoints."""
         print("\n[7/8] Testing Bookmark Operations")
         print("-" * 70)
@@ -360,7 +362,7 @@ class ImHexMCPTest:
             bookmarks = result.get("data", {}).get("bookmarks", [])
             self.log(f"Found {len(bookmarks)} bookmarks")
 
-    def test_batch_operations(self):
+    def test_batch_operations(self) -> None:
         """Test batch operation endpoints."""
         print("\n[8/8] Testing Batch Operations")
         print("-" * 70)
@@ -406,13 +408,13 @@ class ImHexMCPTest:
             else:
                 print("  ⚠ Skipping: Need at least 2 files for batch operations")
 
-    def cleanup_providers(self):
+    def cleanup_providers(self) -> None:
         """Close all open providers."""
         self.log("Closing providers...")
         for provider_id in self.provider_ids:
             self.send_request("file/close", {"provider_id": provider_id})
 
-    def run_all_tests(self):
+    def run_all_tests(self) -> int:
         """Run complete integration test suite."""
         print(f"\n{'='*70}")
         print(f"ImHex MCP Integration Tests")
@@ -454,7 +456,7 @@ class ImHexMCPTest:
             return 1
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="ImHex MCP integration tests")
     parser.add_argument("--host", default="localhost", help="ImHex MCP host (default: localhost)")
     parser.add_argument("--port", type=int, default=31337, help="ImHex MCP port (default: 31337)")
