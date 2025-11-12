@@ -7,6 +7,8 @@
 #include <hex/api/content_registry/diffing.hpp>
 #include <hex/api/content_registry/disassemblers.hpp>
 #include <hex/api/events/requests_interaction.hpp>
+#include <hex/api/events/events_provider.hpp>
+#include <hex/api/event_manager.hpp>
 #include <hex/providers/provider.hpp>
 
 #include <hex/helpers/logger.hpp>
@@ -23,6 +25,10 @@
 #include <sstream>
 #include <iomanip>
 #include <fstream>
+#include <future>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
 
 namespace hex::plugin::mcp {
 
@@ -178,19 +184,28 @@ namespace hex::plugin::mcp {
                 try {
                     auto path = data.at("path").get<std::string>();
 
-                    // Schedule file opening on main thread using TaskManager::doLater()
-                    // Network callbacks run on background threads, but ImHex APIs require main thread
+                    // Check if file is already open - prevents issues with duplicate opens
+                    for (const auto& provider : ImHexApi::Provider::getProviders()) {
+                        if (provider->getName() == path) {
+                            nlohmann::json result;
+                            result["file"] = path;
+                            result["success"] = true;
+                            result["message"] = "File already open";
+                            result["provider_id"] = provider->getID();
+                            return result;
+                        }
+                    }
+
+                    // Schedule file opening on main thread - async approach
                     TaskManager::doLater([path]() {
                         RequestOpenFile::post(path);
                     });
 
-                    // Return immediately - file opening happens asynchronously on main thread
-                    // Client should poll list/providers to check when file is open
+                    // Return immediately - file opening is async
                     nlohmann::json result;
                     result["file"] = path;
-                    result["status"] = "async";
-                    result["message"] = "File opening scheduled on main thread. Poll list/providers to check status.";
-
+                    result["requested"] = true;
+                    result["message"] = "File opening requested (async)";
                     return result;
                 } catch (const std::exception &e) {
                     throw std::runtime_error(fmt::format("Failed to open file: {}", e.what()));
