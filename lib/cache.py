@@ -1,0 +1,422 @@
+#!/usr/bin/env python3
+"""
+ImHex MCP Response Caching Module
+
+Provides high-performance response caching with TTL and LRU eviction strategies.
+Reduces redundant requests and improves overall system performance.
+"""
+
+import time
+import hashlib
+import json
+import threading
+from typing import Dict, Any, Optional, Tuple, List
+from collections import OrderedDict
+from dataclasses import dataclass
+from enum import Enum
+
+
+class CachePolicy(Enum):
+    """Cache eviction policies."""
+    LRU = "lru"           # Least Recently Used
+    TTL_ONLY = "ttl_only"  # Only TTL-based expiration
+
+
+@dataclass
+class CacheEntry:
+    """Cache entry with metadata."""
+    key: str
+    value: Any
+    created_at: float
+    last_accessed: float
+    access_count: int
+    ttl: Optional[float]  # Time to live in seconds
+
+    def is_expired(self) -> bool:
+        """Check if entry has expired."""
+        if self.ttl is None:
+            return False
+        return time.time() - self.created_at > self.ttl
+
+    def touch(self) -> None:
+        """Update last accessed time and increment counter."""
+        self.last_accessed = time.time()
+        self.access_count += 1
+
+
+@dataclass
+class CacheStats:
+    """Cache statistics."""
+    hits: int = 0
+    misses: int = 0
+    evictions: int = 0
+    expired: int = 0
+    size: int = 0
+    max_size: int = 0
+
+    def hit_rate(self) -> float:
+        """Calculate cache hit rate."""
+        total = self.hits + self.misses
+        return (self.hits / total * 100) if total > 0 else 0.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "hits": self.hits,
+            "misses": self.misses,
+            "evictions": self.evictions,
+            "expired": self.expired,
+            "size": self.size,
+            "max_size": self.max_size,
+            "hit_rate": round(self.hit_rate(), 2)
+        }
+
+
+class ResponseCache:
+    """
+    Thread-safe response cache with LRU eviction and TTL support.
+
+    Features:
+    - Configurable maximum size
+    - TTL-based expiration
+    - LRU eviction when cache is full
+    - Thread-safe operations
+    - Cache statistics tracking
+    """
+
+    def __init__(
+        self,
+        max_size: int = 1000,
+        default_ttl: Optional[float] = 300.0,  # 5 minutes default
+        policy: CachePolicy = CachePolicy.LRU
+    ):
+        """
+        Initialize response cache.
+
+        Args:
+            max_size: Maximum number of entries in cache
+            default_ttl: Default TTL in seconds (None = no expiration)
+            policy: Cache eviction policy
+        """
+        self.max_size = max_size
+        self.default_ttl = default_ttl
+        self.policy = policy
+
+        self._cache: OrderedDict[str, CacheEntry] = OrderedDict()
+        self._lock = threading.RLock()
+        self._stats = CacheStats(max_size=max_size)
+
+    def _generate_key(self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Generate cache key from endpoint and data.
+
+        Args:
+            endpoint: API endpoint name
+            data: Request parameters
+
+        Returns:
+            Cache key string
+        """
+        # Create deterministic key from endpoint + sorted data
+        key_parts = [endpoint]
+        if data:
+            # Sort keys for deterministic ordering
+            sorted_data = json.dumps(data, sort_keys=True)
+            key_parts.append(sorted_data)
+
+        key_string = ":".join(key_parts)
+        # Use hash for shorter keys
+        return hashlib.sha256(key_string.encode()).hexdigest()[:16]
+
+    def get(
+        self,
+        endpoint: str,
+        data: Optional[Dict[str, Any]] = None
+    ) -> Optional[Any]:
+        """
+        Get cached response.
+
+        Args:
+            endpoint: API endpoint name
+            data: Request parameters
+
+        Returns:
+            Cached value or None if not found/expired
+        """
+        key = self._generate_key(endpoint, data)
+
+        with self._lock:
+            entry = self._cache.get(key)
+
+            if entry is None:
+                self._stats.misses += 1
+                return None
+
+            # Check if expired
+            if entry.is_expired():
+                del self._cache[key]
+                self._stats.expired += 1
+                self._stats.misses += 1
+                self._stats.size = len(self._cache)
+                return None
+
+            # Update access metadata
+            entry.touch()
+
+            # Move to end for LRU policy
+            if self.policy == CachePolicy.LRU:
+                self._cache.move_to_end(key)
+
+            self._stats.hits += 1
+            return entry.value
+
+    def set(
+        self,
+        endpoint: str,
+        data: Optional[Dict[str, Any]],
+        value: Any,
+        ttl: Optional[float] = None
+    ) -> None:
+        """
+        Store response in cache.
+
+        Args:
+            endpoint: API endpoint name
+            data: Request parameters
+            value: Response value to cache
+            ttl: Time to live in seconds (None = use default)
+        """
+        key = self._generate_key(endpoint, data)
+        ttl = ttl if ttl is not None else self.default_ttl
+
+        with self._lock:
+            # Check if we need to evict
+            if key not in self._cache and len(self._cache) >= self.max_size:
+                self._evict_one()
+
+            # Create new entry
+            entry = CacheEntry(
+                key=key,
+                value=value,
+                created_at=time.time(),
+                last_accessed=time.time(),
+                access_count=0,
+                ttl=ttl
+            )
+
+            self._cache[key] = entry
+            self._stats.size = len(self._cache)
+
+    def _evict_one(self) -> None:
+        """Evict one entry according to policy."""
+        if not self._cache:
+            return
+
+        if self.policy == CachePolicy.LRU:
+            # Remove least recently used (first item in OrderedDict)
+            self._cache.popitem(last=False)
+        else:
+            # For TTL_ONLY, remove oldest entry
+            self._cache.popitem(last=False)
+
+        self._stats.evictions += 1
+
+    def invalidate(
+        self,
+        endpoint: Optional[str] = None,
+        data: Optional[Dict[str, Any]] = None
+    ) -> int:
+        """
+        Invalidate cache entries.
+
+        Args:
+            endpoint: Endpoint to invalidate (None = all)
+            data: Specific parameters to invalidate (None = all for endpoint)
+
+        Returns:
+            Number of entries invalidated
+        """
+        with self._lock:
+            if endpoint is None:
+                # Clear all
+                count = len(self._cache)
+                self._cache.clear()
+                self._stats.size = 0
+                return count
+
+            if data is not None:
+                # Invalidate specific entry
+                key = self._generate_key(endpoint, data)
+                if key in self._cache:
+                    del self._cache[key]
+                    self._stats.size = len(self._cache)
+                    return 1
+                return 0
+
+            # Invalidate all entries for endpoint
+            # Need to regenerate keys for comparison
+            keys_to_remove = []
+            for cached_key, entry in self._cache.items():
+                # Check if this entry matches the endpoint
+                # We need to track endpoint in entry for this
+                # For now, we'll use a prefix match approach
+                test_key = self._generate_key(endpoint, None)
+                if cached_key.startswith(test_key[:8]):  # Match prefix
+                    keys_to_remove.append(cached_key)
+
+            for key in keys_to_remove:
+                del self._cache[key]
+
+            self._stats.size = len(self._cache)
+            return len(keys_to_remove)
+
+    def clear(self) -> None:
+        """Clear all cache entries."""
+        with self._lock:
+            self._cache.clear()
+            self._stats.size = 0
+
+    def cleanup_expired(self) -> int:
+        """
+        Remove all expired entries.
+
+        Returns:
+            Number of entries removed
+        """
+        with self._lock:
+            keys_to_remove = [
+                key for key, entry in self._cache.items()
+                if entry.is_expired()
+            ]
+
+            for key in keys_to_remove:
+                del self._cache[key]
+
+            count = len(keys_to_remove)
+            self._stats.expired += count
+            self._stats.size = len(self._cache)
+            return count
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get cache statistics."""
+        with self._lock:
+            return self._stats.to_dict()
+
+    def reset_stats(self) -> None:
+        """Reset statistics counters."""
+        with self._lock:
+            self._stats.hits = 0
+            self._stats.misses = 0
+            self._stats.evictions = 0
+            self._stats.expired = 0
+
+    def get_entry_info(
+        self,
+        endpoint: str,
+        data: Optional[Dict[str, Any]] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get metadata about cached entry.
+
+        Args:
+            endpoint: API endpoint name
+            data: Request parameters
+
+        Returns:
+            Entry metadata or None if not found
+        """
+        key = self._generate_key(endpoint, data)
+
+        with self._lock:
+            entry = self._cache.get(key)
+            if entry is None:
+                return None
+
+            return {
+                "key": entry.key,
+                "created_at": entry.created_at,
+                "last_accessed": entry.last_accessed,
+                "access_count": entry.access_count,
+                "ttl": entry.ttl,
+                "age": time.time() - entry.created_at,
+                "expires_in": (entry.ttl - (time.time() - entry.created_at))
+                              if entry.ttl else None,
+                "is_expired": entry.is_expired()
+            }
+
+    def get_all_entries(self) -> List[Dict[str, Any]]:
+        """
+        Get metadata for all cached entries.
+
+        Returns:
+            List of entry metadata dictionaries
+        """
+        with self._lock:
+            return [
+                {
+                    "key": entry.key,
+                    "created_at": entry.created_at,
+                    "last_accessed": entry.last_accessed,
+                    "access_count": entry.access_count,
+                    "ttl": entry.ttl,
+                    "age": time.time() - entry.created_at,
+                    "is_expired": entry.is_expired()
+                }
+                for entry in self._cache.values()
+            ]
+
+
+class CachingStrategy:
+    """
+    Predefined caching strategies for different endpoint types.
+    """
+
+    # Fast-changing data - short TTL
+    VOLATILE = {"ttl": 10.0}  # 10 seconds
+
+    # Moderate-changing data - medium TTL
+    MODERATE = {"ttl": 60.0}  # 1 minute
+
+    # Slow-changing data - long TTL
+    STABLE = {"ttl": 300.0}  # 5 minutes
+
+    # Session-scoped data - no expiration
+    SESSION = {"ttl": None}
+
+    @classmethod
+    def get_ttl_for_endpoint(cls, endpoint: str) -> float:
+        """
+        Get recommended TTL for endpoint.
+
+        Args:
+            endpoint: API endpoint name
+
+        Returns:
+            TTL in seconds
+        """
+        # Classify endpoints by expected change frequency
+        stable_endpoints = {
+            "capabilities",      # Rarely changes
+            "file/info",        # File metadata is stable
+        }
+
+        moderate_endpoints = {
+            "file/list",        # Changes when files open/close
+            "file/current",     # Changes with active file
+        }
+
+        volatile_endpoints = {
+            "data/read",        # Data can change
+            "data/search",      # Results may vary
+            "data/statistics",  # Calculated values
+        }
+
+        if endpoint in stable_endpoints:
+            return cls.STABLE["ttl"]
+        elif endpoint in moderate_endpoints:
+            return cls.MODERATE["ttl"]
+        elif endpoint in volatile_endpoints:
+            return cls.VOLATILE["ttl"]
+        else:
+            # Default to moderate
+            return cls.MODERATE["ttl"]
