@@ -1,6 +1,7 @@
 # ImHex MCP Integration
 
 <div align="center">
+<img width="2912" height="1632" alt="image" src="https://github.com/user-attachments/assets/925eb2fc-921b-40fe-8d59-e334bf985a4a" />
 
 **🔧 Patch-Based MCP Plugin for ImHex**
 
