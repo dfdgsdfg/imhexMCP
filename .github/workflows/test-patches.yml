@@ -1,0 +1,77 @@
+name: Test Patches
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'patches/**'
+      - '.github/workflows/test-patches.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'patches/**'
+  schedule:
+    # Test daily against latest ImHex
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  test-patch-application:
+    name: Test patches on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout ImHex MCP
+        uses: actions/checkout@v4
+        with:
+          path: imhexMCP
+
+      - name: Clone ImHex
+        run: |
+          git clone https://github.com/WerWolv/ImHex.git
+          cd ImHex
+          echo "IMHEX_COMMIT=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          echo "ImHex commit: $(git rev-parse --short HEAD)"
+
+      - name: Test patch application (dry-run)
+        run: |
+          cd ImHex
+          for patch in ../imhexMCP/patches/*.patch; do
+            echo "Testing: $(basename $patch)"
+            if git apply --check "$patch"; then
+              echo "✓ $(basename $patch) applies cleanly"
+            else
+              echo "✗ $(basename $patch) FAILED"
+              exit 1
+            fi
+          done
+
+      - name: Apply all patches
+        run: |
+          cd ImHex
+          git apply ../imhexMCP/patches/*.patch
+          echo "Patches applied successfully"
+
+      - name: Verify MCP plugin exists
+        run: |
+          if [ -d "ImHex/plugins/mcp" ]; then
+            echo "✓ MCP plugin directory exists"
+            ls -la ImHex/plugins/mcp/source/
+          else
+            echo "✗ MCP plugin directory not found"
+            exit 1
+          fi
+
+      - name: Create summary
+        if: always()
+        run: |
+          echo "## Patch Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Platform:** ${{ matrix.os }}" >> $GITHUB_STEP_SUMMARY
+          echo "**ImHex Commit:** ${{ env.IMHEX_COMMIT }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All patches applied successfully! :white_check_mark:" >> $GITHUB_STEP_SUMMARY

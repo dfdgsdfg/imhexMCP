@@ -1,0 +1,80 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-imhex-with-mcp:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            libglfw3-dev \
+            libfreetype6-dev \
+            libmbedtls-dev \
+            libcurl4-openssl-dev \
+            pkg-config
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake ninja pkg-config
+
+      - name: Run setup script
+        run: |
+          chmod +x setup-imhex-mcp.sh
+          ./setup-imhex-mcp.sh
+
+      - name: Build ImHex with MCP
+        run: |
+          cd ImHex
+          mkdir -p build && cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -G Ninja
+          ninja -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+
+      - name: Verify MCP plugin built
+        run: |
+          if [ -f "ImHex/build/plugins/mcp.hexplug" ]; then
+            echo "✓ MCP plugin built successfully"
+            ls -lh ImHex/build/plugins/mcp.hexplug
+          else
+            echo "✗ MCP plugin not found"
+            echo "Available plugins:"
+            ls -la ImHex/build/plugins/ || true
+            exit 1
+          fi
+
+      - name: Create build summary
+        if: always()
+        run: |
+          echo "## Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Platform:** ${{ matrix.os }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "ImHex/build/plugins/mcp.hexplug" ]; then
+            PLUGIN_SIZE=$(ls -lh ImHex/build/plugins/mcp.hexplug | awk '{print $5}')
+            echo "✅ MCP plugin built successfully ($PLUGIN_SIZE)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ MCP plugin build failed" >> $GITHUB_STEP_SUMMARY
+          fi
