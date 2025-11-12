@@ -1,0 +1,69 @@
+From 6ea7d809aa696c40783b691fcef905bcef00c175 Mon Sep 17 00:00:00 2001
+From: Pavel Polikashin <polikashin@celestialtech.io>
+Date: Tue, 11 Nov 2025 02:01:14 -0500
+Subject: [PATCH 14/16] Fix glob pattern escaping bug in batch/open_directory
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Root cause: Backslash in specialChars was escaping the backslashes
+we added during the escaping process, causing double-escaping.
+
+Example bug:
+- Pattern: *.bin
+- After escaping '.': *\.bin
+- After escaping '\': *\\.bin (WRONG - matches literal backslash)
+- Regex interprets as: star, backslash, dot, bin
+
+Fix: Removed backslash from specialChars to avoid double-escaping.
+
+Result:
+- Pattern: *.bin
+- After escaping '.': *\.bin
+- After converting '*': .*\.bin (CORRECT)
+- Regex interprets as: anything, dot, bin
+
+All 10 batch operations tests now pass (100% success rate).
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+---
+ plugins/mcp/source/plugin_mcp.cpp | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/plugins/mcp/source/plugin_mcp.cpp b/plugins/mcp/source/plugin_mcp.cpp
+index c79acfc3c..9d5e15ece 100644
+--- a/plugins/mcp/source/plugin_mcp.cpp
++++ b/plugins/mcp/source/plugin_mcp.cpp
+@@ -1367,8 +1367,10 @@ namespace hex::plugin::mcp {
+ 
+                         // Convert glob to regex
+                         std::string regexPattern = pattern;
++                        log::debug("MCP: Pattern matching - filename: '{}', pattern: '{}'", filename, pattern);
+                         // Escape special regex characters except * and ?
+-                        std::string specialChars = ".+^$()[]{}\\|";
++                        // Note: We don't escape backslash to avoid double-escaping
++                        std::string specialChars = ".+^$()[]{}|";
+                         for (char c : specialChars) {
+                             size_t pos = 0;
+                             std::string charStr(1, c);
+@@ -1391,8 +1393,14 @@ namespace hex::plugin::mcp {
+ 
+                         try {
+                             std::regex re(regexPattern, std::regex::icase);
+-                            return std::regex_match(filename, re);
++                            bool matches = std::regex_match(filename, re);
++                            log::debug("MCP: Pattern after conversion: '{}', matches: {}", regexPattern, matches);
++                            return matches;
++                        } catch (const std::exception& e) {
++                            log::error("MCP: Regex error for pattern '{}': {}", regexPattern, e.what());
++                            return false;
+                         } catch (...) {
++                            log::error("MCP: Unknown regex error for pattern '{}'", regexPattern);
+                             return false;
+                         }
+                     };
+-- 
+2.51.1
+

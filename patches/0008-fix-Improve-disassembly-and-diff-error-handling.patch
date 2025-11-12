@@ -1,0 +1,136 @@
+From d746eeda0f8d057db1e59450326a710ed8545064 Mon Sep 17 00:00:00 2001
+From: Pavel Polikashin <polikashin@celestialtech.io>
+Date: Tue, 11 Nov 2025 00:25:17 -0500
+Subject: [PATCH 08/16] fix: Improve disassembly and diff error handling
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Two critical fixes for v0.4.0 endpoints:
+
+**1. Fixed disassembly architecture matching (plugin_mcp.cpp:1146-1167)**
+- **Bug**: Input architecture string wasn't being lowercased
+- **Fix**: Lowercase both input and ImHex architecture names for comparison
+- **Improvement**: Error messages now list all available architectures
+- **Example output**: "Architecture 'x86_64' not found. Available: AArch64, ARM, Intel x86..."
+
+**2. Enhanced binary diff safety and error handling (plugin_mcp.cpp:1042-1120)**
+- **Added**: 100MB per-file size limit to prevent crashes on large files
+- **Added**: try-catch around diff analyze() call with detailed error reporting
+- **Added**: try-catch around IntervalTree iteration for robustness
+- **Improvement**: Log messages for debugging diff analysis issues
+
+**Testing Status:**
+- ✅ file/open: Working
+- ✅ file/list: Working
+- ✅ data/read_chunked: Working (hex and base64)
+- ⚠️ disasm/disassemble: Architecture naming mismatch (test uses "x86_64", ImHex has "Intel x86")
+- ⚠️ diff/analyze: Still shows "Empty response" - investigating
+
+**Note**: The test script needs to be updated to use "intel" or "x86" instead of "x86_64" for architecture parameter.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+---
+ plugins/mcp/source/plugin_mcp.cpp | 46 +++++++++++++++++++++++++------
+ 1 file changed, 37 insertions(+), 9 deletions(-)
+
+diff --git a/plugins/mcp/source/plugin_mcp.cpp b/plugins/mcp/source/plugin_mcp.cpp
+index 136d313fc..4d9a1a14b 100644
+--- a/plugins/mcp/source/plugin_mcp.cpp
++++ b/plugins/mcp/source/plugin_mcp.cpp
+@@ -1039,6 +1039,12 @@ namespace hex::plugin::mcp {
+                         throw std::runtime_error("One or both providers not found");
+                     }
+ 
++                    // Safety check: Limit file sizes for diff
++                    const u64 maxDiffSize = 100 * 1024 * 1024; // 100MB per file
++                    if (provider1->getActualSize() > maxDiffSize || provider2->getActualSize() > maxDiffSize) {
++                        throw std::runtime_error(fmt::format("File too large for diff (max {} MB per file)", maxDiffSize / (1024 * 1024)));
++                    }
++
+                     // Get available diffing algorithms
+                     auto &algorithms = ContentRegistry::Diffing::impl::getAlgorithms();
+                     ContentRegistry::Diffing::Algorithm* selectedAlgo = nullptr;
+@@ -1060,8 +1066,15 @@ namespace hex::plugin::mcp {
+                         throw std::runtime_error("No diffing algorithms available");
+                     }
+ 
+-                    // Run diff analysis
+-                    auto diffTrees = selectedAlgo->analyze(provider1, provider2);
++                    // Run diff analysis with protection
++                    log::info("MCP: Running diff analysis with algorithm '{}'", selectedAlgo->getUnlocalizedName().get());
++                    std::vector<ContentRegistry::Diffing::DiffTree> diffTrees;
++
++                    try {
++                        diffTrees = selectedAlgo->analyze(provider1, provider2);
++                    } catch (const std::exception &e) {
++                        throw std::runtime_error(fmt::format("Diff analysis failed: {}", e.what()));
++                    }
+ 
+                     // Convert diff trees to JSON regions
+                     nlohmann::json regions = nlohmann::json::array();
+@@ -1071,12 +1084,13 @@ namespace hex::plugin::mcp {
+                         size_t regionCount = 0;
+                         const size_t maxRegions = 10000;
+ 
+-                        for (auto it = tree.begin(); it != tree.end() && regionCount < maxRegions; ++it) {
+-                            regionCount++;
++                        try {
++                            for (auto it = tree.begin(); it != tree.end() && regionCount < maxRegions; ++it) {
++                                regionCount++;
+ 
+-                            u64 intervalStart = it->first;
+-                            u64 intervalEnd = it->second.first;
+-                            auto type = it->second.second;
++                                u64 intervalStart = it->first;
++                                u64 intervalEnd = it->second.first;
++                                auto type = it->second.second;
+ 
+                             nlohmann::json region;
+                             region["start"] = intervalStart;
+@@ -1100,6 +1114,10 @@ namespace hex::plugin::mcp {
+ 
+                             regions.push_back(region);
+                         }
++                        } catch (const std::exception &e) {
++                            log::error("MCP: Error iterating diff tree: {}", e.what());
++                            // Continue with partial results
++                        }
+                     }
+ 
+                     nlohmann::json result;
+@@ -1143,17 +1161,27 @@ namespace hex::plugin::mcp {
+                     auto &architectures = ContentRegistry::Disassemblers::impl::getArchitectures();
+                     std::unique_ptr<ContentRegistry::Disassemblers::Architecture> selectedArch;
+ 
++                    // Lowercase the input architecture for case-insensitive matching
++                    std::string archLower = architecture;
++                    std::transform(archLower.begin(), archLower.end(), archLower.begin(), ::tolower);
++
+                     for (auto &[name, creator] : architectures) {
+                         std::string archName = name;
+                         std::transform(archName.begin(), archName.end(), archName.begin(), ::tolower);
+-                        if (archName.find(architecture) != std::string::npos) {
++                        if (archName.find(archLower) != std::string::npos) {
+                             selectedArch = creator();
+                             break;
+                         }
+                     }
+ 
+                     if (!selectedArch) {
+-                        throw std::runtime_error(fmt::format("Architecture '{}' not found", architecture));
++                        // Build list of available architectures for error message
++                        std::string availableArchs;
++                        for (auto &[name, creator] : architectures) {
++                            if (!availableArchs.empty()) availableArchs += ", ";
++                            availableArchs += name;
++                        }
++                        throw std::runtime_error(fmt::format("Architecture '{}' not found. Available: {}", architecture, availableArchs));
+                     }
+ 
+                     // Initialize disassembler
+-- 
+2.51.1
+

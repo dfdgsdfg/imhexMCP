@@ -1,0 +1,51 @@
+From 0ff17744d0a6017b75d9a7cf8d0834d90173b805 Mon Sep 17 00:00:00 2001
+From: Pavel Polikashin <polikashin@celestialtech.io>
+Date: Tue, 11 Nov 2025 01:49:43 -0500
+Subject: [PATCH 13/16] Fix glob pattern matching in batch/open_directory
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fixed wildcard pattern conversion bug:
+- Changed from looking for escaped patterns `\\*` and `\\?`
+- To looking for literal wildcards `*` and `?`
+- Properly converts `*.bin` to regex `.*\.bin`
+
+The bug was that wildcards were never being escaped to `\*`, so the
+search for `\\*` never matched, and patterns like `*.bin` weren't being
+converted to proper regex patterns.
+
+Related to batch operations Phase 1 testing.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+---
+ plugins/mcp/source/plugin_mcp.cpp | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/plugins/mcp/source/plugin_mcp.cpp b/plugins/mcp/source/plugin_mcp.cpp
+index c3972f201..c79acfc3c 100644
+--- a/plugins/mcp/source/plugin_mcp.cpp
++++ b/plugins/mcp/source/plugin_mcp.cpp
+@@ -1379,13 +1379,13 @@ namespace hex::plugin::mcp {
+                         }
+                         // Convert glob wildcards to regex
+                         size_t pos = 0;
+-                        while ((pos = regexPattern.find("\\*", pos)) != std::string::npos) {
+-                            regexPattern.replace(pos, 2, ".*");
++                        while ((pos = regexPattern.find("*", pos)) != std::string::npos) {
++                            regexPattern.replace(pos, 1, ".*");
+                             pos += 2;
+                         }
+                         pos = 0;
+-                        while ((pos = regexPattern.find("\\?", pos)) != std::string::npos) {
+-                            regexPattern.replace(pos, 2, ".");
++                        while ((pos = regexPattern.find("?", pos)) != std::string::npos) {
++                            regexPattern.replace(pos, 1, ".");
+                             pos += 1;
+                         }
+ 
+-- 
+2.51.1
+

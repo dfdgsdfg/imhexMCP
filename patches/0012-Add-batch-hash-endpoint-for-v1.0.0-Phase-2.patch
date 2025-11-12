@@ -1,0 +1,157 @@
+From ad6cb2bf715f6ce3497acb79d88c536cf6faa0ed Mon Sep 17 00:00:00 2001
+From: Pavel Polikashin <polikashin@celestialtech.io>
+Date: Tue, 11 Nov 2025 01:11:22 -0500
+Subject: [PATCH 12/16] Add batch/hash endpoint for v1.0.0 Phase 2
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Implements multi-file hash calculation capability:
+- Calculate hashes for all open files or specified subset
+- Supports multiple algorithms: md5, sha1, sha224, sha256, sha384, sha512
+- Returns per-file results with all requested hash values
+- File info includes provider_id, filename, and size
+- Efficient batch processing for malware analysis and file comparison
+
+Use cases:
+- Generate hash manifests for file collections
+- Compare firmware versions by hash
+- Identify duplicate files in binary datasets
+- Malware family clustering by similarity hashes
+
+Part of v1.0.0 batch operations feature for automated workflows.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+---
+ plugins/mcp/source/plugin_mcp.cpp | 113 +++++++++++++++++++++++++++++-
+ 1 file changed, 112 insertions(+), 1 deletion(-)
+
+diff --git a/plugins/mcp/source/plugin_mcp.cpp b/plugins/mcp/source/plugin_mcp.cpp
+index a67baa0a4..c3972f201 100644
+--- a/plugins/mcp/source/plugin_mcp.cpp
++++ b/plugins/mcp/source/plugin_mcp.cpp
+@@ -1636,7 +1636,118 @@ namespace hex::plugin::mcp {
+                 }
+             });
+ 
+-            log::info("MCP plugin (improved) loaded - registered {} network endpoints", 22);
++            // Batch Hash: Calculate hashes for multiple files
++            ContentRegistry::CommunicationInterface::registerNetworkEndpoint("batch/hash", [](const nlohmann::json &data) -> nlohmann::json {
++                try {
++                    // Parse parameters
++                    auto algorithms = data.at("algorithms").get<std::vector<std::string>>();
++
++                    // Get provider IDs to hash (if not specified, hash all)
++                    std::vector<u32> provider_ids;
++                    if (data.contains("provider_ids")) {
++                        auto ids = data["provider_ids"].get<std::vector<int>>();
++                        for (int id : ids) {
++                            provider_ids.push_back(static_cast<u32>(id));
++                        }
++                    } else {
++                        // Hash all open providers
++                        auto providers = ImHexApi::Provider::getProviders();
++                        for (auto& prov : providers) {
++                            provider_ids.push_back(prov->getID());
++                        }
++                    }
++
++                    if (provider_ids.empty()) {
++                        throw std::runtime_error("No files open to hash");
++                    }
++
++                    if (algorithms.empty()) {
++                        throw std::runtime_error("No hash algorithms specified");
++                    }
++
++                    // Results structure
++                    std::vector<nlohmann::json> results;
++
++                    // Hash each provider
++                    for (u32 provider_id : provider_ids) {
++                        // Find provider by ID
++                        prv::Provider* provider = nullptr;
++                        auto providers = ImHexApi::Provider::getProviders();
++                        for (auto& prov : providers) {
++                            if (prov->getID() == provider_id) {
++                                provider = prov;
++                                break;
++                            }
++                        }
++
++                        if (!provider) {
++                            log::warn("MCP: Provider ID {} not found, skipping", provider_id);
++                            continue;
++                        }
++
++                        nlohmann::json file_result;
++                        file_result["provider_id"] = provider_id;
++                        file_result["file"] = provider->getName();
++                        file_result["size"] = provider->getActualSize();
++
++                        // Read entire file
++                        u64 fileSize = provider->getActualSize();
++                        std::vector<u8> buffer(fileSize);
++                        provider->read(0, buffer.data(), fileSize);
++
++                        // Calculate each hash algorithm
++                        nlohmann::json hashes;
++                        for (const auto& algorithm : algorithms) {
++                            std::vector<u8> hashResult;
++
++                            // Convert algorithm to lowercase for comparison
++                            std::string algoLower = algorithm;
++                            std::transform(algoLower.begin(), algoLower.end(), algoLower.begin(), ::tolower);
++
++                            if (algoLower == "md5") {
++                                auto hash = crypt::md5(buffer);
++                                hashResult.assign(hash.begin(), hash.end());
++                            } else if (algoLower == "sha1") {
++                                auto hash = crypt::sha1(buffer);
++                                hashResult.assign(hash.begin(), hash.end());
++                            } else if (algoLower == "sha224") {
++                                auto hash = crypt::sha224(buffer);
++                                hashResult.assign(hash.begin(), hash.end());
++                            } else if (algoLower == "sha256") {
++                                auto hash = crypt::sha256(buffer);
++                                hashResult.assign(hash.begin(), hash.end());
++                            } else if (algoLower == "sha384") {
++                                auto hash = crypt::sha384(buffer);
++                                hashResult.assign(hash.begin(), hash.end());
++                            } else if (algoLower == "sha512") {
++                                auto hash = crypt::sha512(buffer);
++                                hashResult.assign(hash.begin(), hash.end());
++                            } else {
++                                log::warn("MCP: Unsupported hash algorithm: {}", algorithm);
++                                continue;
++                            }
++
++                            std::string hashHex = bytesToHexString(hashResult);
++                            hashes[algoLower] = hashHex;
++                        }
++
++                        file_result["hashes"] = hashes;
++                        results.push_back(file_result);
++                    }
++
++                    nlohmann::json result;
++                    result["hashes"] = results;
++                    result["total_files"] = results.size();
++
++                    log::info("MCP: Batch hash complete - {} files, {} algorithms", results.size(), algorithms.size());
++
++                    return result;
++                } catch (const std::exception &e) {
++                    throw std::runtime_error(fmt::format("Batch hash failed: {}", e.what()));
++                }
++            });
++
++            log::info("MCP plugin (improved) loaded - registered {} network endpoints", 23);
+         }
+ 
+     }
+-- 
+2.51.1
+
