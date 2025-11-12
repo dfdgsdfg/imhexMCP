@@ -23,7 +23,17 @@ import argparse
 import time
 import subprocess
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Optional, Any
+
+# Add lib directory to path for error handling
+sys.path.insert(0, str(Path(__file__).parent.parent / "lib"))
+
+from error_handling import (
+    retry_with_backoff,
+    ConnectionError as ImHexConnectionError,
+    HealthCheck
+)
 
 try:
     import psutil
@@ -52,9 +62,10 @@ class ImHexProfiler:
                 continue
         return None
 
+    @retry_with_backoff(max_attempts=3, initial_delay=0.5, exponential_base=2.0)
     def send_request(self, endpoint: str, data: Optional[Dict[str, Any]] = None,
                      timeout: int = 10) -> Dict[str, Any]:
-        """Send request to ImHex MCP."""
+        """Send request to ImHex MCP with automatic retry on failure."""
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(timeout)
@@ -74,6 +85,9 @@ class ImHexProfiler:
             sock.close()
             return json.loads(response.decode().strip())
 
+        except (socket.error, socket.timeout, ConnectionRefusedError) as e:
+            # These will be caught by retry decorator
+            raise
         except Exception as e:
             return {"status": "error", "data": {"error": str(e)}}
 

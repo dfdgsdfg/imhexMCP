@@ -23,6 +23,15 @@ from pathlib import Path
 import tempfile
 from typing import Dict, List, Optional, Any, Tuple
 
+# Add lib directory to path for error handling
+sys.path.insert(0, str(Path(__file__).parent.parent / "lib"))
+
+from error_handling import (
+    retry_with_backoff,
+    ConnectionError as ImHexConnectionError,
+    HealthCheck
+)
+
 
 class ImHexBenchmark:
     """Benchmark framework for ImHex MCP endpoints."""
@@ -33,8 +42,12 @@ class ImHexBenchmark:
         self.timeout = timeout
         self.results: Dict[str, List[Dict[str, Any]]] = {}
 
+    @retry_with_backoff(max_attempts=3, initial_delay=0.5, exponential_base=2.0)
     def send_request(self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> Tuple[Dict[str, Any], float]:
-        """Send request to ImHex MCP and return response with timing."""
+        """Send request to ImHex MCP and return response with timing.
+
+        Automatically retries on transient network failures with exponential backoff.
+        """
         start_time = time.perf_counter()
 
         try:
@@ -61,6 +74,9 @@ class ImHexBenchmark:
             result = json.loads(response.decode().strip())
             return result, latency
 
+        except (socket.error, socket.timeout, ConnectionRefusedError) as e:
+            # These will be caught by retry decorator
+            raise
         except Exception as e:
             end_time = time.perf_counter()
             latency = (end_time - start_time) * 1000

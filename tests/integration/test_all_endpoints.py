@@ -25,6 +25,15 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
+# Add lib directory to path for error handling
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "lib"))
+
+from error_handling import (
+    retry_with_backoff,
+    ConnectionError as ImHexConnectionError,
+    HealthCheck
+)
+
 
 class ImHexMCPTest:
     """Integration test framework for ImHex MCP."""
@@ -43,9 +52,13 @@ class ImHexMCPTest:
         if self.verbose:
             print(f"  {message}")
 
+    @retry_with_backoff(max_attempts=3, initial_delay=0.5, exponential_base=2.0)
     def send_request(self, endpoint: str, data: Optional[Dict[str, Any]] = None,
                      timeout: int = 10) -> Dict[str, Any]:
-        """Send request to ImHex MCP."""
+        """Send request to ImHex MCP.
+
+        Automatically retries on transient network failures with exponential backoff.
+        """
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(timeout)
@@ -65,14 +78,13 @@ class ImHexMCPTest:
             sock.close()
             return json.loads(response.decode().strip())
 
-        except ConnectionRefusedError:
-            print("\nError: Cannot connect to ImHex. Is it running?")
-            print("Please ensure:")
-            print("  1. ImHex is running")
-            print("  2. Network Interface is enabled in Settings → General")
-            print("  3. Port 31337 is accessible")
-            sys.exit(1)
-
+        except (socket.error, socket.timeout, ConnectionRefusedError) as e:
+            # Check if this is the final retry attempt
+            if isinstance(e, ConnectionRefusedError):
+                # Let retry decorator handle it, but if all retries fail, show helpful message
+                raise
+            # For other network errors, let retry decorator handle them
+            raise
         except Exception as e:
             return {"status": "error", "data": {"error": str(e)}}
 
