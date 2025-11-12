@@ -23,7 +23,7 @@ cd /path/to/ImHex/build
 | [02-malware-scanning.py](02-malware-scanning.py) | Batch malware scanning | Security analysis | ✅ |
 | [03-firmware-analysis.py](03-firmware-analysis.py) | Firmware reverse engineering | IoT/Embedded | ✅ |
 | [04-diff-comparison.py](04-diff-comparison.py) | Binary diff comparison | Patch analysis | ✅ |
-| [05-automated-pipeline.py](05-automated-pipeline.py) | Full analysis workflow | Automation | 🚧 Coming |
+| [05-automated-pipeline.py](05-automated-pipeline.py) | Full analysis workflow | Automation | ✅ |
 
 ## Running Examples
 
@@ -43,7 +43,7 @@ python3 03-firmware-analysis.py firmware.bin
 python3 04-diff-comparison.py original.bin patched.bin
 
 # Full pipeline
-python3 05-automated-pipeline.py /path/to/files/ --output report.json
+python3 05-automated-pipeline.py /path/to/files/ --output report.json --workers 4
 ```
 
 ## Common Patterns
