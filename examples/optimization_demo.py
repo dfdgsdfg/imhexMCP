@@ -13,8 +13,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "lib"))
 
 from streaming import StreamingClient, StreamProcessor, stream_to_file
-from lazy import LazyClient, LazyProvider, memoize, monitored
-from profiling import PerformanceMonitor, HotPathAnalyzer, OptimizationSuggestions
+from lazy import LazyClient, LazyProvider, memoize
+from profiling import PerformanceMonitor, HotPathAnalyzer, OptimizationSuggestions, monitored
 from cached_client import create_client
 
 

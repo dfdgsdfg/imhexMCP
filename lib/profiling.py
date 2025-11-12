@@ -173,6 +173,32 @@ def time_function(func: Callable[..., T]) -> Callable[..., T]:
     return wrapper
 
 
+class _MonitoredTimer:
+    """Internal context manager that records timings to a PerformanceMonitor."""
+
+    def __init__(self, monitor: 'PerformanceMonitor', name: str, metadata: Optional[Dict[str, Any]] = None):
+        self.monitor = monitor
+        self.name = name
+        self.metadata = metadata
+        self.start_time: Optional[float] = None
+        self.end_time: Optional[float] = None
+        self.duration_ms: float = 0.0
+
+    def __enter__(self):
+        self.start_time = time.perf_counter()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.end_time = time.perf_counter()
+        self.duration_ms = (self.end_time - self.start_time) * 1000
+
+        # Record timing in monitor
+        if self.duration_ms > 0:
+            self.monitor.record_timing(self.name, self.duration_ms)
+
+        return False  # Don't suppress exceptions
+
+
 class PerformanceMonitor:
     """
     Monitor and aggregate performance metrics across multiple calls.
@@ -190,31 +216,18 @@ class PerformanceMonitor:
         self._timings: Dict[str, List[float]] = defaultdict(list)
         self._lock = threading.Lock()
 
-    def time(self, name: str, metadata: Optional[Dict[str, Any]] = None) -> PerformanceTimer:
+    def time(self, name: str, metadata: Optional[Dict[str, Any]] = None):
         """
-        Create timer for operation.
+        Create timer for operation that records timing automatically.
 
         Args:
             name: Operation name
             metadata: Optional metadata
 
         Returns:
-            PerformanceTimer context manager
+            Context manager
         """
-        timer = PerformanceTimer(name, metadata)
-
-        # Wrap the timer to record results
-        original_exit = timer.__exit__
-
-        def recording_exit(exc_type, exc_val, exc_tb):
-            result = original_exit(exc_type, exc_val, exc_tb)
-            if timer.duration_ms > 0:
-                with self._lock:
-                    self._timings[name].append(timer.duration_ms)
-            return result
-
-        timer.__exit__ = recording_exit
-        return timer
+        return _MonitoredTimer(self, name, metadata)
 
     def record_timing(self, name: str, duration_ms: float) -> None:
         """
@@ -338,6 +351,31 @@ class PerformanceMonitor:
             self._timings.clear()
 
 
+class _TracedTimer:
+    """Internal context manager that records path traces to HotPathAnalyzer."""
+
+    def __init__(self, analyzer: 'HotPathAnalyzer', path: str, metadata: Optional[Dict[str, Any]] = None):
+        self.analyzer = analyzer
+        self.path = path
+        self.metadata = metadata or {}
+        self.start_time: Optional[float] = None
+        self.end_time: Optional[float] = None
+        self.duration_ms: float = 0.0
+
+    def __enter__(self):
+        self.start_time = time.perf_counter()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.end_time = time.perf_counter()
+        self.duration_ms = (self.end_time - self.start_time) * 1000
+
+        # Record path execution in analyzer
+        self.analyzer.record_path(self.path, self.duration_ms, self.metadata)
+
+        return False  # Don't suppress exceptions
+
+
 class HotPathAnalyzer:
     """
     Analyze and identify hot paths (frequently executed code paths).
@@ -353,7 +391,7 @@ class HotPathAnalyzer:
         self._paths: Dict[str, List[Tuple[float, Dict[str, Any]]]] = defaultdict(list)
         self._lock = threading.Lock()
 
-    def trace(self, path: str, metadata: Optional[Dict[str, Any]] = None) -> PerformanceTimer:
+    def trace(self, path: str, metadata: Optional[Dict[str, Any]] = None):
         """
         Trace execution path.
 
@@ -362,21 +400,21 @@ class HotPathAnalyzer:
             metadata: Optional metadata
 
         Returns:
-            PerformanceTimer context manager
+            Context manager
         """
-        timer = PerformanceTimer(path, metadata)
+        return _TracedTimer(self, path, metadata)
 
-        # Wrap to record path execution
-        original_exit = timer.__exit__
+    def record_path(self, path: str, duration_ms: float, metadata: Optional[Dict[str, Any]] = None) -> None:
+        """
+        Manually record path execution.
 
-        def recording_exit(exc_type, exc_val, exc_tb):
-            result = original_exit(exc_type, exc_val, exc_tb)
-            with self._lock:
-                self._paths[path].append((timer.duration_ms, timer.metadata))
-            return result
-
-        timer.__exit__ = recording_exit
-        return timer
+        Args:
+            path: Path identifier
+            duration_ms: Execution duration in milliseconds
+            metadata: Optional metadata
+        """
+        with self._lock:
+            self._paths[path].append((duration_ms, metadata or {}))
 
     def get_hot_paths(
         self,

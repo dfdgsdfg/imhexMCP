@@ -17,13 +17,14 @@ import threading
 lib_path = Path(__file__).parent.parent / "lib"
 sys.path.insert(0, str(lib_path))
 
-from cache import ResponseCache, CacheKey
+from cache import ResponseCache
 from cached_client import CachedImHexClient
 from batching import RequestBatcher, BatchBuilder, BatchStrategy
 from streaming import StreamingClient, StreamChunk, StreamProcessor
 from lazy import LazyClient, LazyProvider, LazyProviderList
 from profiling import PerformanceMonitor, HotPathAnalyzer, get_global_monitor
-from error_handling import retry_with_backoff, ImHexError as LibImHexError
+from error_handling import retry_with_backoff, ImHexMCPError as LibImHexError
+from compression import CompressionConfig, DataCompressor
 
 
 class EnhancedImHexClient:
@@ -50,7 +51,9 @@ class EnhancedImHexClient:
         enable_cache: bool = True,
         cache_max_size: int = 1000,
         enable_profiling: bool = False,
-        enable_lazy: bool = True
+        enable_lazy: bool = True,
+        enable_compression: bool = False,
+        compression_config: Optional[CompressionConfig] = None
     ):
         """
         Initialize enhanced client.
@@ -62,6 +65,8 @@ class EnhancedImHexClient:
             enable_cache: Enable response caching
             enable_profiling: Enable performance profiling
             enable_lazy: Enable lazy loading
+            enable_compression: Enable data compression
+            compression_config: Compression configuration (optional)
         """
         self.host = host
         self.port = port
@@ -96,6 +101,14 @@ class EnhancedImHexClient:
         self.enable_lazy = enable_lazy
         if enable_lazy:
             self._lazy_client = LazyClient(host=host, port=port, timeout=timeout)
+
+        # Compression layer
+        self.enable_compression = enable_compression
+        if enable_compression:
+            config = compression_config or CompressionConfig(enabled=True)
+            self._compressor = DataCompressor(config)
+        else:
+            self._compressor = None
 
         # Thread safety
         self._lock = threading.Lock()
@@ -333,7 +346,6 @@ class EnhancedImHexClient:
         """Get hot paths (frequently executed code paths)."""
         if not self.enable_profiling or not self.hot_path_analyzer:
             return []
-
         return self.hot_path_analyzer.get_hot_paths(min_calls=min_calls)
 
     def print_performance_report(self) -> None:
@@ -372,6 +384,26 @@ class EnhancedImHexClient:
                     print(f"    Avg: {stats['avg_time_ms']:.2f}ms")
 
         print("=" * 70)
+
+    # Compression methods
+
+    def get_compression_stats(self) -> Dict[str, Any]:
+        """Get compression statistics."""
+        if not self.enable_compression or not self._compressor:
+            return {"enabled": False}
+
+        return {
+            "enabled": True,
+            **self._compressor.get_stats()
+        }
+
+    def print_compression_stats(self) -> None:
+        """Print compression statistics."""
+        if not self.enable_compression or not self._compressor:
+            print("Compression not enabled")
+            return
+
+        self._compressor.print_stats()
 
     # Convenience methods compatible with basic ImHexClient
 
@@ -463,7 +495,16 @@ def create_enhanced_client(
     Args:
         host: ImHex MCP host
         port: ImHex MCP port
-        config: Optional configuration dictionary
+        config: Optional configuration dictionary with keys:
+            - timeout: Socket timeout in seconds
+            - enable_cache: Enable response caching
+            - cache_max_size: Maximum cache entries
+            - enable_profiling: Enable performance profiling
+            - enable_lazy: Enable lazy loading
+            - enable_compression: Enable data compression
+            - compression_algorithm: Compression algorithm (zstd, gzip, zlib)
+            - compression_level: Compression level
+            - compression_min_size: Minimum size to compress
 
     Returns:
         Configured EnhancedImHexClient
@@ -472,10 +513,23 @@ def create_enhanced_client(
         >>> client = create_enhanced_client(config={
         ...     'enable_cache': True,
         ...     'cache_max_size': 1000,
-        ...     'enable_profiling': True
+        ...     'enable_profiling': True,
+        ...     'enable_compression': True
         ... })
     """
     config = config or {}
+
+    # Build compression config if enabled
+    compression_config = None
+    if config.get('enable_compression', False):
+        from compression import CompressionConfig
+        compression_config = CompressionConfig(
+            enabled=True,
+            algorithm=config.get('compression_algorithm', 'zstd'),
+            level=config.get('compression_level', 3),
+            min_size=config.get('compression_min_size', 1024),
+            adaptive=True
+        )
 
     return EnhancedImHexClient(
         host=host,
@@ -484,7 +538,9 @@ def create_enhanced_client(
         enable_cache=config.get('enable_cache', True),
         cache_max_size=config.get('cache_max_size', 1000),
         enable_profiling=config.get('enable_profiling', False),
-        enable_lazy=config.get('enable_lazy', True)
+        enable_lazy=config.get('enable_lazy', True),
+        enable_compression=config.get('enable_compression', False),
+        compression_config=compression_config
     )
 
 

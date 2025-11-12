@@ -34,6 +34,14 @@ from mcp.types import (
     EmbeddedResource,
 )
 
+# Import enhanced client for performance optimizations
+try:
+    from enhanced_client import create_enhanced_client, EnhancedImHexClient
+    ENHANCED_CLIENT_AVAILABLE = True
+except ImportError:
+    ENHANCED_CLIENT_AVAILABLE = False
+    logger.warning("Enhanced client not available - performance optimizations disabled")
+
 # Type hints
 JSON = Dict[str, Any]
 
@@ -59,6 +67,19 @@ class ServerConfig:
     max_retries: int = 3
     retry_delay: float = 1.0
     log_level: LogLevel = LogLevel.INFO
+
+    # Performance optimization settings
+    enable_performance_optimizations: bool = False  # Enable enhanced client with all optimizations
+    enable_cache: bool = True  # Enable response caching
+    cache_max_size: int = 1000  # Maximum cache entries
+    enable_profiling: bool = False  # Enable performance profiling
+    enable_lazy_loading: bool = True  # Enable lazy loading of capabilities
+
+    # Compression settings
+    enable_compression: bool = False  # Enable data compression for large transfers
+    compression_algorithm: str = "zstd"  # Compression algorithm (zstd, gzip, zlib)
+    compression_level: int = 3  # Compression level (1-22 for zstd, 1-9 for gzip/zlib)
+    compression_min_size: int = 1024  # Only compress payloads larger than this (bytes)
 
 
 class ConnectionError(Exception):
@@ -256,6 +277,142 @@ class ImHexClient:
         self.disconnect()
 
 
+class EnhancedImHexClientAdapter:
+    """
+    Adapter that wraps EnhancedImHexClient to match the ImHexClient interface.
+
+    This allows the enhanced client to be used as a drop-in replacement
+    for the basic client throughout the MCP server.
+    """
+
+    def __init__(self, config: ServerConfig):
+        """Initialize adapter with enhanced client."""
+        self.config = config
+
+        # Create enhanced client with configuration
+        self.enhanced_client = create_enhanced_client(
+            host=config.imhex_host,
+            port=config.imhex_port,
+            config={
+                'timeout': int(config.read_timeout),
+                'enable_cache': config.enable_cache,
+                'cache_max_size': config.cache_max_size,
+                'enable_profiling': config.enable_profiling,
+                'enable_lazy': config.enable_lazy_loading,
+                'enable_compression': config.enable_compression,
+                'compression_algorithm': config.compression_algorithm,
+                'compression_level': config.compression_level,
+                'compression_min_size': config.compression_min_size
+            }
+        )
+
+        logger.debug(f"Enhanced client adapter initialized with optimizations: "
+                    f"cache={config.enable_cache}, profiling={config.enable_profiling}, "
+                    f"lazy={config.enable_lazy_loading}, compression={config.enable_compression}")
+
+    def connect(self) -> bool:
+        """
+        Connect to ImHex (no-op for enhanced client, it auto-connects).
+
+        Returns:
+            bool: Always True (enhanced client auto-connects)
+        """
+        # Enhanced client connects automatically per request
+        logger.debug("Enhanced client connects automatically - no explicit connection needed")
+        return True
+
+    def disconnect(self):
+        """Disconnect from ImHex (no-op for enhanced client)."""
+        # Enhanced client doesn't maintain persistent connections
+        logger.debug("Enhanced client disconnects automatically - no explicit disconnection needed")
+
+    def is_connected(self) -> bool:
+        """
+        Check if connected (always True for enhanced client).
+
+        Returns:
+            bool: Always True (enhanced client manages connections internally)
+        """
+        return True
+
+    def send_command(self, endpoint: str, data: Optional[JSON] = None) -> JSON:
+        """
+        Send a command using the enhanced client.
+
+        Args:
+            endpoint: The endpoint to call
+            data: Optional data to send
+
+        Returns:
+            JSON response from ImHex
+
+        Raises:
+            ConnectionError: If connection fails
+            ImHexError: If ImHex returns an error
+        """
+        try:
+            # Use enhanced client's send_request method
+            response = self.enhanced_client.send_request(endpoint, data)
+
+            # Check for errors
+            if response.get("status") == "error":
+                error_msg = response.get("data", {}).get("error", "Unknown error")
+                logger.error(f"ImHex returned error: {error_msg}")
+                raise ImHexError(error_msg)
+
+            return response
+
+        except Exception as e:
+            # Convert enhanced client errors to server errors
+            if "Connection" in str(e) or "timeout" in str(e).lower():
+                raise ConnectionError(f"Connection error: {e}")
+            elif isinstance(e, (ImHexError, ConnectionError)):
+                raise
+            else:
+                raise ImHexError(f"Enhanced client error: {e}")
+
+    def __enter__(self):
+        """Context manager entry."""
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - print performance report if profiling enabled."""
+        if self.config.enable_profiling:
+            logger.info("=== Performance Report ===")
+            self.enhanced_client.print_performance_report()
+        self.disconnect()
+
+
+def create_client_from_config(config: ServerConfig):
+    """
+    Factory function that creates the appropriate client based on configuration.
+
+    If performance optimizations are enabled and available, returns an enhanced
+    client wrapped in an adapter. Otherwise, returns the standard ImHexClient.
+
+    Args:
+        config: Server configuration
+
+    Returns:
+        Client instance (either ImHexClient or EnhancedImHexClientAdapter)
+    """
+    if config.enable_performance_optimizations:
+        if ENHANCED_CLIENT_AVAILABLE:
+            logger.info("Creating enhanced client with performance optimizations enabled")
+            logger.info(f"  Cache: {config.enable_cache} (max size: {config.cache_max_size})")
+            logger.info(f"  Profiling: {config.enable_profiling}")
+            logger.info(f"  Lazy loading: {config.enable_lazy_loading}")
+            return EnhancedImHexClientAdapter(config)
+        else:
+            logger.warning("Performance optimizations requested but enhanced client not available")
+            logger.warning("Falling back to standard client")
+            return ImHexClient(config)
+    else:
+        logger.info("Creating standard client (performance optimizations disabled)")
+        return ImHexClient(config)
+
+
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
@@ -330,6 +487,33 @@ Examples:
         version="ImHex MCP Server 0.3.0"
     )
 
+    # Performance optimization flags
+    parser.add_argument(
+        "--enable-optimizations",
+        action="store_true",
+        help="Enable performance optimizations (cache, lazy loading)"
+    )
+
+    parser.add_argument(
+        "--enable-compression",
+        action="store_true",
+        help="Enable data compression for large transfers (60-80%% bandwidth reduction)"
+    )
+
+    parser.add_argument(
+        "--compression-algorithm",
+        type=str,
+        default="zstd",
+        choices=["zstd", "gzip", "zlib"],
+        help="Compression algorithm (default: zstd)"
+    )
+
+    parser.add_argument(
+        "--enable-profiling",
+        action="store_true",
+        help="Enable performance profiling and statistics"
+    )
+
     return parser.parse_args()
 
 
@@ -365,7 +549,13 @@ def create_config(args: argparse.Namespace) -> ServerConfig:
         read_timeout=args.read_timeout,
         max_retries=args.max_retries,
         retry_delay=args.retry_delay,
-        log_level=LogLevel.DEBUG if args.debug else LogLevel.INFO
+        log_level=LogLevel.DEBUG if args.debug else LogLevel.INFO,
+        # Performance optimizations
+        enable_performance_optimizations=args.enable_optimizations,
+        enable_profiling=args.enable_profiling,
+        # Compression
+        enable_compression=args.enable_compression,
+        compression_algorithm=args.compression_algorithm
     )
 
 
@@ -2148,8 +2338,8 @@ async def main():
     # Create configuration
     config = create_config(args)
 
-    # Initialize client
-    imhex_client = ImHexClient(config)
+    # Initialize client (use factory to select appropriate client type)
+    imhex_client = create_client_from_config(config)
 
     # Test connection
     try:
