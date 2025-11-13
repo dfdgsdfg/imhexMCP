@@ -39,3 +39,7 @@ coverage_html/
 # Development/testing files
 mcp-server/test_endpoints_only.py
 mcp-server/test_with_manual_file.py
+
+# Pre-commit
+.pre-commit-config.yaml.backup
+
