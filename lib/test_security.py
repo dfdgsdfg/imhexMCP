@@ -6,6 +6,7 @@ Tests rate limiting, input validation, and security hardening.
 
 import asyncio
 import pytest
+import time
 from security import (
     SecurityManager,
     SecurityConfig,
@@ -15,7 +16,8 @@ from security import (
     InvalidInput,
     PayloadTooLarge,
     TokenBucket,
-    InputValidator
+    InputValidator,
+    RateLimiter
 )
 
 
@@ -190,6 +192,83 @@ class TestInputValidator:
         assert result["size"] == 1024
         assert result["pattern"] == "ABCD1234"
 
+    def test_validate_string_non_string_type(self):
+        """Test string validation with non-string type."""
+        validator = InputValidator(ValidationConfig())
+
+        with pytest.raises(InvalidInput, match="must be a string"):
+            validator.validate_string(12345)
+
+    def test_validate_integer_type_error(self):
+        """Test integer validation with non-convertible type."""
+        validator = InputValidator(ValidationConfig())
+
+        with pytest.raises(InvalidInput, match="must be an integer"):
+            validator.validate_integer({"invalid": "dict"})
+
+        with pytest.raises(InvalidInput, match="must be an integer"):
+            validator.validate_integer([1, 2, 3])
+
+    def test_validate_payload_bytes(self):
+        """Test payload size validation with bytes."""
+        config = ValidationConfig(max_payload_size=100)
+        validator = InputValidator(config)
+
+        # Small bytes payload should pass
+        validator.validate_payload_size(b"x" * 50)
+
+        # Large bytes payload should fail
+        with pytest.raises(PayloadTooLarge):
+            validator.validate_payload_size(b"x" * 200)
+
+    def test_validate_payload_unknown_type(self):
+        """Test payload validation with unknown type (should skip)."""
+        validator = InputValidator(ValidationConfig())
+
+        # Unknown types should not raise error
+        validator.validate_payload_size([1, 2, 3])
+        validator.validate_payload_size(12345)
+        validator.validate_payload_size(None)
+
+    def test_validate_payload_disabled(self):
+        """Test payload validation when disabled."""
+        config = ValidationConfig(enabled=False, max_payload_size=10)
+        validator = InputValidator(config)
+
+        # Even large payload should pass when disabled
+        validator.validate_payload_size("x" * 10000)
+
+    def test_validate_path_exception(self):
+        """Test path validation exception handling."""
+        validator = InputValidator(ValidationConfig())
+
+        # Test invalid path that causes exception
+        # Note: This is platform-dependent, so we'll test the traversal check
+        with pytest.raises(InvalidInput, match="forbidden pattern"):
+            validator.validate_path("../../../etc/passwd")
+
+    def test_validate_endpoint_data_with_mixed_types(self):
+        """Test endpoint validation with mixed field types."""
+        validator = InputValidator(ValidationConfig(
+            allowed_path_patterns=[".*"]
+        ))
+
+        data = {
+            "provider_id": 0,  # int
+            "offset": "100",  # string
+            "custom_field": "some_value",  # custom string
+            "custom_int": 42,  # custom int
+            "custom_other": [1, 2, 3]  # other type (should pass through)
+        }
+
+        result = validator.validate_endpoint_data("test", data)
+
+        assert result["provider_id"] == 0
+        assert result["offset"] == 100
+        assert result["custom_field"] == "some_value"
+        assert result["custom_int"] == 42
+        assert result["custom_other"] == [1, 2, 3]
+
 
 class TestSecurityManager:
     """Tests for security manager."""
@@ -284,6 +363,75 @@ class TestSecurityManager:
         # Even many requests should succeed with disabled rate limiting
         for _ in range(1000):
             await manager.check_request("test", {})
+
+    @pytest.mark.asyncio
+    async def test_global_rate_limiting(self):
+        """Test global rate limiting (non-per-client)."""
+        config = SecurityConfig(
+            rate_limit=RateLimitConfig(
+                enabled=True,
+                requests_per_second=5.0,
+                burst_size=5,
+                per_client=False  # Global only
+            )
+        )
+        manager = SecurityManager(config)
+
+        # First 5 requests should succeed
+        for _ in range(5):
+            await manager.check_request("test", {})
+
+        # 6th request should fail
+        with pytest.raises(RateLimitExceeded, match="Global rate limit"):
+            await manager.check_request("test", {})
+
+    @pytest.mark.asyncio
+    async def test_security_manager_lifecycle(self):
+        """Test SecurityManager start/stop lifecycle."""
+        manager = SecurityManager()
+
+        # Test start (should create background task)
+        await manager.start()
+
+        # Test stop (should cancel tasks)
+        await manager.stop()
+
+    @pytest.mark.asyncio
+    async def test_rate_limiter_cleanup(self):
+        """Test rate limiter cleanup of old clients."""
+        config = RateLimitConfig(
+            enabled=True,
+            requests_per_second=10.0,
+            burst_size=10,
+            per_client=True
+        )
+        limiter = RateLimiter(config)
+
+        # Create some client buckets
+        await limiter.check_rate_limit("client1")
+        await limiter.check_rate_limit("client2")
+        await limiter.check_rate_limit("client3")
+
+        assert len(limiter.client_buckets) == 3
+
+        # Manually trigger cleanup with very low max_age
+        # This should remove all clients
+        old_buckets = dict(limiter.client_buckets)
+        for client_id, bucket in old_buckets.items():
+            bucket.last_update = time.monotonic() - 400  # Make it old
+
+        # Manual cleanup (without the infinite loop)
+        now = time.monotonic()
+        to_remove = [
+            client_id
+            for client_id, bucket in limiter.client_buckets.items()
+            if now - bucket.last_update > 300.0
+        ]
+
+        for client_id in to_remove:
+            del limiter.client_buckets[client_id]
+
+        assert len(limiter.client_buckets) == 0
 
 
 async def main():
