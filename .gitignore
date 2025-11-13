@@ -32,6 +32,9 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+coverage.xml
+coverage_html/
+.hypothesis/
 
 # Development/testing files
 mcp-server/test_endpoints_only.py
