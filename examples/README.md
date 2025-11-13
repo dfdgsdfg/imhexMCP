@@ -24,6 +24,8 @@ cd /path/to/ImHex/build
 | [03-firmware-analysis.py](03-firmware-analysis.py) | Firmware reverse engineering | IoT/Embedded | ✅ |
 | [04-diff-comparison.py](04-diff-comparison.py) | Binary diff comparison | Patch analysis | ✅ |
 | [05-automated-pipeline.py](05-automated-pipeline.py) | Full analysis workflow | Automation | ✅ |
+| [08-lib-modules-demo.py](08-lib-modules-demo.py) | Enhanced server modules | Production client | ✅ |
+| [09-config-validation.py](09-config-validation.py) | Configuration management | Server setup | ✅ |
 
 ## Running Examples
 
