@@ -405,7 +405,7 @@ class InputValidator:
         Raises:
             InvalidInput: If validation fails
         """
-        validated = {}
+        validated: Dict[str, Any] = {}
 
         # Common validations for file operations
         if "provider_id" in data:

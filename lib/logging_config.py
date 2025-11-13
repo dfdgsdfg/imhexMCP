@@ -11,7 +11,7 @@ import json
 import sys
 import traceback
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, MutableMapping
 from pathlib import Path
 
 
@@ -43,7 +43,7 @@ class JSONFormatter(logging.Formatter):
             log_data["context"] = record.context
 
         # Add exception information if present
-        if record.exc_info:
+        if record.exc_info and record.exc_info[0] is not None:
             log_data["exception"] = {
                 "type": record.exc_info[0].__name__,
                 "message": str(record.exc_info[1]),
@@ -194,8 +194,8 @@ class LoggerAdapter(logging.LoggerAdapter):
     """Logger adapter that adds context to all log records."""
 
     def process(
-        self, msg: str, kwargs: Dict[str, Any]
-    ) -> tuple[str, Dict[str, Any]]:
+        self, msg: str, kwargs: MutableMapping[str, Any]
+    ) -> tuple[str, MutableMapping[str, Any]]:
         """
         Add context to log record.
 
@@ -208,7 +208,9 @@ class LoggerAdapter(logging.LoggerAdapter):
         """
         # Merge adapter context with extra context
         extra = kwargs.get("extra", {})
-        extra["context"] = {**self.extra, **extra.get("context", {})}
+        adapter_context = dict(self.extra) if self.extra else {}
+        extra_context = extra.get("context", {}) if isinstance(extra, dict) else {}
+        extra["context"] = {**adapter_context, **extra_context}
         kwargs["extra"] = extra
         return msg, kwargs
 
