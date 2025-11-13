@@ -25,6 +25,7 @@ from error_handling import retry_with_backoff, ImHexMCPError
 from connection_pool import ConnectionPool
 from request_batching import RequestBatcher, BatchMode, BatchStats
 from cache import AsyncResponseCache
+from data_compression import DataCompressor, CompressionConfig
 
 
 class AsyncImHexClient:
@@ -46,7 +47,11 @@ class AsyncImHexClient:
         pool_max_size: int = 10,
         enable_cache: bool = True,
         cache_max_size: int = 1000,
-        cache_max_memory_mb: float = 100.0
+        cache_max_memory_mb: float = 100.0,
+        enable_compression: bool = True,
+        compression_algorithm: str = "zstd",
+        compression_level: int = 3,
+        compression_min_size: int = 1024
     ):
         """
         Initialize async client.
@@ -62,6 +67,10 @@ class AsyncImHexClient:
             enable_cache: Enable response caching (50-90% cache hit rate)
             cache_max_size: Maximum number of cached entries
             cache_max_memory_mb: Maximum cache memory in megabytes
+            enable_compression: Enable data compression (60-100% bandwidth reduction)
+            compression_algorithm: Compression algorithm (zstd, gzip, or zlib)
+            compression_level: Compression level (1-22 for zstd, 1-9 for gzip/zlib)
+            compression_min_size: Minimum size in bytes to compress (default: 1024)
         """
         self.host = host
         self.port = port
@@ -71,10 +80,9 @@ class AsyncImHexClient:
         self.enable_cache = enable_cache
 
         # Semaphore to limit concurrent connections (only if no pool)
+        self._semaphore: Optional[asyncio.Semaphore] = None
         if not use_connection_pool:
             self._semaphore = asyncio.Semaphore(max_concurrent)
-        else:
-            self._semaphore = None
 
         # Connection pool
         self._pool: Optional[ConnectionPool] = None
@@ -95,6 +103,18 @@ class AsyncImHexClient:
                 max_memory_mb=cache_max_memory_mb,
                 enable_auto_cleanup=True
             )
+
+        # Data compressor
+        self._compressor: Optional[DataCompressor] = None
+        if enable_compression:
+            compression_config = CompressionConfig(
+                enabled=True,
+                algorithm=compression_algorithm,
+                level=compression_level,
+                min_size=compression_min_size,
+                adaptive=True
+            )
+            self._compressor = DataCompressor(config=compression_config)
 
     async def send_request(
         self,
@@ -196,7 +216,7 @@ class AsyncImHexClient:
         Reuses persistent TCP connections to eliminate handshake overhead.
         """
         # Initialize pool if needed
-        if not self._pool._initialized:
+        if self._pool and not self._pool._initialized:
             await self._pool.initialize()
 
         conn = None
@@ -204,6 +224,8 @@ class AsyncImHexClient:
 
         try:
             # Acquire connection from pool
+            if not self._pool:
+                raise ImHexMCPError("Connection pool not initialized")
             conn = await self._pool.acquire()
 
             # Build request
@@ -240,7 +262,7 @@ class AsyncImHexClient:
             raise ImHexMCPError(f"Request error: {e}")
         finally:
             # Release connection back to pool
-            if conn:
+            if conn and self._pool:
                 await self._pool.release(conn, healthy=healthy)
 
     def _sync_send_request(
@@ -606,6 +628,80 @@ class AsyncImHexClient:
             return await self._cache.get_stats()
         return {"enabled": False}
 
+    # Compression methods
+
+    def compression_stats(self) -> Dict[str, Any]:
+        """
+        Get compression statistics.
+
+        Returns:
+            Dictionary with compression statistics:
+            - bytes_sent: Total bytes sent
+            - bytes_received: Total bytes received
+            - bytes_saved: Bytes saved through compression
+            - compression_ratio: Overall compression ratio
+            - compressions: Number of compressions performed
+            - decompressions: Number of decompressions performed
+        """
+        if not self._compressor:
+            return {
+                "enabled": False,
+                "message": "Compression is disabled"
+            }
+
+        stats = self._compressor.get_stats()
+        stats["enabled"] = True
+        return stats
+
+    def compress_binary_data(self, hex_data: str) -> Dict[str, Any]:
+        """
+        Compress hex-encoded binary data.
+
+        Useful for compressing large data/read responses before caching or storage.
+
+        Args:
+            hex_data: Hex-encoded binary data string
+
+        Returns:
+            Dictionary with:
+            - data: Compressed data (base64) or original hex
+            - compressed: True if compressed, False otherwise
+            - original_size: Original size in bytes
+            - compressed_size: Compressed size in bytes (if compressed)
+            - ratio: Compression ratio (if compressed)
+        """
+        if not self._compressor:
+            return {
+                "data": hex_data,
+                "compressed": False,
+                "size": len(hex_data) // 2
+            }
+
+        # Convert hex to bytes
+        binary_data = bytes.fromhex(hex_data)
+
+        # Compress
+        return self._compressor.compress_data(binary_data)
+
+    def decompress_binary_data(self, compressed_payload: Dict[str, Any]) -> str:
+        """
+        Decompress binary data back to hex string.
+
+        Args:
+            compressed_payload: Payload from compress_binary_data()
+
+        Returns:
+            Hex-encoded binary data string
+        """
+        if not self._compressor:
+            # No compression enabled, return as-is
+            return compressed_payload.get("data", "")
+
+        # Decompress to bytes
+        binary_data = self._compressor.decompress_data(compressed_payload)
+
+        # Convert bytes to hex
+        return binary_data.hex()
     # Context manager support
 
     async def __aenter__(self):
@@ -778,6 +874,7 @@ class AsyncEnhancedImHexClient(AsyncImHexClient):
             "p95_time_ms": times_sorted[int(len(times_sorted) * 0.95)],
             "p99_time_ms": times_sorted[int(len(times_sorted) * 0.99)]
         }
+
 
 
 # Helper functions for easier async usage

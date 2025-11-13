@@ -20,7 +20,7 @@ from typing import Dict, Any, List
 lib_path = Path(__file__).parent.parent / "lib"
 sys.path.insert(0, str(lib_path))
 
-from compression import CompressionConfig, DataCompressor
+from data_compression import CompressionConfig, DataCompressor
 
 
 def format_bytes(bytes_count):

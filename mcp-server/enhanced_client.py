@@ -24,7 +24,7 @@ from streaming import StreamingClient, StreamChunk, StreamProcessor
 from lazy import LazyClient, LazyProvider, LazyProviderList
 from profiling import PerformanceMonitor, HotPathAnalyzer, get_global_monitor
 from error_handling import retry_with_backoff, ImHexMCPError as LibImHexError
-from compression import CompressionConfig, DataCompressor
+from data_compression import CompressionConfig, DataCompressor
 
 
 class EnhancedImHexClient:
@@ -522,7 +522,7 @@ def create_enhanced_client(
     # Build compression config if enabled
     compression_config = None
     if config.get('enable_compression', False):
-        from compression import CompressionConfig
+        from data_compression import CompressionConfig
         compression_config = CompressionConfig(
             enabled=True,
             algorithm=config.get('compression_algorithm', 'zstd'),

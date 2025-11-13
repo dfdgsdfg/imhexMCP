@@ -70,8 +70,10 @@ class DataCompressor:
         """
         self.config = config or CompressionConfig()
         self.stats = CompressionStats()
-        self._compressor = None
-        self._decompressor = None
+        self._compressor: Any = None
+        self._decompressor: Any = None
+        self._compress_func: Any = None
+        self._decompress_func: Any = None
 
         if not self.config.enabled:
             logger.info("Compression disabled")
@@ -89,7 +91,7 @@ class DataCompressor:
 
         logger.info(f"Compression enabled: {self.config.algorithm} level {self.config.level}")
 
-    def _init_zstd(self):
+    def _init_zstd(self) -> None:
         """Initialize zstd compression."""
         try:
             import zstandard as zstd
@@ -101,14 +103,14 @@ class DataCompressor:
             self.config.algorithm = "gzip"
             self._init_gzip()
 
-    def _init_gzip(self):
+    def _init_gzip(self) -> None:
         """Initialize gzip compression."""
         import gzip
         self._compress_func = lambda data: gzip.compress(data, compresslevel=self.config.level)
         self._decompress_func = gzip.decompress
         logger.debug("Using gzip compression")
 
-    def _init_zlib(self):
+    def _init_zlib(self) -> None:
         """Initialize zlib compression."""
         import zlib
         self._compress_func = lambda data: zlib.compress(data, level=self.config.level)
@@ -244,12 +246,12 @@ class DataCompressor:
         """
         return self.stats.to_dict()
 
-    def reset_stats(self):
+    def reset_stats(self) -> None:
         """Reset compression statistics."""
         self.stats = CompressionStats()
         logger.debug("Compression statistics reset")
 
-    def print_stats(self):
+    def print_stats(self) -> None:
         """Print compression statistics summary."""
         print("\n" + "=" * 70)
         print("Compression Statistics")

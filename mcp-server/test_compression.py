@@ -17,7 +17,7 @@ from pathlib import Path
 lib_path = Path(__file__).parent.parent / "lib"
 sys.path.insert(0, str(lib_path))
 
-from compression import (
+from data_compression import (
     DataCompressor,
     AdaptiveCompressor,
     CompressionConfig,

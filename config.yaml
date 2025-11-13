@@ -1,0 +1,94 @@
+# ImHex MCP Server Configuration
+# This file configures runtime behavior of the MCP server
+
+# Server Configuration
+server:
+  host: "localhost"
+  port: 31337
+  timeout: 30  # seconds
+  max_connections: 100
+
+# Compression Settings
+compression:
+  enabled: true
+  algorithm: "zstd"  # zstd, gzip, zlib
+  level: 3  # 1-22 for zstd, 1-9 for gzip/zlib
+  min_size: 1024  # bytes - only compress if payload > this size
+  adaptive: true  # skip compression if ratio < 10% savings
+
+# Connection Pool Settings
+connection_pool:
+  enabled: true
+  min_size: 2
+  max_size: 10
+  timeout: 30.0  # seconds
+
+# Caching Settings
+caching:
+  enabled: true
+  max_size: 1000  # max cached entries
+  ttl: 300  # seconds (5 minutes)
+
+# Request Batching
+batching:
+  enabled: true
+  window_ms: 10  # milliseconds
+  max_batch_size: 50
+
+# Health Monitoring
+health:
+  enabled: true
+  check_interval: 60  # seconds
+
+# Performance Profiling
+profiling:
+  enabled: true
+  log_slow_requests: true
+  slow_threshold_ms: 1000
+
+# Logging Configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: null  # null = stdout, or path to log file
+  max_bytes: 10485760  # 10MB
+  backup_count: 5
+
+# Security Settings
+security:
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 1000
+    burst_size: 100
+
+  input_validation:
+    enabled: true
+    max_payload_size: 104857600  # 100MB
+    allowed_paths:  # Restrict file/open to these paths (empty = allow all)
+      - "/tmp"
+      - "/Users"  # macOS
+      - "/home"   # Linux
+
+  cors:
+    enabled: false
+    allowed_origins: []
+
+# Metrics & Monitoring
+metrics:
+  enabled: false  # Enable Prometheus metrics endpoint
+  port: 9090
+  endpoint: "/metrics"
+
+# Feature Flags
+features:
+  lazy_loading: true
+  streaming: true
+  advanced_caching: true
+  request_prioritization: false  # Not yet implemented
+  circuit_breaker: false  # Not yet implemented
+
+# Development Settings
+development:
+  debug: false
+  reload_on_change: false
+  mock_imhex: false  # Use mock ImHex for testing without actual ImHex instance
