@@ -300,7 +300,8 @@ class TestCircuitBreakerProperties:
         for _ in range(failure_count):
             try:
                 await breaker.call(failing_coro)
-            except RuntimeError:
+            except (RuntimeError, Exception):
+                # Catch both the original error and CircuitBreakerError when circuit opens
                 pass
 
         # Circuit should be open
