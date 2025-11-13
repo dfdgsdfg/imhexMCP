@@ -10,6 +10,10 @@
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](patches/PATCH_MANIFEST.md)
 [![Status](https://img.shields.io/badge/status-production%20ready-green.svg)](STATUS.md)
 
+[![CI](https://github.com/jmpnop/imhexMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/jmpnop/imhexMCP/actions)
+[![codecov](https://codecov.io/gh/jmpnop/imhexMCP/branch/main/graph/badge.svg)](https://codecov.io/gh/jmpnop/imhexMCP)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
+
 *Add Model Context Protocol support to ImHex through automated patches*
 
 **[⚡ Quick Start](#-quick-start)** • [Features](#-features) • [Documentation](#-documentation) • [Patches](patches/PATCH_MANIFEST.md) • [Status](STATUS.md)
