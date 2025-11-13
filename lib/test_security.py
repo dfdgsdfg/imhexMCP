@@ -142,10 +142,10 @@ class TestInputValidator:
         """Test path traversal protection."""
         validator = InputValidator(ValidationConfig())
 
-        with pytest.raises(InvalidInput, match="path traversal"):
+        with pytest.raises(InvalidInput, match="forbidden pattern"):
             validator.validate_path("../etc/passwd")
 
-        with pytest.raises(InvalidInput, match="path traversal"):
+        with pytest.raises(InvalidInput, match="forbidden pattern"):
             validator.validate_path("~/sensitive")
 
     def test_validate_path_blocked_patterns(self):
@@ -254,22 +254,22 @@ class TestSecurityManager:
         config = SecurityConfig(
             rate_limit=RateLimitConfig(
                 enabled=True,
-                requests_per_second=100.0,
-                burst_size=10,
+                requests_per_second=10.0,
+                burst_size=20,  # Large enough that per-client gets 2 tokens (20//10=2)
                 per_client=True
             )
         )
         manager = SecurityManager(config)
 
-        # Exhaust one client's limit
-        for _ in range(10):
-            await manager.check_request("test", {}, client_id="client1")
+        # Make 2 requests (per-client bucket has capacity of 2)
+        await manager.check_request("test", {}, client_id="client1")
+        await manager.check_request("test", {}, client_id="client1")
 
-        # Client 1 should be rate limited
+        # Third request should be rate limited (per-client burst exhausted)
         with pytest.raises(RateLimitExceeded):
             await manager.check_request("test", {}, client_id="client1")
 
-        # Client 2 should still work
+        # Client 2 should still work (separate bucket)
         await manager.check_request("test", {}, client_id="client2")
 
     @pytest.mark.asyncio

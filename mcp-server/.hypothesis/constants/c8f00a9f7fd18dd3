@@ -1,0 +1,4 @@
+# file: /Users/pasha/PycharmProjects/IMHexMCP/lib/security.py
+# hypothesis_version: 6.147.0
+
+[0.01, 100.0, 300.0, 100, 200, 1024, 4096, 10000, '.*', '..', '/etc/', '/proc/', '/sys/', '\\.\\./', '^[0-9A-Fa-f]*$', 'hex_value', 'offset', 'path', 'pattern', 'provider_id', 'size', 'value', '~']

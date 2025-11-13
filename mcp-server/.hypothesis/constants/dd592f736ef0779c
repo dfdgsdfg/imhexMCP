@@ -1,0 +1,4 @@
+# file: /Users/pasha/PycharmProjects/IMHexMCP/lib/advanced_cache.py
+# hypothesis_version: 6.147.0
+
+[0.0, 0.1, 0.5, 0.7, 1.0, 300.0, 600.0, 1800.0, 100, 200, 1024, 'L1', 'L2', 'T', 'adaptive', 'entries', 'evictions', 'fifo', 'hit_rate', 'hits', 'l1', 'l2', 'lfu', 'lru', 'misses', 'prefetches', 'promotions', 'random', 'sequential', 'size_bytes', 'strided', 'total_hit_rate']
