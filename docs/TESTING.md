@@ -378,3 +378,216 @@ Integration tests require ImHex to be built and running. This is more complex fo
 - **CI/CD**: Unit tests only (mock server)
 
 All tests are designed to be informative, showing exactly what's being tested and what the results are.
+
+## Advanced Testing
+
+### Property-Based Testing
+
+Property-based testing uses randomly generated inputs to verify that code properties hold true across a wide range of scenarios.
+
+#### Location
+
+`lib/test_property_based.py`
+
+#### What is Property-Based Testing?
+
+Instead of writing specific test cases like "cache.put('key1', 'value1') should return 'value1'", you write general properties like "getting a key after putting it should always return the value, regardless of the key/value used".
+
+#### Running Property-Based Tests
+
+```bash
+cd mcp-server
+./venv/bin/pytest ../lib/test_property_based.py -v
+
+# Show statistics
+./venv/bin/pytest ../lib/test_property_based.py -v --hypothesis-show-statistics
+
+# Increase test examples for more thoroughness
+./venv/bin/pytest ../lib/test_property_based.py -v --hypothesis-seed=random
+```
+
+#### What's Tested
+
+- **Cache Properties**: Get after put, overwrite behavior, multiple keys, operation sequences
+- **Pattern Detection**: Sequential, strided, and random access patterns
+- **Priority Queue**: Priority ordering, queue size invariants
+- **Circuit Breaker**: Stays closed on success, opens on failures
+- **Stateful Testing**: Random sequences of cache operations
+
+#### Benefits
+
+1. **Broader Coverage**: Tests thousands of cases automatically (default: 100 examples per property)
+2. **Edge Case Discovery**: Finds corner cases developers didn't think of
+3. **Reproducible**: Failed cases are shrunk to minimal examples
+4. **Regression Prevention**: Generated cases can be added to test suite
+
+#### Example Output
+
+```
+test_property_based.py::TestCacheProperties::test_cache_get_after_put PASSED
+test_property_based.py::TestCacheProperties::test_cache_overwrite PASSED
+test_property_based.py::TestPatternDetectorProperties::test_sequential_pattern_detection PASSED
+test_property_based.py::TestPriorityQueueProperties::test_priority_ordering PASSED
+test_property_based.py::TestCircuitBreakerProperties::test_circuit_stays_closed_on_success PASSED
+test_property_based.py::TestCircuitBreakerProperties::test_circuit_opens_on_failures PASSED
+
+Hypothesis Statistics:
+  - test_cache_get_after_put: 100 examples, 0 failures
+  - test_cache_overwrite: 100 examples, 0 failures
+  - test_sequential_pattern_detection: 50 examples, 0 failures
+  - test_priority_ordering: 50 examples, 0 failures
+```
+
+### Mutation Testing
+
+Mutation testing evaluates test suite quality by introducing small bugs (mutations) into source code and checking if tests catch them.
+
+#### What is Mutation Testing?
+
+Mutation testing:
+1. Introduces small bugs (mutations) into source code
+2. Runs tests against mutated code
+3. Checks if tests fail (catch the bug)
+
+If tests pass despite mutations, the tests are insufficient.
+
+#### Running Mutation Testing
+
+```bash
+# Install dependencies
+cd mcp-server
+./venv/bin/pip install mutmut
+
+# Run mutation testing
+cd ..
+./mcp-server/venv/bin/mutmut run
+
+# Show results
+./mcp-server/venv/bin/mutmut results
+
+# Show specific mutant
+./mcp-server/venv/bin/mutmut show <mutant-id>
+
+# Apply a mutant to investigate
+./mcp-server/venv/bin/mutmut apply <mutant-id>
+```
+
+#### Configuration
+
+Mutation testing is configured in `.mutmut_config.py`:
+- **Paths to mutate**: `lib/` directory
+- **Test command**: `python -m pytest lib/test_*.py -x --tb=short`
+- **Workers**: 4 parallel workers
+- **Filtering**: Skips documentation, logging, imports, and type hints
+
+#### Mutation Operators
+
+Common mutations applied:
+1. **Arithmetic**: `+` → `-`, `*` → `/`
+2. **Comparison**: `<` → `<=`, `==` → `!=`
+3. **Boolean**: `and` → `or`, `True` → `False`
+4. **Return**: `return x` → `return None`
+5. **Constants**: `1` → `2`, `"foo"` → `"XXfooXX"`
+
+#### Interpreting Results
+
+```bash
+# Mutation score calculation
+Mutation Score = (Killed Mutants / Total Mutants) * 100%
+
+# Goals:
+# - 80%+: Good test coverage
+# - 90%+: Excellent test coverage
+# - 95%+: Outstanding test coverage
+```
+
+#### Example Output
+
+```
+⠧ 45/100  🎉 45  ⏰ 0  🤔 0  🙁 0  🔇 0
+
+Legend:
+🎉 Killed mutants (tests caught the bug)
+⏰ Timeout (infinite loop)
+🤔 Suspicious (tests passed despite mutation)
+🙁 Survived (tests didn't catch the bug)
+🔇 Skipped (filtered out)
+
+Results:
+  Mutation Score: 90.0% (45 killed / 50 total)
+  Status: EXCELLENT
+```
+
+#### Workflow
+
+```bash
+# 1. Run mutation testing
+./mcp-server/venv/bin/mutmut run
+
+# 2. Check results
+./mcp-server/venv/bin/mutmut results
+
+# 3. Investigate survivors (mutants not caught)
+./mcp-server/venv/bin/mutmut show 42
+
+# 4. Add test to catch the survivor
+# 5. Re-run mutation testing
+./mcp-server/venv/bin/mutmut run
+```
+
+### Installing Dependencies
+
+```bash
+cd mcp-server
+./venv/bin/pip install hypothesis mutmut
+```
+
+### Best Practices
+
+#### Property-Based Testing
+
+1. **Start Simple**: Begin with basic properties like "get after put returns the value"
+2. **Use Strategies**: Leverage Hypothesis strategies to generate realistic inputs
+3. **Add Assumptions**: Use `assume()` to filter out invalid input combinations
+4. **Check Invariants**: Test properties that should always hold
+5. **Set Reasonable Limits**: Don't generate gigabytes of data
+
+Example:
+```python
+from hypothesis import given, strategies as st, assume
+
+@given(
+    key=st.text(min_size=1, max_size=100),
+    value=st.text(min_size=0, max_size=1000)
+)
+async def test_cache_property(key, value):
+    # Test with thousands of random key/value pairs
+    cache = CacheTier("test", config)
+    await cache.put(key, value, len(value))
+    result = await cache.get(key)
+    assert result == value
+```
+
+#### Mutation Testing
+
+1. **Run Incrementally**: Test one module at a time
+2. **Investigate Survivors**: Add tests for uncaught mutants
+3. **Skip Non-Critical Code**: Focus on business logic
+4. **Use in CI**: Run on pull requests to maintain quality
+5. **Set Thresholds**: Require minimum mutation score (e.g., 80%)
+
+### Test Coverage Summary
+
+| Test Type | Coverage | Speed | When to Run |
+|-----------|----------|-------|-------------|
+| Unit Tests | Core logic | Fast | During development |
+| Integration Tests | Full system | Medium | Before commits |
+| Property-Based | Edge cases | Medium | Before releases |
+| Mutation Testing | Test quality | Slow | Weekly/monthly |
+
+### Resources
+
+- [Hypothesis Documentation](https://hypothesis.readthedocs.io/)
+- [Mutmut Documentation](https://mutmut.readthedocs.io/)
+- [Property-Based Testing Guide](https://hypothesis.works/articles/what-is-property-based-testing/)
+- [Mutation Testing Best Practices](https://pitest.org/quickstart/basic_concepts/)
