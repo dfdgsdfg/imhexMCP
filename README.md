@@ -76,6 +76,61 @@ After applying patches, ImHex will have:
 
 ---
 
+## 🚀 MCP Server (NEW - v2.0)
+
+### Recent Enhancements
+
+The Python MCP server has been significantly enhanced with 15 major improvements:
+
+#### Testing & Quality
+1. **Pytest Framework** - Professional test suite with coverage reporting
+2. **CI/CD Pipeline** - Automated testing via GitHub Actions
+3. **Property-Based Testing** - Hypothesis integration for edge case discovery
+4. **Code Quality Tools** - Black, Ruff, isort formatting
+
+#### Configuration & Typing
+5. **Centralized Config** - YAML/TOML based configuration system
+6. **Type Hints** - Comprehensive typing with mypy static analysis
+
+#### Monitoring & Metrics
+7. **Prometheus Metrics** - Production-ready metrics export at `/metrics`
+
+#### Code Organization
+8. **Consolidated Batching** - Single `lib/batch_operations.py` module
+
+#### Documentation
+9. **API Documentation** - Sphinx-generated docs in `docs/build/html/`
+10. **Architecture Diagrams** - Visual system architecture
+
+#### Security
+11. **Security Hardening** - Rate limiting, input validation, sanitization
+
+#### Dependencies
+12. **Poetry** - Modern dependency management (see `pyproject.toml`)
+
+#### Advanced Features
+13. **Request Prioritization** - Priority queue with aging mechanism
+14. **Circuit Breaker** - Fault tolerance for ImHex connection
+15. **Multi-Tier Caching** - L1/L2 cache with predictive prefetching
+
+### Server Capabilities
+
+```bash
+# Run tests
+cd mcp-server
+./venv/bin/pytest -v
+
+# View API documentation
+open docs/build/html/index.html
+
+# Check metrics
+curl http://localhost:8000/metrics
+```
+
+See [docs/](docs/) for complete documentation.
+
+---
+
 ## 🚀 Quick Start
 
 ### One-Command Setup
@@ -412,6 +467,6 @@ When reporting issues, please include:
 
 ---
 
-**Version 1.0.0** | **Last Updated: 2025-11-11** | **Status: ✅ Production Ready**
+**Version 2.0.0** | **Last Updated: 2025-11-13** | **Status: ✅ Production Ready**
 
 </div>
