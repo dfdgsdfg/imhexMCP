@@ -147,7 +147,7 @@ class TestPriorityScheduler:
         # Submit 10 requests
         futures = []
         for i in range(10):
-            # future = await queue.submit(
+            future = await queue.submit(
                 lambda v=i: test_coro(v),
                 Priority.NORMAL
             )
