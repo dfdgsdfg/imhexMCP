@@ -2,10 +2,11 @@
 # Configuration for flake8 to work with black formatter
 # See: https://black.readthedocs.io/en/stable/guides/using_black_with_other_tools.html
 
-# Ignore known black/flake8 conflicts
-ignore =
-    E203,  # whitespace before ':' (black adds this in slices)
-    E122,  # continuation line missing indentation (black formats differently)
+# Ignore known black/flake8 conflicts:
+# - E203: whitespace before ':' (black adds this in slices)
+# - E122: continuation line missing indentation (black formats differently)
+# - W503: line break before binary operator (black uses this, modern PEP 8 style)
+ignore = E203,E122,W503
 
 # Match black's line length
 max-line-length = 79
