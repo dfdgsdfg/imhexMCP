@@ -6,6 +6,7 @@ Provides lazy initialization, deferred loading, and memoization patterns
 to reduce startup time and unnecessary operations.
 """
 
+from error_handling import retry_with_backoff
 import socket
 import json
 import sys
@@ -13,12 +14,9 @@ import functools
 import threading
 from pathlib import Path
 from typing import Dict, Any, Optional, Callable, TypeVar, Generic
-from dataclasses import dataclass
 
 # Add lib directory to path
 sys.path.insert(0, str(Path(__file__).parent))
-
-from error_handling import retry_with_backoff
 
 
 T = TypeVar('T')
@@ -152,7 +150,9 @@ def memoize(func: Callable[..., T]) -> Callable[..., T]:
     # Add cache inspection methods
     wrapper.cache = cache
     wrapper.cache_clear = lambda: cache.clear()
-    wrapper.cache_info = lambda: {"size": len(cache), "keys": list(cache.keys())}
+    wrapper.cache_info = lambda: {
+        "size": len(cache),
+        "keys": list(cache.keys())}
 
     return wrapper
 
@@ -258,10 +258,12 @@ class LazyProvider:
             if self._metadata is not None:
                 return self._metadata
 
-            result = self._client.send_request("file/info", {"provider_id": self.provider_id})
+            result = self._client.send_request(
+                "file/info", {"provider_id": self.provider_id})
 
             if result.get("status") != "success":
-                raise ValueError(f"Failed to load provider {self.provider_id}: {result.get('data', {}).get('error')}")
+                raise ValueError(
+                    f"Failed to load provider {self.provider_id}: {result.get('data', {}).get('error')}")
 
             self._metadata = result["data"]
             return self._metadata
@@ -340,7 +342,8 @@ class LazyProviderList:
             result = self._client.send_request("file/list")
 
             if result.get("status") != "success":
-                raise ValueError(f"Failed to load providers: {result.get('data', {}).get('error')}")
+                raise ValueError(
+                    f"Failed to load providers: {result.get('data', {}).get('error')}")
 
             provider_data = result["data"].get("providers", [])
             self._providers = [
@@ -479,7 +482,8 @@ class LazyClient:
         self._capabilities = LazyValue(lambda: self._load_capabilities())
         self._providers = LazyProviderList(self)
 
-    @retry_with_backoff(max_attempts=3, initial_delay=0.5, exponential_base=2.0)
+    @retry_with_backoff(max_attempts=3, initial_delay=0.5,
+                        exponential_base=2.0)
     def send_request(
         self,
         endpoint: str,
@@ -505,7 +509,7 @@ class LazyClient:
             sock.close()
             return json.loads(response.decode().strip())
 
-        except (socket.error, socket.timeout, ConnectionRefusedError) as e:
+        except (socket.error, socket.timeout, ConnectionRefusedError):
             raise
         except Exception as e:
             return {"status": "error", "data": {"error": str(e)}}
@@ -514,7 +518,8 @@ class LazyClient:
         """Load capabilities from server."""
         result = self.send_request("capabilities")
         if result.get("status") != "success":
-            raise ValueError(f"Failed to load capabilities: {result.get('data', {}).get('error')}")
+            raise ValueError(
+                f"Failed to load capabilities: {result.get('data', {}).get('error')}")
         return result["data"]
 
     @property

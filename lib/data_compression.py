@@ -87,9 +87,11 @@ class DataCompressor:
         elif self.config.algorithm == "zlib":
             self._init_zlib()
         else:
-            raise ValueError(f"Unsupported compression algorithm: {self.config.algorithm}")
+            raise ValueError(
+                f"Unsupported compression algorithm: {self.config.algorithm}")
 
-        logger.info(f"Compression enabled: {self.config.algorithm} level {self.config.level}")
+        logger.info(
+            f"Compression enabled: {self.config.algorithm} level {self.config.level}")
 
     def _init_zstd(self) -> None:
         """Initialize zstd compression."""
@@ -106,14 +108,16 @@ class DataCompressor:
     def _init_gzip(self) -> None:
         """Initialize gzip compression."""
         import gzip
-        self._compress_func = lambda data: gzip.compress(data, compresslevel=self.config.level)
+        self._compress_func = lambda data: gzip.compress(
+            data, compresslevel=self.config.level)
         self._decompress_func = gzip.decompress
         logger.debug("Using gzip compression")
 
     def _init_zlib(self) -> None:
         """Initialize zlib compression."""
         import zlib
-        self._compress_func = lambda data: zlib.compress(data, level=self.config.level)
+        self._compress_func = lambda data: zlib.compress(
+            data, level=self.config.level)
         self._decompress_func = zlib.decompress
         logger.debug("Using zlib compression")
 
@@ -187,9 +191,11 @@ class DataCompressor:
         # Use compressed data
         self.stats.compressions += 1
         self.stats.bytes_saved += (original_size - compressed_size)
-        self.stats.compression_ratio = self.stats.bytes_saved / self.stats.bytes_sent if self.stats.bytes_sent > 0 else 0.0
+        self.stats.compression_ratio = self.stats.bytes_saved / \
+            self.stats.bytes_sent if self.stats.bytes_sent > 0 else 0.0
 
-        logger.debug(f"Compressed {original_size} -> {compressed_size} bytes ({ratio:.2%})")
+        logger.debug(
+            f"Compressed {original_size} -> {compressed_size} bytes ({ratio:.2%})")
 
         return {
             "data": base64.b64encode(compressed).decode('ascii'),
@@ -230,7 +236,8 @@ class DataCompressor:
             self.stats.decompressions += 1
             self.stats.bytes_received += len(decompressed)
 
-            logger.debug(f"Decompressed {len(compressed_data)} -> {len(decompressed)} bytes")
+            logger.debug(
+                f"Decompressed {len(compressed_data)} -> {len(decompressed)} bytes")
 
             return decompressed
 
@@ -259,7 +266,8 @@ class DataCompressor:
 
         print("\nData Transfer:")
         print(f"  Bytes sent: {self.stats.bytes_sent:,} bytes")
-        print(f"  Bytes saved: {self.stats.bytes_saved:,} bytes ({self.stats.compression_ratio:.1%} reduction)")
+        print(
+            f"  Bytes saved: {self.stats.bytes_saved:,} bytes ({self.stats.compression_ratio:.1%} reduction)")
         print(f"  Bytes received: {self.stats.bytes_received:,} bytes")
 
         print("\nOperations:")
@@ -318,7 +326,8 @@ class AdaptiveCompressor(DataCompressor):
             # Only compress if estimated ratio < 0.85 (15% savings)
             if estimated_ratio >= 0.85:
                 self.stats.skipped_ratio += 1
-                logger.debug(f"Skipping compression (estimated ratio: {estimated_ratio:.2f})")
+                logger.debug(
+                    f"Skipping compression (estimated ratio: {estimated_ratio:.2f})")
                 return {
                     "data": data.hex(),
                     "compressed": False,
@@ -334,7 +343,7 @@ class AdaptiveCompressor(DataCompressor):
 # Convenience functions
 
 def create_compressor(algorithm: str = "zstd", level: int = 3,
-                     adaptive: bool = True) -> DataCompressor:
+                      adaptive: bool = True) -> DataCompressor:
     """Create a configured compressor instance.
 
     Args:

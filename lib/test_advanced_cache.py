@@ -13,7 +13,6 @@ from advanced_cache import (
     MultiTierCache,
     PatternDetector,
     PredictiveCacheConfig,
-    AccessPattern,
 )
 
 
@@ -68,7 +67,8 @@ class TestCacheTier:
     @pytest.mark.asyncio
     async def test_size_limit_eviction(self):
         """Test eviction based on size limit."""
-        config = CacheTierConfig(max_size=100, max_bytes=250, policy=CachePolicy.FIFO)
+        config = CacheTierConfig(
+            max_size=100, max_bytes=250, policy=CachePolicy.FIFO)
         tier = CacheTier("test", config)
 
         # Add entries totaling 300 bytes
@@ -125,7 +125,8 @@ class TestPatternDetector:
     @pytest.mark.asyncio
     async def test_sequential_pattern(self):
         """Test sequential access pattern detection."""
-        config = PredictiveCacheConfig(sequential_threshold=3, pattern_window=10)
+        config = PredictiveCacheConfig(
+            sequential_threshold=3, pattern_window=10)
         detector = PatternDetector(config)
 
         # Record sequential accesses (stride of 1)
@@ -142,7 +143,8 @@ class TestPatternDetector:
     @pytest.mark.asyncio
     async def test_strided_pattern(self):
         """Test strided access pattern detection."""
-        config = PredictiveCacheConfig(sequential_threshold=3, pattern_window=10)
+        config = PredictiveCacheConfig(
+            sequential_threshold=3, pattern_window=10)
         detector = PatternDetector(config)
 
         # Record strided accesses (every 500 bytes)
@@ -158,7 +160,8 @@ class TestPatternDetector:
     @pytest.mark.asyncio
     async def test_random_pattern(self):
         """Test random access pattern detection."""
-        config = PredictiveCacheConfig(sequential_threshold=3, pattern_window=10)
+        config = PredictiveCacheConfig(
+            sequential_threshold=3, pattern_window=10)
         detector = PatternDetector(config)
 
         # Record random accesses
@@ -174,7 +177,8 @@ class TestPatternDetector:
     @pytest.mark.asyncio
     async def test_insufficient_data(self):
         """Test with insufficient data for pattern detection."""
-        config = PredictiveCacheConfig(sequential_threshold=5, pattern_window=10)
+        config = PredictiveCacheConfig(
+            sequential_threshold=5, pattern_window=10)
         detector = PatternDetector(config)
 
         # Record only 2 accesses (less than threshold)

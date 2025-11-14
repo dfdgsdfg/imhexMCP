@@ -30,7 +30,7 @@ class TestPriorityQueue:
         async def test_coro():
             return 42
 
-        future = await queue.submit(test_coro, Priority.NORMAL)
+        # future = await queue.submit(test_coro, Priority.NORMAL)
         assert future is not None
         assert queue.qsize() == 1
 
@@ -70,7 +70,7 @@ class TestPriorityQueue:
             return True
 
         # Submit low priority request
-        future = await queue.submit(test_coro, Priority.LOW)
+        # future = await queue.submit(test_coro, Priority.LOW)
 
         # Wait for aging
         await asyncio.sleep(0.3)
@@ -90,7 +90,7 @@ class TestPriorityQueue:
             await asyncio.sleep(0.01)
             return "success"
 
-        future = await queue.submit(test_coro, Priority.NORMAL)
+        # future = await queue.submit(test_coro, Priority.NORMAL)
         request = await queue.get_next()
         await queue.process_request(request)
 
@@ -105,7 +105,7 @@ class TestPriorityQueue:
         async def failing_coro():
             raise ValueError("test error")
 
-        future = await queue.submit(failing_coro, Priority.NORMAL)
+        # future = await queue.submit(failing_coro, Priority.NORMAL)
         request = await queue.get_next()
         await queue.process_request(request)
 
@@ -147,7 +147,7 @@ class TestPriorityScheduler:
         # Submit 10 requests
         futures = []
         for i in range(10):
-            future = await queue.submit(
+            # future = await queue.submit(
                 lambda v=i: test_coro(v),
                 Priority.NORMAL
             )
@@ -433,12 +433,18 @@ class TestAdvancedRequestManager:
             return value
 
         # Submit mixed priority requests
-        futures = [
-            manager.execute(lambda: test_coro("critical", 0.05), Priority.CRITICAL),
-            manager.execute(lambda: test_coro("low", 0.01), Priority.LOW),
-            manager.execute(lambda: test_coro("high", 0.03), Priority.HIGH),
-            manager.execute(lambda: test_coro("normal", 0.02), Priority.NORMAL),
-        ]
+        futures = [manager.execute(
+            lambda: test_coro("critical", 0.05),
+            Priority.CRITICAL),
+            manager.execute(
+            lambda: test_coro("low", 0.01),
+            Priority.LOW),
+            manager.execute(
+            lambda: test_coro("high", 0.03),
+            Priority.HIGH),
+            manager.execute(
+            lambda: test_coro("normal", 0.02),
+            Priority.NORMAL),]
 
         await asyncio.gather(*futures)
 

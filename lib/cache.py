@@ -6,11 +6,12 @@ Provides high-performance response caching with TTL and LRU eviction strategies.
 Reduces redundant requests and improves overall system performance.
 """
 
+import asyncio
 import time
 import hashlib
 import json
 import threading
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, List
 from collections import OrderedDict
 from dataclasses import dataclass
 from enum import Enum
@@ -106,7 +107,8 @@ class ResponseCache:
         self._lock = threading.RLock()
         self._stats = CacheStats(max_size=max_size)
 
-    def _generate_key(self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> str:
+    def _generate_key(
+            self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> str:
         """
         Generate cache key from endpoint and data.
 
@@ -340,7 +342,7 @@ class ResponseCache:
                 "ttl": entry.ttl,
                 "age": time.time() - entry.created_at,
                 "expires_in": (entry.ttl - (time.time() - entry.created_at))
-                              if entry.ttl else None,
+                if entry.ttl else None,
                 "is_expired": entry.is_expired()
             }
 
@@ -423,7 +425,6 @@ class CachingStrategy:
 
 
 # Async cache implementation for AsyncImHexClient
-import asyncio
 
 
 class AsyncResponseCache:
@@ -491,7 +492,8 @@ class AsyncResponseCache:
             except asyncio.CancelledError:
                 pass
 
-    def _generate_key(self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> str:
+    def _generate_key(
+            self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> str:
         """Generate cache key from endpoint and data."""
         key_parts = [endpoint]
         if data:
@@ -718,7 +720,8 @@ class AsyncResponseCache:
         async with self._lock:
             stats_dict = self._stats.to_dict()
             stats_dict["memory_bytes"] = self._current_memory
-            stats_dict["memory_mb"] = round(self._current_memory / (1024 * 1024), 2)
+            stats_dict["memory_mb"] = round(
+                self._current_memory / (1024 * 1024), 2)
             stats_dict["memory_usage_pct"] = round(
                 (self._current_memory / self.max_memory_bytes * 100)
                 if self.max_memory_bytes > 0 else 0, 2

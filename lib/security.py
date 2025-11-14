@@ -21,22 +21,18 @@ from dataclasses import dataclass, field
 
 class SecurityViolation(Exception):
     """Exception raised for security violations."""
-    pass
 
 
 class RateLimitExceeded(SecurityViolation):
     """Exception raised when rate limit is exceeded."""
-    pass
 
 
 class InvalidInput(SecurityViolation):
     """Exception raised for invalid or malicious input."""
-    pass
 
 
 class PayloadTooLarge(SecurityViolation):
     """Exception raised when payload exceeds size limit."""
-    pass
 
 
 @dataclass
@@ -55,7 +51,8 @@ class ValidationConfig:
     max_payload_size: int = 10 * 1024 * 1024  # 10 MB max payload
     max_string_length: int = 10000  # Max string length
     max_path_length: int = 4096  # Max file path length
-    allowed_path_patterns: List[str] = field(default_factory=lambda: [".*"])  # Regex patterns
+    allowed_path_patterns: List[str] = field(
+        default_factory=lambda: [".*"])  # Regex patterns
     blocked_path_patterns: List[str] = field(default_factory=lambda: [
         r"\.\./",  # Path traversal
         r"~",  # Home directory expansion
@@ -116,7 +113,8 @@ class TokenBucket:
 
             return False
 
-    async def wait_for_tokens(self, tokens: int = 1, timeout: Optional[float] = None) -> bool:
+    async def wait_for_tokens(
+            self, tokens: int = 1, timeout: Optional[float] = None) -> bool:
         """
         Wait until tokens are available.
 
@@ -190,7 +188,8 @@ class RateLimiter:
                 )
 
             if not await self.client_buckets[client_id].acquire():
-                raise RateLimitExceeded(f"Rate limit exceeded for client {client_id}")
+                raise RateLimitExceeded(
+                    f"Rate limit exceeded for client {client_id}")
 
     async def cleanup_old_clients(self, max_age: float = 300.0) -> None:
         """
@@ -250,7 +249,8 @@ class InputValidator:
         # Sanitize control characters if enabled
         if self.config.sanitize_strings:
             # Remove null bytes and other control characters
-            value = "".join(char for char in value if char >= ' ' or char in '\n\r\t')
+            value = "".join(char for char in value if char >=
+                            ' ' or char in '\n\r\t')
 
         return value
 
@@ -314,7 +314,8 @@ class InputValidator:
         # Check for blocked patterns
         for pattern in self.config.blocked_path_patterns:
             if re.search(pattern, path):
-                raise InvalidInput(f"{field_name} contains forbidden pattern: {pattern}")
+                raise InvalidInput(
+                    f"{field_name} contains forbidden pattern: {pattern}")
 
         # Check allowed patterns
         allowed = False
@@ -334,11 +335,13 @@ class InputValidator:
 
         # Additional traversal check
         if ".." in path or path.startswith("~"):
-            raise InvalidInput(f"{field_name} contains forbidden path traversal")
+            raise InvalidInput(
+                f"{field_name} contains forbidden path traversal")
 
         return resolved
 
-    def validate_hex_string(self, value: str, field_name: str = "hex_value") -> str:
+    def validate_hex_string(
+            self, value: str, field_name: str = "hex_value") -> str:
         """
         Validate hexadecimal string.
 
@@ -356,7 +359,8 @@ class InputValidator:
 
         # Check if valid hex
         if not re.match(r'^[0-9A-Fa-f]*$', value):
-            raise InvalidInput(f"{field_name} must contain only hex characters")
+            raise InvalidInput(
+                f"{field_name} must contain only hex characters")
 
         return value.upper()
 
@@ -507,4 +511,3 @@ class SecurityManager:
     async def stop(self) -> None:
         """Stop security manager background tasks."""
         # Cleanup task will be cancelled when event loop stops
-        pass

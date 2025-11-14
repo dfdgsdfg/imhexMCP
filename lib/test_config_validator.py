@@ -12,7 +12,6 @@ Tests validation logic for server configuration including:
 
 import pytest
 from dataclasses import dataclass
-from typing import Optional
 
 from config_validator import (
     ValidationLevel,
@@ -70,8 +69,8 @@ class TestValidationResult:
     def test_validation_result_no_suggestion(self):
         """Test ValidationResult without suggestion."""
         result = ValidationResult(
-            level=ValidationLevel.INFO, field="test_field", message="Test message"
-        )
+            level=ValidationLevel.INFO, field="test_field",
+            message="Test message")
 
         assert result.suggestion is None
 
@@ -86,7 +85,8 @@ class TestConnectionValidation:
         validator._validate_connection(config)
 
         # Should have no errors, possibly 1 info about default port
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) == 0
 
     def test_empty_host(self):
@@ -95,7 +95,8 @@ class TestConnectionValidation:
         validator = ConfigValidator()
         validator._validate_connection(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) == 1
         assert errors[0].field == "imhex_host"
         assert "cannot be empty" in errors[0].message.lower()
@@ -106,7 +107,9 @@ class TestConnectionValidation:
         validator = ConfigValidator()
         validator._validate_connection(config)
 
-        warnings = [r for r in validator.results if r.level == ValidationLevel.WARNING]
+        warnings = [
+            r for r in validator.results
+            if r.level == ValidationLevel.WARNING]
         assert len(warnings) >= 1
         assert any("remote host" in w.message.lower() for w in warnings)
 
@@ -116,7 +119,8 @@ class TestConnectionValidation:
         validator = ConfigValidator()
         validator._validate_connection(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) == 1
         assert errors[0].field == "imhex_port"
         assert "invalid port" in errors[0].message.lower()
@@ -127,7 +131,8 @@ class TestConnectionValidation:
         validator = ConfigValidator()
         validator._validate_connection(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) == 1
         assert errors[0].field == "imhex_port"
 
@@ -137,7 +142,9 @@ class TestConnectionValidation:
         validator = ConfigValidator()
         validator._validate_connection(config)
 
-        warnings = [r for r in validator.results if r.level == ValidationLevel.WARNING]
+        warnings = [
+            r for r in validator.results
+            if r.level == ValidationLevel.WARNING]
         assert len(warnings) >= 1
         assert any("privileged port" in w.message.lower() for w in warnings)
 
@@ -147,7 +154,8 @@ class TestConnectionValidation:
         validator = ConfigValidator()
         validator._validate_connection(config)
 
-        infos = [r for r in validator.results if r.level == ValidationLevel.INFO]
+        infos = [r for r in validator.results
+                 if r.level == ValidationLevel.INFO]
         assert len(infos) >= 1
         assert any("non-standard port" in i.message.lower() for i in infos)
 
@@ -161,7 +169,8 @@ class TestTimeoutValidation:
         validator = ConfigValidator()
         validator._validate_timeouts(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) == 0
 
     def test_negative_connection_timeout(self):
@@ -170,7 +179,8 @@ class TestTimeoutValidation:
         validator = ConfigValidator()
         validator._validate_timeouts(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) >= 1
         assert any("connection_timeout" in e.field for e in errors)
 
@@ -180,7 +190,8 @@ class TestTimeoutValidation:
         validator = ConfigValidator()
         validator._validate_timeouts(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) >= 1
 
     def test_short_connection_timeout_warning(self):
@@ -189,7 +200,9 @@ class TestTimeoutValidation:
         validator = ConfigValidator()
         validator._validate_timeouts(config)
 
-        warnings = [r for r in validator.results if r.level == ValidationLevel.WARNING]
+        warnings = [
+            r for r in validator.results
+            if r.level == ValidationLevel.WARNING]
         assert len(warnings) >= 1
         assert any("short" in w.message.lower() for w in warnings)
 
@@ -199,7 +212,9 @@ class TestTimeoutValidation:
         validator = ConfigValidator()
         validator._validate_timeouts(config)
 
-        warnings = [r for r in validator.results if r.level == ValidationLevel.WARNING]
+        warnings = [
+            r for r in validator.results
+            if r.level == ValidationLevel.WARNING]
         assert len(warnings) >= 1
         assert any("long" in w.message.lower() for w in warnings)
 
@@ -209,7 +224,8 @@ class TestTimeoutValidation:
         validator = ConfigValidator()
         validator._validate_timeouts(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) >= 1
 
     def test_read_timeout_shorter_than_connection(self):
@@ -218,9 +234,12 @@ class TestTimeoutValidation:
         validator = ConfigValidator()
         validator._validate_timeouts(config)
 
-        warnings = [r for r in validator.results if r.level == ValidationLevel.WARNING]
+        warnings = [
+            r for r in validator.results
+            if r.level == ValidationLevel.WARNING]
         assert len(warnings) >= 1
-        assert any("shorter than connection" in w.message.lower() for w in warnings)
+        assert any("shorter than connection" in w.message.lower()
+                   for w in warnings)
 
 
 class TestRetryValidation:
@@ -232,7 +251,8 @@ class TestRetryValidation:
         validator = ConfigValidator()
         validator._validate_retry_settings(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) == 0
 
     def test_negative_max_retries(self):
@@ -241,7 +261,8 @@ class TestRetryValidation:
         validator = ConfigValidator()
         validator._validate_retry_settings(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) == 1
         assert errors[0].field == "max_retries"
 
@@ -251,7 +272,9 @@ class TestRetryValidation:
         validator = ConfigValidator()
         validator._validate_retry_settings(config)
 
-        warnings = [r for r in validator.results if r.level == ValidationLevel.WARNING]
+        warnings = [
+            r for r in validator.results
+            if r.level == ValidationLevel.WARNING]
         assert len(warnings) >= 1
         assert any("high retry count" in w.message.lower() for w in warnings)
 
@@ -261,7 +284,8 @@ class TestRetryValidation:
         validator = ConfigValidator()
         validator._validate_retry_settings(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) == 1
         assert errors[0].field == "retry_delay"
 
@@ -271,7 +295,9 @@ class TestRetryValidation:
         validator = ConfigValidator()
         validator._validate_retry_settings(config)
 
-        warnings = [r for r in validator.results if r.level == ValidationLevel.WARNING]
+        warnings = [
+            r for r in validator.results
+            if r.level == ValidationLevel.WARNING]
         assert len(warnings) >= 1
         assert any("zero retry delay" in w.message.lower() for w in warnings)
 
@@ -281,7 +307,9 @@ class TestRetryValidation:
         validator = ConfigValidator()
         validator._validate_retry_settings(config)
 
-        warnings = [r for r in validator.results if r.level == ValidationLevel.WARNING]
+        warnings = [
+            r for r in validator.results
+            if r.level == ValidationLevel.WARNING]
         assert len(warnings) >= 1
         assert any("long retry delay" in w.message.lower() for w in warnings)
 
@@ -300,7 +328,8 @@ class TestPerformanceValidation:
         validator = ConfigValidator()
         validator._validate_performance(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) == 0
 
     def test_profiling_with_optimizations_warning(self):
@@ -311,7 +340,9 @@ class TestPerformanceValidation:
         validator = ConfigValidator()
         validator._validate_performance(config)
 
-        warnings = [r for r in validator.results if r.level == ValidationLevel.WARNING]
+        warnings = [
+            r for r in validator.results
+            if r.level == ValidationLevel.WARNING]
         assert len(warnings) >= 1
         assert any("profiling enabled" in w.message.lower() for w in warnings)
 
@@ -323,7 +354,9 @@ class TestPerformanceValidation:
         validator = ConfigValidator()
         validator._validate_performance(config)
 
-        warnings = [r for r in validator.results if r.level == ValidationLevel.WARNING]
+        warnings = [
+            r for r in validator.results
+            if r.level == ValidationLevel.WARNING]
         assert len(warnings) >= 1
         assert any("cache disabled" in w.message.lower() for w in warnings)
 
@@ -335,7 +368,8 @@ class TestPerformanceValidation:
         validator = ConfigValidator()
         validator._validate_performance(config)
 
-        infos = [r for r in validator.results if r.level == ValidationLevel.INFO]
+        infos = [r for r in validator.results
+                 if r.level == ValidationLevel.INFO]
         assert len(infos) >= 1
         assert any("lazy loading disabled" in i.message.lower() for i in infos)
 
@@ -349,7 +383,8 @@ class TestCacheValidation:
         validator = ConfigValidator()
         validator._validate_cache(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) == 0
 
     def test_negative_cache_size(self):
@@ -358,7 +393,8 @@ class TestCacheValidation:
         validator = ConfigValidator()
         validator._validate_cache(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) == 1
         assert errors[0].field == "cache_max_size"
 
@@ -368,7 +404,8 @@ class TestCacheValidation:
         validator = ConfigValidator()
         validator._validate_cache(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) == 1
 
     def test_small_cache_warning(self):
@@ -377,7 +414,9 @@ class TestCacheValidation:
         validator = ConfigValidator()
         validator._validate_cache(config)
 
-        warnings = [r for r in validator.results if r.level == ValidationLevel.WARNING]
+        warnings = [
+            r for r in validator.results
+            if r.level == ValidationLevel.WARNING]
         assert len(warnings) >= 1
         assert any("small cache" in w.message.lower() for w in warnings)
 
@@ -387,7 +426,9 @@ class TestCacheValidation:
         validator = ConfigValidator()
         validator._validate_cache(config)
 
-        warnings = [r for r in validator.results if r.level == ValidationLevel.WARNING]
+        warnings = [
+            r for r in validator.results
+            if r.level == ValidationLevel.WARNING]
         assert len(warnings) >= 1
         assert any("large cache" in w.message.lower() for w in warnings)
 
@@ -399,11 +440,12 @@ class TestCacheValidation:
         validator = ConfigValidator()
         validator._validate_cache(config)
 
-        infos = [r for r in validator.results if r.level == ValidationLevel.INFO]
+        infos = [r for r in validator.results
+                 if r.level == ValidationLevel.INFO]
         assert len(infos) >= 1
         assert any(
-            "performance optimizations disabled" in i.message.lower() for i in infos
-        )
+            "performance optimizations disabled" in i.message.lower()
+            for i in infos)
 
 
 class TestConsistencyValidation:
@@ -412,23 +454,26 @@ class TestConsistencyValidation:
     def test_valid_total_timeout(self):
         """Test valid total timeout."""
         config = MockConfig(
-            connection_timeout=5.0, read_timeout=30.0, max_retries=3, retry_delay=1.0
-        )
+            connection_timeout=5.0, read_timeout=30.0, max_retries=3,
+            retry_delay=1.0)
         validator = ConfigValidator()
         validator._validate_consistency(config)
 
-        errors = [r for r in validator.results if r.level == ValidationLevel.ERROR]
+        errors = [r for r in validator.results
+                  if r.level == ValidationLevel.ERROR]
         assert len(errors) == 0
 
     def test_excessive_total_timeout_warning(self):
         """Test excessive total timeout generates warning."""
         config = MockConfig(
-            connection_timeout=60.0, read_timeout=120.0, max_retries=10, retry_delay=20.0
-        )
+            connection_timeout=60.0, read_timeout=120.0, max_retries=10,
+            retry_delay=20.0)
         validator = ConfigValidator()
         validator._validate_consistency(config)
 
-        warnings = [r for r in validator.results if r.level == ValidationLevel.WARNING]
+        warnings = [
+            r for r in validator.results
+            if r.level == ValidationLevel.WARNING]
         assert len(warnings) >= 1
         assert any("total_timeout" in w.field for w in warnings)
 
@@ -447,7 +492,8 @@ class TestValidateAll:
 
     def test_invalid_config_has_errors(self):
         """Test invalid configuration produces errors."""
-        config = MockConfig(imhex_port=0, connection_timeout=-1.0, max_retries=-1)
+        config = MockConfig(
+            imhex_port=0, connection_timeout=-1.0, max_retries=-1)
         is_valid, results = validate_config(config)
 
         assert is_valid is False
@@ -549,9 +595,8 @@ class TestPrintValidationReport:
         """Test printing report with info messages."""
         results = [
             ValidationResult(
-                level=ValidationLevel.INFO, field="test_field", message="Test info"
-            )
-        ]
+                level=ValidationLevel.INFO, field="test_field",
+                message="Test info")]
         print_validation_report(results)
 
         captured = capsys.readouterr()

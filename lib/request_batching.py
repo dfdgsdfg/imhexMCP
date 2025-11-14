@@ -297,7 +297,8 @@ class RequestBatcher:
             # Find requests with satisfied dependencies
             ready = []
             for req_id, req in list(pending.items()):
-                if not req.depends_on or all(dep in completed for dep in req.depends_on):
+                if not req.depends_on or all(
+                        dep in completed for dep in req.depends_on):
                     ready.append(req)
                     del pending[req_id]
 
@@ -414,12 +415,10 @@ class RequestBatcher:
 
         return BatchStats(
             total_requests=len(responses),
-            successful_requests=successful,
-            failed_requests=failed,
-            total_time_ms=total_time_ms,
-            avg_request_time_ms=total_time_ms / len(responses) if responses else 0,
-            round_trips_saved=round_trips_saved
-        )
+            successful_requests=successful, failed_requests=failed,
+            total_time_ms=total_time_ms, avg_request_time_ms=total_time_ms /
+            len(responses) if responses else 0,
+            round_trips_saved=round_trips_saved)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert batch to dictionary for serialization."""

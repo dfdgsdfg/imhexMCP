@@ -334,7 +334,8 @@ class TestSecurityManager:
             rate_limit=RateLimitConfig(
                 enabled=True,
                 requests_per_second=10.0,
-                burst_size=20,  # Large enough that per-client gets 2 tokens (20//10=2)
+                # Large enough that per-client gets 2 tokens (20//10=2)
+                burst_size=20,
                 per_client=True
             )
         )

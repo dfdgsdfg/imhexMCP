@@ -191,7 +191,7 @@ class CacheTier:
         elif self.config.policy == CachePolicy.LFU:
             # Remove least frequently used
             key = min(self._cache.keys(),
-                     key=lambda k: self._cache[k].access_count)
+                      key=lambda k: self._cache[k].access_count)
             await self._evict(key)
 
         elif self.config.policy == CachePolicy.FIFO:
@@ -266,8 +266,8 @@ class PatternDetector:
             offsets = [offset for _, offset in recent]
 
             # Check for sequential access
-            differences = [offsets[i+1] - offsets[i]
-                          for i in range(len(offsets)-1)]
+            differences = [offsets[i + 1] - offsets[i]
+                           for i in range(len(offsets) - 1)]
 
             if not differences:
                 return None
@@ -276,7 +276,8 @@ class PatternDetector:
             avg_diff = sum(differences) / len(differences)
 
             # Check if consistent stride
-            variance = sum((d - avg_diff) ** 2 for d in differences) / len(differences)
+            variance = sum((d - avg_diff) **
+                           2 for d in differences) / len(differences)
 
             if variance < 0.1 * abs(avg_diff):  # Low variance = consistent stride
                 if abs(avg_diff) < 2:  # Small stride = sequential
@@ -362,7 +363,8 @@ class MultiTierCache:
         self._prefetch_tasks: Dict[str, asyncio.Task] = {}
         self._lock = asyncio.Lock()
 
-    async def get(self, key: str, offset: Optional[int] = None) -> Optional[Any]:
+    async def get(
+            self, key: str, offset: Optional[int] = None) -> Optional[Any]:
         """
         Get value from cache with multi-tier lookup.
 
@@ -492,7 +494,8 @@ class MultiTierCache:
             if self.data_loader:
                 value = await self.data_loader(key)
                 if value is not None:
-                    size = len(value) if isinstance(value, (bytes, str)) else 1024
+                    size = len(value) if isinstance(
+                        value, (bytes, str)) else 1024
                     await self.l2.put(key, value, size)
                     self.l2.stats.prefetches += 1
                     logger.debug(f"Prefetched: {key}")
@@ -546,6 +549,6 @@ class MultiTierCache:
                 "entries": len(self.l2._cache),
             },
             "total_hit_rate": (self.l1.stats.hits + self.l2.stats.hits) /
-                             max(self.l1.stats.hits + self.l1.stats.misses +
-                                 self.l2.stats.hits + self.l2.stats.misses, 1),
+            max(self.l1.stats.hits + self.l1.stats.misses +
+                self.l2.stats.hits + self.l2.stats.misses, 1),
         }

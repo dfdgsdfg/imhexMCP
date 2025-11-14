@@ -105,7 +105,8 @@ class MetricsServer:
             )
             self.thread.start()
 
-            logger.info(f"Metrics server started on http://{self.host}:{self.port}/metrics")
+            logger.info(
+                f"Metrics server started on http://{self.host}:{self.port}/metrics")
 
         except Exception as e:
             logger.error(f"Failed to start metrics server: {e}")

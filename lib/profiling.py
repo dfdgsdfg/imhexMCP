@@ -61,7 +61,8 @@ class PerformanceTimer:
         >>> print(f"Duration: {timer.duration_ms:.2f}ms")
     """
 
-    def __init__(self, name: str = "operation", metadata: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: str = "operation",
+                 metadata: Optional[Dict[str, Any]] = None):
         self.name = name
         self.metadata = metadata or {}
         self.start_time: Optional[float] = None
@@ -97,7 +98,8 @@ class PerformanceTimer:
         )
 
 
-def profile_function(output_file: Optional[str] = None, sort_by: str = 'cumulative'):
+def profile_function(
+        output_file: Optional[str] = None, sort_by: str = 'cumulative'):
     """
     Decorator for profiling function with cProfile.
 
@@ -176,7 +178,8 @@ def time_function(func: Callable[..., T]) -> Callable[..., T]:
 class _MonitoredTimer:
     """Internal context manager that records timings to a PerformanceMonitor."""
 
-    def __init__(self, monitor: 'PerformanceMonitor', name: str, metadata: Optional[Dict[str, Any]] = None):
+    def __init__(self, monitor: 'PerformanceMonitor', name: str,
+                 metadata: Optional[Dict[str, Any]] = None):
         self.monitor = monitor
         self.name = name
         self.metadata = metadata
@@ -251,7 +254,8 @@ class PerformanceMonitor:
             Dictionary of profile statistics
         """
         with self._lock:
-            timings = {name: self._timings[name]} if name else dict(self._timings)
+            timings = {name: self._timings[name]
+                       } if name else dict(self._timings)
 
         stats = {}
         for func_name, times in timings.items():
@@ -266,19 +270,19 @@ class PerformanceMonitor:
             p99_idx = int(count * 0.99)
 
             stats[func_name] = ProfileStats(
-                function_name=func_name,
-                call_count=count,
+                function_name=func_name, call_count=count,
                 total_time_ms=sum(times),
-                avg_time_ms=sum(times) / count,
-                min_time_ms=min(times),
+                avg_time_ms=sum(times) / count, min_time_ms=min(times),
                 max_time_ms=max(times),
-                percentile_95_ms=sorted_times[p95_idx] if p95_idx < count else sorted_times[-1],
-                percentile_99_ms=sorted_times[p99_idx] if p99_idx < count else sorted_times[-1]
-            )
+                percentile_95_ms=sorted_times[p95_idx]
+                if p95_idx < count else sorted_times[-1],
+                percentile_99_ms=sorted_times[p99_idx]
+                if p99_idx < count else sorted_times[-1])
 
         return stats
 
-    def print_stats(self, name: Optional[str] = None, sort_by: str = 'total') -> None:
+    def print_stats(
+            self, name: Optional[str] = None, sort_by: str = 'total') -> None:
         """
         Print performance statistics.
 
@@ -354,7 +358,8 @@ class PerformanceMonitor:
 class _TracedTimer:
     """Internal context manager that records path traces to HotPathAnalyzer."""
 
-    def __init__(self, analyzer: 'HotPathAnalyzer', path: str, metadata: Optional[Dict[str, Any]] = None):
+    def __init__(self, analyzer: 'HotPathAnalyzer', path: str,
+                 metadata: Optional[Dict[str, Any]] = None):
         self.analyzer = analyzer
         self.path = path
         self.metadata = metadata or {}
@@ -388,7 +393,8 @@ class HotPathAnalyzer:
     """
 
     def __init__(self):
-        self._paths: Dict[str, List[Tuple[float, Dict[str, Any]]]] = defaultdict(list)
+        self._paths: Dict[str, List[Tuple[float,
+                                          Dict[str, Any]]]] = defaultdict(list)
         self._lock = threading.Lock()
 
     def trace(self, path: str, metadata: Optional[Dict[str, Any]] = None):
@@ -404,7 +410,8 @@ class HotPathAnalyzer:
         """
         return _TracedTimer(self, path, metadata)
 
-    def record_path(self, path: str, duration_ms: float, metadata: Optional[Dict[str, Any]] = None) -> None:
+    def record_path(self, path: str, duration_ms: float,
+                    metadata: Optional[Dict[str, Any]] = None) -> None:
         """
         Manually record path execution.
 
@@ -461,7 +468,8 @@ class HotPathAnalyzer:
             'avg_time': lambda x: x[1]['avg_time_ms']
         }
 
-        results.sort(key=sort_key_map.get(sort_by, sort_key_map['total_time']), reverse=True)
+        results.sort(key=sort_key_map.get(
+            sort_by, sort_key_map['total_time']), reverse=True)
 
         return results
 
@@ -531,7 +539,9 @@ class OptimizationSuggestions:
 
             # High total time
             if stat.total_time_ms > 10000:  # 10 seconds
-                pct = (stat.total_time_ms / sum(s.total_time_ms for s in stats.values())) * 100
+                pct = (
+                    stat.total_time_ms /
+                    sum(s.total_time_ms for s in stats.values())) * 100
                 suggestions.append(
                     f"'{name}' accounts for {pct:.1f}% of total execution time - "
                     f"primary optimization target"

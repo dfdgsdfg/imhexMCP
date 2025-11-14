@@ -13,7 +13,6 @@ import time
 from batching import (
     BatchStrategy,
     BatchRequest,
-    BatchResponse,
     RequestBatcher,
     BatchBuilder,
     batch_read_operations,
@@ -42,7 +41,8 @@ class MockImHexServer:
     def start(self):
         """Start mock server."""
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server_socket.setsockopt(
+            socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind(('localhost', self.port))
         self.server_socket.listen(10)
         self.running = True
@@ -255,7 +255,8 @@ class TestRequestBatcher:
         assert responses[2].success is True
 
         # Error should be recorded
-        assert responses[1].error is not None or "error" in responses[1].result.get("status", "")
+        assert responses[1].error is not None or "error" in responses[1].result.get(
+            "status", "")
 
     def test_empty_batch(self, batcher):
         """Test empty batch."""
@@ -270,7 +271,8 @@ class TestRequestBatcher:
             ("data/read", {"offset": 0, "size": 16})
         ]
 
-        results = batcher.execute_batch_dict(requests, BatchStrategy.SEQUENTIAL)
+        results = batcher.execute_batch_dict(
+            requests, BatchStrategy.SEQUENTIAL)
 
         assert len(results) == 3
         assert all(r.get("status") == "success" for r in results)
@@ -282,10 +284,10 @@ class TestBatchBuilder:
     def test_add_requests(self):
         """Test adding requests to builder."""
         batch = (BatchBuilder()
-                .add("capabilities")
-                .add("file/list")
-                .add("data/read", {"offset": 0, "size": 16})
-                .build())
+                 .add("capabilities")
+                 .add("file/list")
+                 .add("data/read", {"offset": 0, "size": 16})
+                 .build())
 
         assert len(batch) == 3
         assert batch[0].endpoint == "capabilities"
@@ -302,8 +304,8 @@ class TestBatchBuilder:
         ]
 
         batch = (BatchBuilder()
-                .add_multiple("data/read", data_list)
-                .build())
+                 .add_multiple("data/read", data_list)
+                 .build())
 
         assert len(batch) == 3
         assert all(r.endpoint == "data/read" for r in batch)
@@ -327,9 +329,9 @@ class TestBatchBuilder:
     def test_custom_request_id(self):
         """Test custom request IDs."""
         batch = (BatchBuilder()
-                .add("capabilities", request_id="custom_1")
-                .add("file/list", request_id="custom_2")
-                .build())
+                 .add("capabilities", request_id="custom_1")
+                 .add("file/list", request_id="custom_2")
+                 .build())
 
         assert batch[0].request_id == "custom_1"
         assert batch[1].request_id == "custom_2"
@@ -352,7 +354,8 @@ class TestBatchHelpers:
     def test_batch_hash_operations(self):
         """Test batch_hash_operations helper."""
         regions = [(0, 256), (256, 512), (512, 1024)]
-        batch = batch_hash_operations(provider_id=0, regions=regions, algorithm="sha256")
+        batch = batch_hash_operations(
+            provider_id=0, regions=regions, algorithm="sha256")
 
         assert len(batch) == 3
         assert all(r.endpoint == "data/hash" for r in batch)
@@ -369,7 +372,8 @@ class TestBatchPerformance:
     @pytest.fixture
     def mock_server(self):
         """Fixture providing mock ImHex server."""
-        server = MockImHexServer(port=31338, delay_ms=50)  # Higher delay for performance tests
+        server = MockImHexServer(
+            port=31338, delay_ms=50)  # Higher delay for performance tests
         server.start()
         yield server
         server.stop()
@@ -383,18 +387,21 @@ class TestBatchPerformance:
         """Test that concurrent is faster than sequential."""
         num_requests = 5
         requests = [
-            BatchRequest(f"req{i}", "data/read", {"offset": i * 16, "size": 16})
-            for i in range(num_requests)
-        ]
+            BatchRequest(
+                f"req{i} ", "data/read",
+                {"offset": i * 16, "size": 16})
+            for i in range(num_requests)]
 
         # Sequential
         start = time.perf_counter()
-        seq_responses = batcher.execute_batch(requests, BatchStrategy.SEQUENTIAL)
+        seq_responses = batcher.execute_batch(
+            requests, BatchStrategy.SEQUENTIAL)
         seq_elapsed = time.perf_counter() - start
 
         # Concurrent
         start = time.perf_counter()
-        con_responses = batcher.execute_batch(requests, BatchStrategy.CONCURRENT)
+        con_responses = batcher.execute_batch(
+            requests, BatchStrategy.CONCURRENT)
         con_elapsed = time.perf_counter() - start
 
         assert len(seq_responses) == num_requests
@@ -402,11 +409,11 @@ class TestBatchPerformance:
 
         # Concurrent should be faster, but timing can vary based on system load
         # Just verify concurrent completed successfully
-        print(f"\nPerformance comparison:")
-        print(f"  Sequential: {seq_elapsed*1000:.1f}ms")
-        print(f"  Concurrent: {con_elapsed*1000:.1f}ms")
+        print("\nPerformance comparison:")
+        print(f"  Sequential: {seq_elapsed * 1000:.1f}ms")
+        print(f"  Concurrent: {con_elapsed * 1000:.1f}ms")
         if seq_elapsed > 0:
-            print(f"  Speedup: {seq_elapsed/con_elapsed:.2f}x")
+            print(f"  Speedup: {seq_elapsed / con_elapsed:.2f}x")
 
         # Verify both completed all requests successfully
         assert all(r.success for r in seq_responses)
@@ -424,7 +431,7 @@ class TestBatchPerformance:
         assert len(responses) == 2
         assert all(r.latency_ms > 0 for r in responses)
 
-        print(f"\nRequest latencies:")
+        print("\nRequest latencies:")
         for r in responses:
             print(f"  {r.request_id}: {r.latency_ms:.2f}ms")
 
@@ -469,10 +476,10 @@ async def main():
         # Test BatchBuilder
         print("[4/8] Testing BatchBuilder...")
         batch = (BatchBuilder()
-                .add("capabilities")
-                .add("file/list")
-                .add("data/read", {"offset": 0, "size": 16})
-                .build())
+                 .add("capabilities")
+                 .add("file/list")
+                 .add("data/read", {"offset": 0, "size": 16})
+                 .build())
         assert len(batch) == 3
         print("  ✓ PASSED")
 
@@ -494,7 +501,8 @@ async def main():
             BatchRequest("req2", "error"),
             BatchRequest("req3", "file/list")
         ]
-        responses = batcher.execute_batch(requests_with_error, BatchStrategy.SEQUENTIAL)
+        responses = batcher.execute_batch(
+            requests_with_error, BatchStrategy.SEQUENTIAL)
         assert len(responses) == 3
         assert responses[0].success is True
         assert responses[1].success is False
@@ -505,21 +513,22 @@ async def main():
         print("[8/8] Testing performance comparison...")
         num_requests = 5
         requests = [
-            BatchRequest(f"req{i}", "data/read", {"offset": i * 16, "size": 16})
-            for i in range(num_requests)
-        ]
+            BatchRequest(
+                f"req{i} ", "data/read",
+                {"offset": i * 16, "size": 16})
+            for i in range(num_requests)]
 
         start = time.perf_counter()
-        seq_responses = batcher.execute_batch(requests, BatchStrategy.SEQUENTIAL)
+        batcher.execute_batch(requests, BatchStrategy.SEQUENTIAL)
         seq_elapsed = time.perf_counter() - start
 
         start = time.perf_counter()
-        con_responses = batcher.execute_batch(requests, BatchStrategy.CONCURRENT)
+        batcher.execute_batch(requests, BatchStrategy.CONCURRENT)
         con_elapsed = time.perf_counter() - start
 
-        print(f"  Sequential: {seq_elapsed*1000:.1f}ms")
-        print(f"  Concurrent: {con_elapsed*1000:.1f}ms")
-        print(f"  Speedup: {seq_elapsed/con_elapsed:.2f}x")
+        print(f"  Sequential: {seq_elapsed * 1000:.1f}ms")
+        print(f"  Concurrent: {con_elapsed * 1000:.1f}ms")
+        print(f"  Speedup: {seq_elapsed / con_elapsed:.2f}x")
         print("  ✓ PASSED")
 
         batcher.shutdown()

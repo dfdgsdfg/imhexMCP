@@ -10,6 +10,11 @@ Performance:
 - Concurrent request handling
 """
 
+from data_compression import DataCompressor, CompressionConfig
+from cache import AsyncResponseCache
+from request_batching import RequestBatcher, BatchMode, BatchStats
+from connection_pool import ConnectionPool
+from error_handling import ImHexMCPError
 import asyncio
 import socket
 import json
@@ -20,12 +25,6 @@ import sys
 # Add parent directory to path for imports
 lib_path = Path(__file__).parent
 sys.path.insert(0, str(lib_path))
-
-from error_handling import ImHexMCPError
-from connection_pool import ConnectionPool
-from request_batching import RequestBatcher, BatchMode, BatchStats
-from cache import AsyncResponseCache
-from data_compression import DataCompressor, CompressionConfig
 
 
 class AsyncImHexClient:
@@ -179,7 +178,8 @@ class AsyncImHexClient:
                     await asyncio.sleep(delay)
                     delay *= 2
 
-        raise ImHexMCPError(f"Failed after {max_attempts} attempts: {last_error}")
+        raise ImHexMCPError(
+            f"Failed after {max_attempts} attempts: {last_error}")
 
     async def _send_request_impl(
         self,
@@ -446,7 +446,8 @@ class AsyncImHexClient:
         """
         from request_batching import create_multi_file_batch
 
-        batcher = create_multi_file_batch(provider_ids, endpoint, data_template)
+        batcher = create_multi_file_batch(
+            provider_ids, endpoint, data_template)
         return await self.send_batch_advanced(batcher)
 
     async def batch_analysis_pipeline(
@@ -683,7 +684,8 @@ class AsyncImHexClient:
         # Compress
         return self._compressor.compress_data(binary_data)
 
-    def decompress_binary_data(self, compressed_payload: Dict[str, Any]) -> str:
+    def decompress_binary_data(
+            self, compressed_payload: Dict[str, Any]) -> str:
         """
         Decompress binary data back to hex string.
 
@@ -776,7 +778,8 @@ class AsyncEnhancedImHexClient(AsyncImHexClient):
             self._request_times: List[float] = []
             self._request_count = 0
 
-    def _make_cache_key(self, endpoint: str, data: Optional[Dict[str, Any]]) -> str:
+    def _make_cache_key(
+            self, endpoint: str, data: Optional[Dict[str, Any]]) -> str:
         """Create cache key from endpoint and data."""
         data_str = json.dumps(data or {}, sort_keys=True)
         return f"{endpoint}:{data_str}"
@@ -876,7 +879,6 @@ class AsyncEnhancedImHexClient(AsyncImHexClient):
         }
 
 
-
 # Helper functions for easier async usage
 
 async def async_read_file(
@@ -957,7 +959,7 @@ def run_async(coro):
     Useful for backward compatibility with synchronous code.
     """
     try:
-        loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
         # Already in async context, just await
         return coro
     except RuntimeError:

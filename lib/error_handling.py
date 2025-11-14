@@ -6,10 +6,13 @@ Provides robust error handling, retry logic, and connection management
 for ImHex MCP operations.
 """
 
+import threading
+from contextlib import contextmanager
+import queue
 import socket
 import time
 import functools
-from typing import Dict, List, Optional, Any, Callable, TypeVar, cast
+from typing import Dict, List, Optional, Any, Callable, TypeVar
 from dataclasses import dataclass
 from enum import Enum
 
@@ -83,7 +86,8 @@ class InvalidEndpointError(ImHexMCPError):
         message = f"Invalid endpoint: '{endpoint}'"
         recovery_hint = "Check available endpoints with 'capabilities' endpoint"
         if available:
-            recovery_hint += f"\nAvailable: {', '.join(sorted(available)[:10])}"
+            recovery_hint += f"\nAvailable: {
+                ', '.join(sorted(available)[: 10])} "
         super().__init__(message, recovery_hint)
         self.endpoint = endpoint
         self.available = available
@@ -116,7 +120,7 @@ class ErrorSeverity(Enum):
     LOW = "low"           # Recoverable, can retry immediately
     MEDIUM = "medium"     # Recoverable, should backoff
     HIGH = "high"         # May be recoverable, exponential backoff
-    CRITICAL = "critical" # Not recoverable, fail fast
+    CRITICAL = "critical"  # Not recoverable, fail fast
 
 
 @dataclass
@@ -139,7 +143,8 @@ def classify_error(error: Exception) -> ErrorInfo:
         )
 
     # Connection errors - usually retryable with backoff
-    if isinstance(error, (socket.error, ConnectionRefusedError, ConnectionResetError)):
+    if isinstance(
+            error, (socket.error, ConnectionRefusedError, ConnectionResetError)):
         return ErrorInfo(
             severity=ErrorSeverity.MEDIUM,
             retryable=True,
@@ -229,7 +234,8 @@ def retry_with_backoff(
 
                         # Wrap in ImHexMCPError with recovery hint
                         if isinstance(e, socket.error):
-                            raise ConnectionError("localhost", 31337, str(e)) from e
+                            raise ConnectionError(
+                                "localhost", 31337, str(e)) from e
                         raise ImHexMCPError(
                             f"Operation failed after {max_attempts} attempts: {str(e)}",
                             "Check network connection and ImHex status"
@@ -239,9 +245,8 @@ def retry_with_backoff(
                     error_info = classify_error(e)
                     if error_info.retryable:
                         backoff_delay = min(
-                            delay * (exponential_base ** (attempt - 1)) * error_info.backoff_multiplier,
-                            max_delay
-                        )
+                            delay * (exponential_base ** (attempt - 1)) *
+                            error_info.backoff_multiplier, max_delay)
 
                         # Optional: log retry attempt
                         # print(f"Retry attempt {attempt}/{max_attempts} after {backoff_delay:.2f}s...")
@@ -264,7 +269,7 @@ class CircuitBreakerState(Enum):
     """Circuit breaker states."""
     CLOSED = "closed"       # Normal operation
     OPEN = "open"           # Failing, reject requests
-    HALF_OPEN = "half_open" # Testing if service recovered
+    HALF_OPEN = "half_open"  # Testing if service recovered
 
 
 class CircuitBreaker:
@@ -318,7 +323,7 @@ class CircuitBreaker:
             self._on_success()
             return result
 
-        except Exception as e:
+        except Exception:
             self._on_failure()
             raise
 
@@ -407,15 +412,11 @@ class HealthCheck:
 
 # Connection Pooling
 
-import threading
-import queue
-from contextlib import contextmanager
-
 
 class ConnectionPool:
     """
     Connection pool for ImHex MCP.
-    
+
     Reuses connections to reduce overhead and improve performance.
     """
 
@@ -483,7 +484,7 @@ class ConnectionPool:
                 try:
                     # Test if connection is still alive
                     sock.setblocking(False)
-                    data = sock.recv(1, socket.MSG_PEEK)
+                    sock.recv(1, socket.MSG_PEEK)
                     sock.setblocking(True)
 
                     # Connection is still good, return to pool

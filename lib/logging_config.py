@@ -113,7 +113,8 @@ class ConsoleFormatter(logging.Formatter):
         )
 
         # Build message
-        message = f"{color}[{record.levelname:8s}]{reset} {timestamp} - {record.name} - {record.getMessage()}"
+        message = f"{color} [{record.levelname: 8s}] {reset}  {timestamp}  - {
+            record.name}  - {record.getMessage()} "
 
         # Add context if available
         if hasattr(record, "context"):
@@ -209,7 +210,9 @@ class LoggerAdapter(logging.LoggerAdapter):
         # Merge adapter context with extra context
         extra = kwargs.get("extra", {})
         adapter_context = dict(self.extra) if self.extra else {}
-        extra_context = extra.get("context", {}) if isinstance(extra, dict) else {}
+        extra_context = extra.get(
+            "context", {}) if isinstance(
+            extra, dict) else {}
         extra["context"] = {**adapter_context, **extra_context}
         kwargs["extra"] = extra
         return msg, kwargs

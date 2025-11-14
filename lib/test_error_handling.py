@@ -8,8 +8,7 @@ and connection pooling.
 import pytest
 import socket
 import time
-import threading
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 from error_handling import (
     # Exception classes
     ImHexMCPError,
@@ -21,7 +20,6 @@ from error_handling import (
     CircuitBreakerOpenError,
     # Error classification
     ErrorSeverity,
-    ErrorInfo,
     classify_error,
     # Retry logic
     retry_with_backoff,
@@ -234,7 +232,8 @@ class TestRetryDecorator:
         """Test exponential backoff timing."""
         call_times = []
 
-        @retry_with_backoff(max_attempts=3, initial_delay=0.05, exponential_base=2.0)
+        @retry_with_backoff(max_attempts=3, initial_delay=0.05,
+                            exponential_base=2.0)
         def timing_test():
             call_times.append(time.time())
             if len(call_times) < 3:
@@ -475,14 +474,16 @@ class TestHealthCheck:
 
             # Verify socket operations
             mock_socket.assert_called_once()
-            mock_sock_instance.connect.assert_called_once_with(("localhost", 31337))
+            mock_sock_instance.connect.assert_called_once_with(
+                ("localhost", 31337))
             mock_sock_instance.close.assert_called_once()
 
     def test_health_check_failure(self):
         """Test failed health check."""
         with patch("socket.socket") as mock_socket:
             mock_sock_instance = MagicMock()
-            mock_sock_instance.connect.side_effect = socket.error("Connection refused")
+            mock_sock_instance.connect.side_effect = socket.error(
+                "Connection refused")
             mock_socket.return_value = mock_sock_instance
 
             health = HealthCheck("localhost", 31337)

@@ -6,6 +6,7 @@ Provides generator-based streaming for large data operations to reduce memory us
 Enables processing files larger than available RAM through chunked transfers.
 """
 
+from error_handling import retry_with_backoff
 import socket
 import json
 import sys
@@ -15,8 +16,6 @@ from dataclasses import dataclass
 
 # Add lib directory to path
 sys.path.insert(0, str(Path(__file__).parent))
-
-from error_handling import retry_with_backoff, ConnectionError as ImHexConnectionError
 
 
 @dataclass
@@ -62,7 +61,8 @@ class StreamingClient:
         self.timeout = timeout
         self.default_chunk_size = default_chunk_size
 
-    @retry_with_backoff(max_attempts=3, initial_delay=0.5, exponential_base=2.0)
+    @retry_with_backoff(max_attempts=3, initial_delay=0.5,
+                        exponential_base=2.0)
     def _send_request(
         self,
         endpoint: str,
@@ -88,7 +88,7 @@ class StreamingClient:
             sock.close()
             return json.loads(response.decode().strip())
 
-        except (socket.error, socket.timeout, ConnectionRefusedError) as e:
+        except (socket.error, socket.timeout, ConnectionRefusedError):
             raise  # Let retry decorator handle
         except Exception as e:
             return {"status": "error", "data": {"error": str(e)}}
@@ -121,9 +121,11 @@ class StreamingClient:
 
         # Get file size if not specified
         if total_size is None:
-            info = self._send_request("file/info", {"provider_id": provider_id})
+            info = self._send_request(
+                "file/info", {"provider_id": provider_id})
             if info.get("status") != "success":
-                raise ValueError(f"Failed to get file info: {info.get('data', {}).get('error')}")
+                raise ValueError(
+                    f"Failed to get file info: {info.get('data', {}).get('error')}")
             total_size = info["data"]["size"]
 
         current_offset = offset
@@ -139,7 +141,8 @@ class StreamingClient:
             })
 
             if result.get("status") != "success":
-                raise IOError(f"Read failed at offset {current_offset}: {result.get('data', {}).get('error')}")
+                raise IOError(
+                    f"Read failed at offset {current_offset}: {result.get('data', {}).get('error')}")
 
             # Decode hex data
             hex_data = result["data"]["data"]
@@ -189,7 +192,8 @@ class StreamingClient:
         # Get file size
         info = self._send_request("file/info", {"provider_id": provider_id})
         if info.get("status") != "success":
-            raise ValueError(f"Failed to get file info: {info.get('data', {}).get('error')}")
+            raise ValueError(
+                f"Failed to get file info: {info.get('data', {}).get('error')}")
 
         file_size = info["data"]["size"]
         current_offset = 0
@@ -244,7 +248,8 @@ class StreamingClient:
         # Get file size
         info = self._send_request("file/info", {"provider_id": provider_id})
         if info.get("status") != "success":
-            raise ValueError(f"Failed to get file info: {info.get('data', {}).get('error')}")
+            raise ValueError(
+                f"Failed to get file info: {info.get('data', {}).get('error')}")
 
         file_size = info["data"]["size"]
         current_offset = 0
@@ -292,7 +297,8 @@ class StreamingClient:
         # Get file size
         info = self._send_request("file/info", {"provider_id": provider_id})
         if info.get("status") != "success":
-            raise ValueError(f"Failed to get file info: {info.get('data', {}).get('error')}")
+            raise ValueError(
+                f"Failed to get file info: {info.get('data', {}).get('error')}")
 
         file_size = info["data"]["size"]
         current_offset = 0

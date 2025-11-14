@@ -73,7 +73,8 @@ class RequestBatcher:
         self.timeout = timeout
         self.max_workers = max_workers
 
-        self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
+        self._executor = concurrent.futures.ThreadPoolExecutor(
+            max_workers=max_workers)
         self._lock = threading.Lock()
 
     def _send_single_request(
@@ -122,7 +123,8 @@ class RequestBatcher:
 
             for req in requests:
                 try:
-                    result, latency = self._send_single_request(sock, req.endpoint, req.data)
+                    result, latency = self._send_single_request(
+                        sock, req.endpoint, req.data)
 
                     responses.append(BatchResponse(
                         request_id=req.request_id,
@@ -165,7 +167,8 @@ class RequestBatcher:
             sock.settimeout(self.timeout)
             sock.connect((self.host, self.port))
 
-            result, latency = self._send_single_request(sock, request.endpoint, request.data)
+            result, latency = self._send_single_request(
+                sock, request.endpoint, request.data)
 
             sock.close()
 
@@ -198,7 +201,7 @@ class RequestBatcher:
 
         # Collect results maintaining order
         responses = []
-        request_map = {req.request_id: req for req in requests}
+        # request_map = {req.request_id: req for req in requests}
 
         for future in concurrent.futures.as_completed(futures):
             try:
@@ -253,7 +256,8 @@ class RequestBatcher:
                     while b"\n" not in response:
                         chunk = sock.recv(4096)
                         if not chunk:
-                            raise ConnectionError("Connection closed by server")
+                            raise ConnectionError(
+                                "Connection closed by server")
                         response += chunk
 
                     end = time.perf_counter()

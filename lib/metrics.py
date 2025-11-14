@@ -14,13 +14,12 @@ Metrics are exposed on a configurable HTTP endpoint for Prometheus scraping.
 
 import time
 import logging
-from typing import Dict, Any, Optional, Callable
+from typing import Any, Optional, Callable
 from functools import wraps
 from prometheus_client import (
     Counter,
     Histogram,
     Gauge,
-    Summary,
     Info,
     CollectorRegistry,
     generate_latest,
@@ -82,7 +81,8 @@ class ImHexMCPMetrics:
         self.bytes_transferred = Counter(
             'imhex_mcp_bytes_transferred_total',
             'Total bytes transferred',
-            ['direction', 'compressed'],  # direction: sent/received, compressed: yes/no
+            # direction: sent/received, compressed: yes/no
+            ['direction', 'compressed'],
             registry=self.registry
         )
 
@@ -95,7 +95,8 @@ class ImHexMCPMetrics:
         self.compression_operations = Counter(
             'imhex_mcp_compression_operations_total',
             'Compression operations by type and result',
-            ['operation', 'result'],  # operation: compress/decompress, result: success/skipped_small/skipped_ratio/failed
+            # operation: compress/decompress, result: success/skipped_small/skipped_ratio/failed
+            ['operation', 'result'],
             registry=self.registry
         )
 
@@ -110,7 +111,8 @@ class ImHexMCPMetrics:
         self.pool_operations = Counter(
             'imhex_mcp_pool_operations_total',
             'Connection pool operations',
-            ['operation', 'result'],  # operation: acquire/release, result: success/timeout/error
+            # operation: acquire/release, result: success/timeout/error
+            ['operation', 'result'],
             registry=self.registry
         )
 
@@ -187,7 +189,8 @@ class ImHexMCPMetrics:
 
         logger.info("Prometheus metrics initialized")
 
-    def set_info(self, version: str, python_version: str, **kwargs: Any) -> None:
+    def set_info(
+            self, version: str, python_version: str, **kwargs: Any) -> None:
         """Set server information.
 
         Args:
@@ -229,12 +232,15 @@ class ImHexMCPMetrics:
                 except Exception as e:
                     status = 'error'
                     error_type = type(e).__name__
-                    self.errors.labels(error_type=error_type, endpoint=endpoint).inc()
+                    self.errors.labels(error_type=error_type,
+                                       endpoint=endpoint).inc()
                     raise
                 finally:
                     duration = time.perf_counter() - start_time
-                    self.request_count.labels(endpoint=endpoint, status=status).inc()
-                    self.request_duration.labels(endpoint=endpoint).observe(duration)
+                    self.request_count.labels(
+                        endpoint=endpoint, status=status).inc()
+                    self.request_duration.labels(
+                        endpoint=endpoint).observe(duration)
                     self.active_requests.dec()
 
             return wrapper
@@ -257,8 +263,10 @@ class ImHexMCPMetrics:
             compressed_size: Compressed size (for compression operations)
             result: Operation result (success/skipped_small/skipped_ratio/failed)
         """
-        self.compression_time.labels(operation=operation).observe(duration_seconds)
-        self.compression_operations.labels(operation=operation, result=result).inc()
+        self.compression_time.labels(
+            operation=operation).observe(duration_seconds)
+        self.compression_operations.labels(
+            operation=operation, result=result).inc()
 
         if compressed_size is not None and result == 'success':
             ratio = compressed_size / original_size if original_size > 0 else 1.0
@@ -287,8 +295,10 @@ class ImHexMCPMetrics:
             compressed_size: Compressed data size
             decompressed_size: Decompressed data size
         """
-        self.compression_time.labels(operation='decompress').observe(duration_seconds)
-        self.compression_operations.labels(operation='decompress', result='success').inc()
+        self.compression_time.labels(
+            operation='decompress').observe(duration_seconds)
+        self.compression_operations.labels(
+            operation='decompress', result='success').inc()
 
         # Track received bytes
         self.bytes_transferred.labels(
@@ -418,7 +428,8 @@ def get_metrics() -> ImHexMCPMetrics:
     return _metrics
 
 
-def initialize_metrics(version: str = "1.0.0", **kwargs: Any) -> ImHexMCPMetrics:
+def initialize_metrics(
+        version: str = "1.0.0", **kwargs: Any) -> ImHexMCPMetrics:
     """Initialize global metrics with server info.
 
     Args:

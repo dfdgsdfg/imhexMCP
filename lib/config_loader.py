@@ -97,7 +97,8 @@ class InputValidationConfig(BaseModel):
     """Input validation configuration."""
     enabled: bool = True
     max_payload_size: int = 104857600  # 100MB
-    allowed_paths: List[str] = Field(default_factory=lambda: ["/tmp", "/Users", "/home"])
+    allowed_paths: List[str] = Field(default_factory=lambda: [
+                                     "/tmp", "/Users", "/home"])
 
 
 class CorsConfig(BaseModel):
@@ -108,8 +109,10 @@ class CorsConfig(BaseModel):
 
 class SecurityConfig(BaseModel):
     """Security configuration."""
-    rate_limiting: RateLimitingConfig = Field(default_factory=RateLimitingConfig)
-    input_validation: InputValidationConfig = Field(default_factory=InputValidationConfig)
+    rate_limiting: RateLimitingConfig = Field(
+        default_factory=RateLimitingConfig)
+    input_validation: InputValidationConfig = Field(
+        default_factory=InputValidationConfig)
     cors: CorsConfig = Field(default_factory=CorsConfig)
 
 
@@ -139,8 +142,10 @@ class DevelopmentConfig(BaseModel):
 class AppConfig(BaseModel):
     """Complete application configuration."""
     server: ServerConfig = Field(default_factory=ServerConfig)
-    compression: CompressionConfigModel = Field(default_factory=CompressionConfigModel)
-    connection_pool: ConnectionPoolConfig = Field(default_factory=ConnectionPoolConfig)
+    compression: CompressionConfigModel = Field(
+        default_factory=CompressionConfigModel)
+    connection_pool: ConnectionPoolConfig = Field(
+        default_factory=ConnectionPoolConfig)
     caching: CachingConfig = Field(default_factory=CachingConfig)
     batching: BatchingConfig = Field(default_factory=BatchingConfig)
     health: HealthConfig = Field(default_factory=HealthConfig)

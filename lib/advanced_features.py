@@ -117,7 +117,8 @@ class PriorityQueue:
         await self._queue.put(request)
         self._active_requests[request_id] = request
 
-        logger.debug(f"Submitted request {request_id} with priority {priority.name}")
+        logger.debug(
+            f"Submitted request {request_id} with priority {priority.name}")
 
         return future
 
@@ -178,7 +179,8 @@ class PriorityScheduler:
             return
 
         self._running = True
-        logger.info(f"Starting priority scheduler with {self.num_workers} workers")
+        logger.info(
+            f"Starting priority scheduler with {self.num_workers} workers")
 
         for i in range(self.num_workers):
             worker = asyncio.create_task(self._worker_loop(i))
@@ -243,7 +245,6 @@ class CircuitBreakerConfig:
 
 class CircuitBreakerError(Exception):
     """Exception raised when circuit breaker is open."""
-    pass
 
 
 class CircuitBreaker:
@@ -314,7 +315,7 @@ class CircuitBreaker:
         if self._state == CircuitState.OPEN:
             # Check if timeout elapsed
             if (self._last_failure_time and
-                time.monotonic() - self._last_failure_time >= self.config.timeout):
+                    time.monotonic() - self._last_failure_time >= self.config.timeout):
                 self._transition_to_half_open()
 
         elif self._state == CircuitState.CLOSED:
@@ -356,7 +357,7 @@ class CircuitBreaker:
             result = await coro()
             await self._on_success()
             return result
-        except Exception as e:
+        except Exception:
             await self._on_failure()
             raise
 

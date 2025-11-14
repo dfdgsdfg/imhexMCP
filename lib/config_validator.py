@@ -53,7 +53,8 @@ class ConfigValidator:
         self._validate_consistency(config)
 
         # Check if any errors
-        has_errors = any(r.level == ValidationLevel.ERROR for r in self.results)
+        has_errors = any(
+            r.level == ValidationLevel.ERROR for r in self.results)
         return (not has_errors, self.results)
 
     def _validate_connection(self, config):
@@ -67,8 +68,8 @@ class ConfigValidator:
                 suggestion="Set to 'localhost' for local connections"
             ))
         elif config.imhex_host not in ["localhost", "127.0.0.1"] and \
-             not config.imhex_host.startswith("192.168.") and \
-             not config.imhex_host.startswith("10."):
+                not config.imhex_host.startswith("192.168.") and \
+                not config.imhex_host.startswith("10."):
             self.results.append(ValidationResult(
                 level=ValidationLevel.WARNING,
                 field="imhex_host",
@@ -264,8 +265,8 @@ class ConfigValidator:
         """Validate configuration consistency."""
         # Total timeout calculation
         total_timeout = (config.connection_timeout +
-                        config.read_timeout +
-                        config.max_retries * config.retry_delay)
+                         config.read_timeout +
+                         config.max_retries * config.retry_delay)
 
         if total_timeout > 300:  # 5 minutes
             self.results.append(ValidationResult(
@@ -289,7 +290,8 @@ def validate_config(config) -> Tuple[bool, List[ValidationResult]]:
     return validator.validate_all(config)
 
 
-def validate_and_log(config, logger_obj: Optional[logging.Logger] = None) -> bool:
+def validate_and_log(
+        config, logger_obj: Optional[logging.Logger] = None) -> bool:
     """
     Validate configuration and log results.
 
@@ -312,7 +314,8 @@ def validate_and_log(config, logger_obj: Optional[logging.Logger] = None) -> boo
 
     # Log errors
     if errors:
-        logger_obj.error(f"Configuration validation: FAILED ({len(errors)} errors)")
+        logger_obj.error(
+            f"Configuration validation: FAILED ({len(errors)} errors)")
         for result in errors:
             logger_obj.error(f"  [ERROR] {result.field}: {result.message}")
             if result.suggestion:
@@ -334,9 +337,11 @@ def validate_and_log(config, logger_obj: Optional[logging.Logger] = None) -> boo
 
     # Summary
     if is_valid:
-        logger_obj.info(f"Configuration validation: PASSED ({len(warnings)} warnings, {len(infos)} notes)")
+        logger_obj.info(
+            f"Configuration validation: PASSED ({len(warnings)} warnings, {len(infos)} notes)")
     else:
-        logger_obj.error("Configuration validation: FAILED - Cannot start with errors")
+        logger_obj.error(
+            "Configuration validation: FAILED - Cannot start with errors")
 
     return is_valid
 

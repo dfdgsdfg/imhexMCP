@@ -6,17 +6,16 @@ High-performance client wrapper with automatic response caching.
 Reduces redundant requests and improves throughput for repeated operations.
 """
 
+from error_handling import retry_with_backoff
+from cache import ResponseCache, CachingStrategy
 import socket
 import json
 import sys
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
 
 # Add lib directory to path
 sys.path.insert(0, str(Path(__file__).parent))
-
-from cache import ResponseCache, CachingStrategy
-from error_handling import retry_with_backoff, ConnectionError as ImHexConnectionError
 
 
 class CachedImHexClient:
@@ -96,7 +95,8 @@ class CachedImHexClient:
         """Get appropriate TTL for endpoint."""
         return CachingStrategy.get_ttl_for_endpoint(endpoint)
 
-    @retry_with_backoff(max_attempts=3, initial_delay=0.5, exponential_base=2.0)
+    @retry_with_backoff(max_attempts=3, initial_delay=0.5,
+                        exponential_base=2.0)
     def _send_request(
         self,
         endpoint: str,
@@ -136,7 +136,7 @@ class CachedImHexClient:
             sock.close()
             return json.loads(response.decode().strip())
 
-        except (socket.error, socket.timeout, ConnectionRefusedError) as e:
+        except (socket.error, socket.timeout, ConnectionRefusedError):
             # Let retry decorator handle these
             raise
 
@@ -161,7 +161,8 @@ class CachedImHexClient:
             Response dictionary
         """
         # Check cache first (if enabled and cacheable)
-        if not bypass_cache and self.cache_enabled and self._is_cacheable(endpoint):
+        if not bypass_cache and self.cache_enabled and self._is_cacheable(
+                endpoint):
             cached_result = self.cache.get(endpoint, data)
             if cached_result is not None:
                 return cached_result
@@ -177,7 +178,7 @@ class CachedImHexClient:
         # Cache successful responses for cacheable endpoints
         if (self.cache_enabled and
             self._is_cacheable(endpoint) and
-            result.get("status") == "success"):
+                result.get("status") == "success"):
             ttl = self._get_cache_ttl(endpoint)
             self.cache.set(endpoint, data, result, ttl=ttl)
 
