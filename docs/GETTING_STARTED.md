@@ -18,11 +18,16 @@ This guide will help you get started with ImHex MCP, from installation to writin
 Before you begin, ensure you have:
 
 1. **ImHex** hex editor installed
-2. **Python 3.9+** (Python 3.14 recommended)
+2. **Python 3.9+** (Python 3.14 recommended for full type support)
 3. **Basic knowledge** of:
    - Python programming
    - Binary file formats
    - Network sockets
+
+The codebase includes:
+- Full type hints (PEP 561 compliant)
+- Comprehensive test coverage
+- Production-ready security and logging modules
 
 ## Installation
 
