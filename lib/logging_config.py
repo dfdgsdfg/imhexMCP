@@ -122,7 +122,9 @@ class ConsoleFormatter(logging.Formatter):
 
         # Add exception if present
         if record.exc_info:
-            message += "\n" + "".join(traceback.format_exception(*record.exc_info))
+            message += "\n" + "".join(
+                traceback.format_exception(*record.exc_info)
+            )
 
         return message
 
@@ -210,9 +212,9 @@ class LoggerAdapter(logging.LoggerAdapter):
         # Merge adapter context with extra context
         extra = kwargs.get("extra", {})
         adapter_context = dict(self.extra) if self.extra else {}
-        extra_context = extra.get(
-            "context", {}) if isinstance(
-            extra, dict) else {}
+        extra_context = (
+            extra.get("context", {}) if isinstance(extra, dict) else {}
+        )
         extra["context"] = {**adapter_context, **extra_context}
         kwargs["extra"] = extra
         return msg, kwargs

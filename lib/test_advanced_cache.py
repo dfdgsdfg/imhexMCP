@@ -68,7 +68,8 @@ class TestCacheTier:
     async def test_size_limit_eviction(self):
         """Test eviction based on size limit."""
         config = CacheTierConfig(
-            max_size=100, max_bytes=250, policy=CachePolicy.FIFO)
+            max_size=100, max_bytes=250, policy=CachePolicy.FIFO
+        )
         tier = CacheTier("test", config)
 
         # Add entries totaling 300 bytes
@@ -126,7 +127,8 @@ class TestPatternDetector:
     async def test_sequential_pattern(self):
         """Test sequential access pattern detection."""
         config = PredictiveCacheConfig(
-            sequential_threshold=3, pattern_window=10)
+            sequential_threshold=3, pattern_window=10
+        )
         detector = PatternDetector(config)
 
         # Record sequential accesses (stride of 1)
@@ -144,7 +146,8 @@ class TestPatternDetector:
     async def test_strided_pattern(self):
         """Test strided access pattern detection."""
         config = PredictiveCacheConfig(
-            sequential_threshold=3, pattern_window=10)
+            sequential_threshold=3, pattern_window=10
+        )
         detector = PatternDetector(config)
 
         # Record strided accesses (every 500 bytes)
@@ -161,7 +164,8 @@ class TestPatternDetector:
     async def test_random_pattern(self):
         """Test random access pattern detection."""
         config = PredictiveCacheConfig(
-            sequential_threshold=3, pattern_window=10)
+            sequential_threshold=3, pattern_window=10
+        )
         detector = PatternDetector(config)
 
         # Record random accesses
@@ -178,7 +182,8 @@ class TestPatternDetector:
     async def test_insufficient_data(self):
         """Test with insufficient data for pattern detection."""
         config = PredictiveCacheConfig(
-            sequential_threshold=5, pattern_window=10)
+            sequential_threshold=5, pattern_window=10
+        )
         detector = PatternDetector(config)
 
         # Record only 2 accesses (less than threshold)
@@ -263,14 +268,11 @@ class TestMultiTierCache:
             return f"data_{key}"
 
         predictive_config = PredictiveCacheConfig(
-            enable_prefetch=True,
-            prefetch_distance=3,
-            sequential_threshold=3
+            enable_prefetch=True, prefetch_distance=3, sequential_threshold=3
         )
 
         cache = MultiTierCache(
-            predictive_config=predictive_config,
-            data_loader=data_loader
+            predictive_config=predictive_config, data_loader=data_loader
         )
 
         # Record sequential accesses to trigger prefetch
@@ -298,8 +300,7 @@ class TestMultiTierCache:
         predictive_config = PredictiveCacheConfig(enable_warming=True)
 
         cache = MultiTierCache(
-            predictive_config=predictive_config,
-            data_loader=data_loader
+            predictive_config=predictive_config, data_loader=data_loader
         )
 
         # Warm cache with keys

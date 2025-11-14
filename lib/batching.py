@@ -17,14 +17,20 @@ from enum import Enum
 
 class BatchStrategy(Enum):
     """Batching strategies."""
-    SEQUENTIAL = "sequential"  # Execute requests sequentially on single connection
-    CONCURRENT = "concurrent"  # Execute requests concurrently with separate connections
-    PIPELINED = "pipelined"    # Send all requests at once, receive in order
+
+    SEQUENTIAL = (
+        "sequential"  # Execute requests sequentially on single connection
+    )
+    CONCURRENT = (
+        "concurrent"  # Execute requests concurrently with separate connections
+    )
+    PIPELINED = "pipelined"  # Send all requests at once, receive in order
 
 
 @dataclass
 class BatchRequest:
     """Single request in a batch."""
+
     request_id: str
     endpoint: str
     data: Optional[Dict[str, Any]] = None
@@ -33,6 +39,7 @@ class BatchRequest:
 @dataclass
 class BatchResponse:
     """Single response from a batch."""
+
     request_id: str
     success: bool
     result: Dict[str, Any]
@@ -57,7 +64,7 @@ class RequestBatcher:
         host: str = "localhost",
         port: int = 31337,
         timeout: int = 30,
-        max_workers: int = 5
+        max_workers: int = 5,
     ):
         """
         Initialize request batcher.
@@ -74,24 +81,22 @@ class RequestBatcher:
         self.max_workers = max_workers
 
         self._executor = concurrent.futures.ThreadPoolExecutor(
-            max_workers=max_workers)
+            max_workers=max_workers
+        )
         self._lock = threading.Lock()
 
     def _send_single_request(
         self,
         sock: socket.socket,
         endpoint: str,
-        data: Optional[Dict[str, Any]] = None
+        data: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Send single request on existing socket."""
         import time
 
         start = time.perf_counter()
 
-        request = json.dumps({
-            "endpoint": endpoint,
-            "data": data or {}
-        }) + "\n"
+        request = json.dumps({"endpoint": endpoint, "data": data or {}}) + "\n"
 
         sock.sendall(request.encode())
 
@@ -109,8 +114,7 @@ class RequestBatcher:
         return result, latency
 
     def _execute_sequential(
-        self,
-        requests: List[BatchRequest]
+        self, requests: List[BatchRequest]
     ) -> List[BatchResponse]:
         """Execute requests sequentially on single connection."""
         responses = []
@@ -124,42 +128,51 @@ class RequestBatcher:
             for req in requests:
                 try:
                     result, latency = self._send_single_request(
-                        sock, req.endpoint, req.data)
+                        sock, req.endpoint, req.data
+                    )
 
-                    responses.append(BatchResponse(
-                        request_id=req.request_id,
-                        success=result.get("status") == "success",
-                        result=result,
-                        latency_ms=latency
-                    ))
+                    responses.append(
+                        BatchResponse(
+                            request_id=req.request_id,
+                            success=result.get("status") == "success",
+                            result=result,
+                            latency_ms=latency,
+                        )
+                    )
 
                 except Exception as e:
-                    responses.append(BatchResponse(
-                        request_id=req.request_id,
-                        success=False,
-                        result={"status": "error", "data": {"error": str(e)}},
-                        latency_ms=0.0,
-                        error=str(e)
-                    ))
+                    responses.append(
+                        BatchResponse(
+                            request_id=req.request_id,
+                            success=False,
+                            result={
+                                "status": "error",
+                                "data": {"error": str(e)},
+                            },
+                            latency_ms=0.0,
+                            error=str(e),
+                        )
+                    )
 
             sock.close()
 
         except Exception as e:
             # Connection failed - mark all remaining requests as failed
-            for req in requests[len(responses):]:
-                responses.append(BatchResponse(
-                    request_id=req.request_id,
-                    success=False,
-                    result={"status": "error", "data": {"error": str(e)}},
-                    latency_ms=0.0,
-                    error=str(e)
-                ))
+            for req in requests[len(responses) :]:
+                responses.append(
+                    BatchResponse(
+                        request_id=req.request_id,
+                        success=False,
+                        result={"status": "error", "data": {"error": str(e)}},
+                        latency_ms=0.0,
+                        error=str(e),
+                    )
+                )
 
         return responses
 
     def _execute_single_concurrent(
-        self,
-        request: BatchRequest
+        self, request: BatchRequest
     ) -> BatchResponse:
         """Execute single request with its own connection."""
         try:
@@ -168,7 +181,8 @@ class RequestBatcher:
             sock.connect((self.host, self.port))
 
             result, latency = self._send_single_request(
-                sock, request.endpoint, request.data)
+                sock, request.endpoint, request.data
+            )
 
             sock.close()
 
@@ -176,7 +190,7 @@ class RequestBatcher:
                 request_id=request.request_id,
                 success=result.get("status") == "success",
                 result=result,
-                latency_ms=latency
+                latency_ms=latency,
             )
 
         except Exception as e:
@@ -185,12 +199,11 @@ class RequestBatcher:
                 success=False,
                 result={"status": "error", "data": {"error": str(e)}},
                 latency_ms=0.0,
-                error=str(e)
+                error=str(e),
             )
 
     def _execute_concurrent(
-        self,
-        requests: List[BatchRequest]
+        self, requests: List[BatchRequest]
     ) -> List[BatchResponse]:
         """Execute requests concurrently with separate connections."""
         # Submit all requests to thread pool
@@ -209,13 +222,15 @@ class RequestBatcher:
                 responses.append(response)
             except Exception as e:
                 req = futures[future]
-                responses.append(BatchResponse(
-                    request_id=req.request_id,
-                    success=False,
-                    result={"status": "error", "data": {"error": str(e)}},
-                    latency_ms=0.0,
-                    error=str(e)
-                ))
+                responses.append(
+                    BatchResponse(
+                        request_id=req.request_id,
+                        success=False,
+                        result={"status": "error", "data": {"error": str(e)}},
+                        latency_ms=0.0,
+                        error=str(e),
+                    )
+                )
 
         # Sort responses to match input order
         response_map = {r.request_id: r for r in responses}
@@ -224,8 +239,7 @@ class RequestBatcher:
         return ordered_responses
 
     def _execute_pipelined(
-        self,
-        requests: List[BatchRequest]
+        self, requests: List[BatchRequest]
     ) -> List[BatchResponse]:
         """Execute requests in pipelined mode (send all, receive all)."""
         import time
@@ -240,10 +254,12 @@ class RequestBatcher:
             # Send all requests
             start_times = []
             for req in requests:
-                request_data = json.dumps({
-                    "endpoint": req.endpoint,
-                    "data": req.data or {}
-                }) + "\n"
+                request_data = (
+                    json.dumps(
+                        {"endpoint": req.endpoint, "data": req.data or {}}
+                    )
+                    + "\n"
+                )
 
                 start = time.perf_counter()
                 sock.sendall(request_data.encode())
@@ -257,7 +273,8 @@ class RequestBatcher:
                         chunk = sock.recv(4096)
                         if not chunk:
                             raise ConnectionError(
-                                "Connection closed by server")
+                                "Connection closed by server"
+                            )
                         response += chunk
 
                     end = time.perf_counter()
@@ -265,41 +282,50 @@ class RequestBatcher:
 
                     result = json.loads(response.decode().strip())
 
-                    responses.append(BatchResponse(
-                        request_id=req.request_id,
-                        success=result.get("status") == "success",
-                        result=result,
-                        latency_ms=latency
-                    ))
+                    responses.append(
+                        BatchResponse(
+                            request_id=req.request_id,
+                            success=result.get("status") == "success",
+                            result=result,
+                            latency_ms=latency,
+                        )
+                    )
 
                 except Exception as e:
-                    responses.append(BatchResponse(
-                        request_id=req.request_id,
-                        success=False,
-                        result={"status": "error", "data": {"error": str(e)}},
-                        latency_ms=0.0,
-                        error=str(e)
-                    ))
+                    responses.append(
+                        BatchResponse(
+                            request_id=req.request_id,
+                            success=False,
+                            result={
+                                "status": "error",
+                                "data": {"error": str(e)},
+                            },
+                            latency_ms=0.0,
+                            error=str(e),
+                        )
+                    )
 
             sock.close()
 
         except Exception as e:
             # Connection failed - mark all remaining requests as failed
-            for req in requests[len(responses):]:
-                responses.append(BatchResponse(
-                    request_id=req.request_id,
-                    success=False,
-                    result={"status": "error", "data": {"error": str(e)}},
-                    latency_ms=0.0,
-                    error=str(e)
-                ))
+            for req in requests[len(responses) :]:
+                responses.append(
+                    BatchResponse(
+                        request_id=req.request_id,
+                        success=False,
+                        result={"status": "error", "data": {"error": str(e)}},
+                        latency_ms=0.0,
+                        error=str(e),
+                    )
+                )
 
         return responses
 
     def execute_batch(
         self,
         requests: List[BatchRequest],
-        strategy: BatchStrategy = BatchStrategy.SEQUENTIAL
+        strategy: BatchStrategy = BatchStrategy.SEQUENTIAL,
     ) -> List[BatchResponse]:
         """
         Execute batch of requests.
@@ -326,7 +352,7 @@ class RequestBatcher:
     def execute_batch_dict(
         self,
         requests: List[Tuple[str, Optional[Dict[str, Any]]]],
-        strategy: BatchStrategy = BatchStrategy.SEQUENTIAL
+        strategy: BatchStrategy = BatchStrategy.SEQUENTIAL,
     ) -> List[Dict[str, Any]]:
         """
         Execute batch from simple (endpoint, data) tuples.
@@ -339,11 +365,7 @@ class RequestBatcher:
             List of result dictionaries
         """
         batch_requests = [
-            BatchRequest(
-                request_id=f"req_{i}",
-                endpoint=endpoint,
-                data=data
-            )
+            BatchRequest(request_id=f"req_{i}", endpoint=endpoint, data=data)
             for i, (endpoint, data) in enumerate(requests)
         ]
 
@@ -376,26 +398,22 @@ class BatchBuilder:
         self,
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
-        request_id: Optional[str] = None
-    ) -> 'BatchBuilder':
+        request_id: Optional[str] = None,
+    ) -> "BatchBuilder":
         """Add request to batch."""
         if request_id is None:
             request_id = f"req_{self._counter}"
             self._counter += 1
 
-        self.requests.append(BatchRequest(
-            request_id=request_id,
-            endpoint=endpoint,
-            data=data
-        ))
+        self.requests.append(
+            BatchRequest(request_id=request_id, endpoint=endpoint, data=data)
+        )
 
         return self
 
     def add_multiple(
-        self,
-        endpoint: str,
-        data_list: List[Dict[str, Any]]
-    ) -> 'BatchBuilder':
+        self, endpoint: str, data_list: List[Dict[str, Any]]
+    ) -> "BatchBuilder":
         """Add multiple requests to same endpoint with different data."""
         for data in data_list:
             self.add(endpoint, data)
@@ -405,7 +423,7 @@ class BatchBuilder:
         """Build final batch."""
         return self.requests
 
-    def clear(self) -> 'BatchBuilder':
+    def clear(self) -> "BatchBuilder":
         """Clear all requests."""
         self.requests = []
         self._counter = 0
@@ -413,9 +431,7 @@ class BatchBuilder:
 
 
 def batch_read_operations(
-    provider_id: int,
-    offsets: List[int],
-    size: int
+    provider_id: int, offsets: List[int], size: int
 ) -> List[BatchRequest]:
     """
     Helper to create batch of read operations.
@@ -432,16 +448,14 @@ def batch_read_operations(
         BatchRequest(
             request_id=f"read_{offset}",
             endpoint="data/read",
-            data={"provider_id": provider_id, "offset": offset, "size": size}
+            data={"provider_id": provider_id, "offset": offset, "size": size},
         )
         for offset in offsets
     ]
 
 
 def batch_hash_operations(
-    provider_id: int,
-    regions: List[Tuple[int, int]],
-    algorithm: str = "md5"
+    provider_id: int, regions: List[Tuple[int, int]], algorithm: str = "md5"
 ) -> List[BatchRequest]:
     """
     Helper to create batch of hash operations.
@@ -462,8 +476,8 @@ def batch_hash_operations(
                 "provider_id": provider_id,
                 "offset": offset,
                 "size": size,
-                "algorithm": algorithm
-            }
+                "algorithm": algorithm,
+            },
         )
         for offset, size in regions
     ]

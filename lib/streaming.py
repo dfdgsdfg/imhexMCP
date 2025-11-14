@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 @dataclass
 class StreamChunk:
     """Single chunk from a streaming operation."""
+
     offset: int
     size: int
     data: bytes
@@ -45,7 +46,7 @@ class StreamingClient:
         host: str = "localhost",
         port: int = 31337,
         timeout: int = 30,
-        default_chunk_size: int = 4096
+        default_chunk_size: int = 4096,
     ):
         """
         Initialize streaming client.
@@ -61,12 +62,11 @@ class StreamingClient:
         self.timeout = timeout
         self.default_chunk_size = default_chunk_size
 
-    @retry_with_backoff(max_attempts=3, initial_delay=0.5,
-                        exponential_base=2.0)
+    @retry_with_backoff(
+        max_attempts=3, initial_delay=0.5, exponential_base=2.0
+    )
     def _send_request(
-        self,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None
+        self, endpoint: str, data: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Send single request with retry."""
         try:
@@ -74,10 +74,9 @@ class StreamingClient:
             sock.settimeout(self.timeout)
             sock.connect((self.host, self.port))
 
-            request = json.dumps({
-                "endpoint": endpoint,
-                "data": data or {}
-            }) + "\n"
+            request = (
+                json.dumps({"endpoint": endpoint, "data": data or {}}) + "\n"
+            )
 
             sock.sendall(request.encode())
 
@@ -98,7 +97,7 @@ class StreamingClient:
         provider_id: int,
         offset: int = 0,
         total_size: Optional[int] = None,
-        chunk_size: Optional[int] = None
+        chunk_size: Optional[int] = None,
     ) -> Iterator[StreamChunk]:
         """
         Stream data from provider in chunks (generator).
@@ -122,10 +121,12 @@ class StreamingClient:
         # Get file size if not specified
         if total_size is None:
             info = self._send_request(
-                "file/info", {"provider_id": provider_id})
+                "file/info", {"provider_id": provider_id}
+            )
             if info.get("status") != "success":
                 raise ValueError(
-                    f"Failed to get file info: {info.get('data', {}).get('error')}")
+                    f"Failed to get file info: {info.get('data', {}).get('error')}"
+                )
             total_size = info["data"]["size"]
 
         current_offset = offset
@@ -134,15 +135,19 @@ class StreamingClient:
         while bytes_remaining > 0:
             read_size = min(chunk_size, bytes_remaining)
 
-            result = self._send_request("data/read", {
-                "provider_id": provider_id,
-                "offset": current_offset,
-                "size": read_size
-            })
+            result = self._send_request(
+                "data/read",
+                {
+                    "provider_id": provider_id,
+                    "offset": current_offset,
+                    "size": read_size,
+                },
+            )
 
             if result.get("status") != "success":
                 raise IOError(
-                    f"Read failed at offset {current_offset}: {result.get('data', {}).get('error')}")
+                    f"Read failed at offset {current_offset}: {result.get('data', {}).get('error')}"
+                )
 
             # Decode hex data
             hex_data = result["data"]["data"]
@@ -153,7 +158,7 @@ class StreamingClient:
                 size=len(chunk_data),
                 data=chunk_data,
                 is_last=(bytes_remaining <= read_size),
-                total_size=total_size
+                total_size=total_size,
             )
 
             current_offset += len(chunk_data)
@@ -165,7 +170,7 @@ class StreamingClient:
         pattern: str,
         pattern_type: str = "hex",
         chunk_size: Optional[int] = None,
-        overlap_size: int = 256
+        overlap_size: int = 256,
     ) -> Iterator[Tuple[int, bytes]]:
         """
         Stream-search for pattern in large files.
@@ -193,7 +198,8 @@ class StreamingClient:
         info = self._send_request("file/info", {"provider_id": provider_id})
         if info.get("status") != "success":
             raise ValueError(
-                f"Failed to get file info: {info.get('data', {}).get('error')}")
+                f"Failed to get file info: {info.get('data', {}).get('error')}"
+            )
 
         file_size = info["data"]["size"]
         current_offset = 0
@@ -202,13 +208,16 @@ class StreamingClient:
             # Search in current chunk
             search_size = min(chunk_size, file_size - current_offset)
 
-            result = self._send_request("data/search", {
-                "provider_id": provider_id,
-                "pattern": pattern,
-                "type": pattern_type,
-                "offset": current_offset,
-                "size": search_size
-            })
+            result = self._send_request(
+                "data/search",
+                {
+                    "provider_id": provider_id,
+                    "pattern": pattern,
+                    "type": pattern_type,
+                    "offset": current_offset,
+                    "size": search_size,
+                },
+            )
 
             if result.get("status") == "success":
                 matches = result.get("data", {}).get("matches", [])
@@ -226,7 +235,7 @@ class StreamingClient:
         self,
         provider_id: int,
         chunk_size: Optional[int] = None,
-        algorithm: str = "md5"
+        algorithm: str = "md5",
     ) -> Iterator[Tuple[int, str]]:
         """
         Stream hash calculation over file regions.
@@ -249,7 +258,8 @@ class StreamingClient:
         info = self._send_request("file/info", {"provider_id": provider_id})
         if info.get("status") != "success":
             raise ValueError(
-                f"Failed to get file info: {info.get('data', {}).get('error')}")
+                f"Failed to get file info: {info.get('data', {}).get('error')}"
+            )
 
         file_size = info["data"]["size"]
         current_offset = 0
@@ -257,12 +267,15 @@ class StreamingClient:
         while current_offset < file_size:
             hash_size = min(chunk_size, file_size - current_offset)
 
-            result = self._send_request("data/hash", {
-                "provider_id": provider_id,
-                "offset": current_offset,
-                "size": hash_size,
-                "algorithm": algorithm
-            })
+            result = self._send_request(
+                "data/hash",
+                {
+                    "provider_id": provider_id,
+                    "offset": current_offset,
+                    "size": hash_size,
+                    "algorithm": algorithm,
+                },
+            )
 
             if result.get("status") == "success":
                 hash_value = result["data"]["hash"]
@@ -274,7 +287,7 @@ class StreamingClient:
         self,
         provider_id: int,
         chunk_size: Optional[int] = None,
-        block_size: int = 256
+        block_size: int = 256,
     ) -> Iterator[Tuple[int, float]]:
         """
         Stream entropy calculation over file regions.
@@ -298,7 +311,8 @@ class StreamingClient:
         info = self._send_request("file/info", {"provider_id": provider_id})
         if info.get("status") != "success":
             raise ValueError(
-                f"Failed to get file info: {info.get('data', {}).get('error')}")
+                f"Failed to get file info: {info.get('data', {}).get('error')}"
+            )
 
         file_size = info["data"]["size"]
         current_offset = 0
@@ -306,12 +320,15 @@ class StreamingClient:
         while current_offset < file_size:
             entropy_size = min(chunk_size, file_size - current_offset)
 
-            result = self._send_request("data/entropy", {
-                "provider_id": provider_id,
-                "offset": current_offset,
-                "size": entropy_size,
-                "block_size": block_size
-            })
+            result = self._send_request(
+                "data/entropy",
+                {
+                    "provider_id": provider_id,
+                    "offset": current_offset,
+                    "size": entropy_size,
+                    "block_size": block_size,
+                },
+            )
 
             if result.get("status") == "success":
                 entropy_value = result["data"]["entropy"]
@@ -330,8 +347,7 @@ class StreamProcessor:
 
     @staticmethod
     def map_chunks(
-        stream: Iterator[StreamChunk],
-        transform: Callable[[bytes], bytes]
+        stream: Iterator[StreamChunk], transform: Callable[[bytes], bytes]
     ) -> Iterator[StreamChunk]:
         """
         Transform each chunk's data through a function.
@@ -354,13 +370,12 @@ class StreamProcessor:
                 size=len(transformed_data),
                 data=transformed_data,
                 is_last=chunk.is_last,
-                total_size=chunk.total_size
+                total_size=chunk.total_size,
             )
 
     @staticmethod
     def filter_chunks(
-        stream: Iterator[StreamChunk],
-        predicate: Callable[[bytes], bool]
+        stream: Iterator[StreamChunk], predicate: Callable[[bytes], bool]
     ) -> Iterator[StreamChunk]:
         """
         Filter chunks based on predicate.
@@ -386,7 +401,7 @@ class StreamProcessor:
     def reduce_stream(
         stream: Iterator[StreamChunk],
         reducer: Callable[[Any, bytes], Any],
-        initial: Any
+        initial: Any,
     ) -> Any:
         """
         Reduce stream to single value.
@@ -412,8 +427,7 @@ class StreamProcessor:
 
     @staticmethod
     def collect_stream(
-        stream: Iterator[StreamChunk],
-        output_path: Optional[str] = None
+        stream: Iterator[StreamChunk], output_path: Optional[str] = None
     ) -> bytes:
         """
         Collect entire stream into bytes or file.
@@ -430,7 +444,7 @@ class StreamProcessor:
             >>> StreamProcessor.collect_stream(stream, "/tmp/output.bin")
         """
         if output_path:
-            with open(output_path, 'wb') as f:
+            with open(output_path, "wb") as f:
                 for chunk in stream:
                     f.write(chunk.data)
             return b""
@@ -442,8 +456,7 @@ class StreamProcessor:
 
     @staticmethod
     def progress_tracker(
-        stream: Iterator[StreamChunk],
-        callback: Callable[[int, int], None]
+        stream: Iterator[StreamChunk], callback: Callable[[int, int], None]
     ) -> Iterator[StreamChunk]:
         """
         Track progress of stream processing.
@@ -473,6 +486,7 @@ class StreamProcessor:
 
 # Convenience functions for common streaming operations
 
+
 def stream_to_file(
     client: StreamingClient,
     provider_id: int,
@@ -480,7 +494,7 @@ def stream_to_file(
     offset: int = 0,
     total_size: Optional[int] = None,
     chunk_size: Optional[int] = None,
-    progress_callback: Optional[Callable[[int, int], None]] = None
+    progress_callback: Optional[Callable[[int, int], None]] = None,
 ) -> int:
     """
     Stream provider data to file.
@@ -510,7 +524,7 @@ def stream_to_file(
         stream = StreamProcessor.progress_tracker(stream, progress_callback)
 
     bytes_written = 0
-    with open(output_path, 'wb') as f:
+    with open(output_path, "wb") as f:
         for chunk in stream:
             f.write(chunk.data)
             bytes_written += chunk.size
@@ -522,7 +536,7 @@ def stream_compare(
     client: StreamingClient,
     provider_id1: int,
     provider_id2: int,
-    chunk_size: Optional[int] = None
+    chunk_size: Optional[int] = None,
 ) -> Iterator[Tuple[int, bytes, bytes]]:
     """
     Compare two providers by streaming both and yielding differences.
@@ -553,7 +567,7 @@ def create_streaming_client(
     host: str = "localhost",
     port: int = 31337,
     chunk_size: int = 4096,
-    **kwargs
+    **kwargs,
 ) -> StreamingClient:
     """
     Factory function to create streaming client.
@@ -573,8 +587,5 @@ def create_streaming_client(
         ...     process(chunk.data)
     """
     return StreamingClient(
-        host=host,
-        port=port,
-        default_chunk_size=chunk_size,
-        **kwargs
+        host=host, port=port, default_chunk_size=chunk_size, **kwargs
     )

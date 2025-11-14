@@ -19,7 +19,7 @@ from typing import Dict, Any, Optional, Callable, TypeVar, Generic
 sys.path.insert(0, str(Path(__file__).parent))
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class LazyProperty(Generic[T]):
@@ -152,7 +152,8 @@ def memoize(func: Callable[..., T]) -> Callable[..., T]:
     wrapper.cache_clear = lambda: cache.clear()
     wrapper.cache_info = lambda: {
         "size": len(cache),
-        "keys": list(cache.keys())}
+        "keys": list(cache.keys()),
+    }
 
     return wrapper
 
@@ -205,7 +206,7 @@ def memoize_with_ttl(ttl: float):
         wrapper.cache_info = lambda: {
             "size": len(cache),
             "keys": list(cache.keys()),
-            "ttl": ttl
+            "ttl": ttl,
         }
 
         return wrapper
@@ -228,10 +229,7 @@ class LazyProvider:
     """
 
     def __init__(
-        self,
-        provider_id: int,
-        client: Any,
-        preload_metadata: bool = False
+        self, provider_id: int, client: Any, preload_metadata: bool = False
     ):
         """
         Initialize lazy provider.
@@ -259,11 +257,13 @@ class LazyProvider:
                 return self._metadata
 
             result = self._client.send_request(
-                "file/info", {"provider_id": self.provider_id})
+                "file/info", {"provider_id": self.provider_id}
+            )
 
             if result.get("status") != "success":
                 raise ValueError(
-                    f"Failed to load provider {self.provider_id}: {result.get('data', {}).get('error')}")
+                    f"Failed to load provider {self.provider_id}: {result.get('data', {}).get('error')}"
+                )
 
             self._metadata = result["data"]
             return self._metadata
@@ -343,12 +343,12 @@ class LazyProviderList:
 
             if result.get("status") != "success":
                 raise ValueError(
-                    f"Failed to load providers: {result.get('data', {}).get('error')}")
+                    f"Failed to load providers: {result.get('data', {}).get('error')}"
+                )
 
             provider_data = result["data"].get("providers", [])
             self._providers = [
-                LazyProvider(p["id"], self._client)
-                for p in provider_data
+                LazyProvider(p["id"], self._client) for p in provider_data
             ]
 
             return self._providers
@@ -461,10 +461,7 @@ class LazyClient:
     """
 
     def __init__(
-        self,
-        host: str = "localhost",
-        port: int = 31337,
-        timeout: int = 10
+        self, host: str = "localhost", port: int = 31337, timeout: int = 10
     ):
         """
         Initialize lazy client.
@@ -482,12 +479,11 @@ class LazyClient:
         self._capabilities = LazyValue(lambda: self._load_capabilities())
         self._providers = LazyProviderList(self)
 
-    @retry_with_backoff(max_attempts=3, initial_delay=0.5,
-                        exponential_base=2.0)
+    @retry_with_backoff(
+        max_attempts=3, initial_delay=0.5, exponential_base=2.0
+    )
     def send_request(
-        self,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None
+        self, endpoint: str, data: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Send request to ImHex MCP."""
         try:
@@ -495,10 +491,9 @@ class LazyClient:
             sock.settimeout(self.timeout)
             sock.connect((self.host, self.port))
 
-            request = json.dumps({
-                "endpoint": endpoint,
-                "data": data or {}
-            }) + "\n"
+            request = (
+                json.dumps({"endpoint": endpoint, "data": data or {}}) + "\n"
+            )
 
             sock.sendall(request.encode())
 
@@ -519,7 +514,8 @@ class LazyClient:
         result = self.send_request("capabilities")
         if result.get("status") != "success":
             raise ValueError(
-                f"Failed to load capabilities: {result.get('data', {}).get('error')}")
+                f"Failed to load capabilities: {result.get('data', {}).get('error')}"
+            )
         return result["data"]
 
     @property
@@ -548,6 +544,7 @@ class LazyClient:
 
 
 # Optimization utilities
+
 
 def once(func: Callable[[], T]) -> Callable[[], T]:
     """
@@ -634,10 +631,9 @@ def lazy_import(module_name: str, attribute: Optional[str] = None):
 
 # Convenience functions
 
+
 def create_lazy_client(
-    host: str = "localhost",
-    port: int = 31337,
-    **kwargs
+    host: str = "localhost", port: int = 31337, **kwargs
 ) -> LazyClient:
     """
     Factory function to create lazy client.

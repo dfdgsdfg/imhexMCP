@@ -17,7 +17,7 @@ from security import (
     PayloadTooLarge,
     TokenBucket,
     InputValidator,
-    RateLimiter
+    RateLimiter,
 )
 
 
@@ -174,15 +174,15 @@ class TestInputValidator:
 
     def test_validate_endpoint_data(self):
         """Test endpoint data validation."""
-        validator = InputValidator(ValidationConfig(
-            allowed_path_patterns=[".*"]
-        ))
+        validator = InputValidator(
+            ValidationConfig(allowed_path_patterns=[".*"])
+        )
 
         data = {
             "provider_id": "0",
             "offset": "100",
             "size": "1024",
-            "pattern": "ABCD1234"
+            "pattern": "ABCD1234",
         }
 
         result = validator.validate_endpoint_data("file/read", data)
@@ -249,16 +249,16 @@ class TestInputValidator:
 
     def test_validate_endpoint_data_with_mixed_types(self):
         """Test endpoint validation with mixed field types."""
-        validator = InputValidator(ValidationConfig(
-            allowed_path_patterns=[".*"]
-        ))
+        validator = InputValidator(
+            ValidationConfig(allowed_path_patterns=[".*"])
+        )
 
         data = {
             "provider_id": 0,  # int
             "offset": "100",  # string
             "custom_field": "some_value",  # custom string
             "custom_int": 42,  # custom int
-            "custom_other": [1, 2, 3]  # other type (should pass through)
+            "custom_other": [1, 2, 3],  # other type (should pass through)
         }
 
         result = validator.validate_endpoint_data("test", data)
@@ -278,9 +278,7 @@ class TestSecurityManager:
         """Test rate limiting enforcement."""
         config = SecurityConfig(
             rate_limit=RateLimitConfig(
-                enabled=True,
-                requests_per_second=10.0,
-                burst_size=10
+                enabled=True, requests_per_second=10.0, burst_size=10
             )
         )
         manager = SecurityManager(config)
@@ -297,9 +295,7 @@ class TestSecurityManager:
     async def test_input_validation(self):
         """Test input validation."""
         config = SecurityConfig(
-            validation=ValidationConfig(
-                allowed_path_patterns=[".*"]
-            )
+            validation=ValidationConfig(allowed_path_patterns=[".*"])
         )
         manager = SecurityManager(config)
 
@@ -336,7 +332,7 @@ class TestSecurityManager:
                 requests_per_second=10.0,
                 # Large enough that per-client gets 2 tokens (20//10=2)
                 burst_size=20,
-                per_client=True
+                per_client=True,
             )
         )
         manager = SecurityManager(config)
@@ -357,7 +353,7 @@ class TestSecurityManager:
         """Test that disabled security allows all requests."""
         config = SecurityConfig(
             rate_limit=RateLimitConfig(enabled=False),
-            validation=ValidationConfig(enabled=False)
+            validation=ValidationConfig(enabled=False),
         )
         manager = SecurityManager(config)
 
@@ -373,7 +369,7 @@ class TestSecurityManager:
                 enabled=True,
                 requests_per_second=5.0,
                 burst_size=5,
-                per_client=False  # Global only
+                per_client=False,  # Global only
             )
         )
         manager = SecurityManager(config)
@@ -404,7 +400,7 @@ class TestSecurityManager:
             enabled=True,
             requests_per_second=10.0,
             burst_size=10,
-            per_client=True
+            per_client=True,
         )
         limiter = RateLimiter(config)
 

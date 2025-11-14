@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class HealthStatus(Enum):
     """Health check status."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -27,6 +28,7 @@ class HealthStatus(Enum):
 @dataclass
 class HealthCheck:
     """Result of a health check."""
+
     name: str
     status: HealthStatus
     message: str
@@ -36,13 +38,14 @@ class HealthCheck:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         result = asdict(self)
-        result['status'] = self.status.value
+        result["status"] = self.status.value
         return result
 
 
 @dataclass
 class Metrics:
     """System metrics."""
+
     # Request metrics
     total_requests: int = 0
     successful_requests: int = 0
@@ -50,7 +53,7 @@ class Metrics:
 
     # Timing metrics
     total_request_time_ms: float = 0.0
-    min_request_time_ms: float = float('inf')
+    min_request_time_ms: float = float("inf")
     max_request_time_ms: float = 0.0
 
     # Cache metrics (if enabled)
@@ -104,11 +107,11 @@ class Metrics:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary with calculated fields."""
         result = asdict(self)
-        result['avg_request_time_ms'] = self.avg_request_time_ms()
-        result['success_rate'] = self.success_rate()
-        result['error_rate'] = self.error_rate()
-        result['cache_hit_rate'] = self.cache_hit_rate()
-        result['uptime_seconds'] = self.uptime_seconds()
+        result["avg_request_time_ms"] = self.avg_request_time_ms()
+        result["success_rate"] = self.success_rate()
+        result["error_rate"] = self.error_rate()
+        result["cache_hit_rate"] = self.cache_hit_rate()
+        result["uptime_seconds"] = self.uptime_seconds()
         return result
 
 
@@ -135,40 +138,43 @@ class HealthMonitor:
                 return HealthCheck(
                     name="imhex_connection",
                     status=HealthStatus.HEALTHY,
-                    message=f"Connected to ImHex (response time: {duration_ms:.1f}ms)",
+                    message=f"Connected to ImHex (response time: {
+                        duration_ms:.1f}ms)",
                     details={
                         "response_time_ms": duration_ms,
-                        "endpoints": len(response.get("data", {}).get("endpoints", []))
-                    }
+                        "endpoints": len(
+                            response.get("data", {}).get("endpoints", [])
+                        ),
+                    },
                 )
             else:
                 return HealthCheck(
                     name="imhex_connection",
                     status=HealthStatus.DEGRADED,
                     message="ImHex responded but with error",
-                    details={"response": response}
+                    details={"response": response},
                 )
         except ConnectionError as e:
             return HealthCheck(
                 name="imhex_connection",
                 status=HealthStatus.UNHEALTHY,
                 message=f"Cannot connect to ImHex: {e}",
-                details={"error": str(e)}
+                details={"error": str(e)},
             )
         except Exception as e:
             return HealthCheck(
                 name="imhex_connection",
                 status=HealthStatus.UNHEALTHY,
                 message=f"Health check failed: {e}",
-                details={"error": str(e), "type": type(e).__name__}
+                details={"error": str(e), "type": type(e).__name__},
             )
 
     def check_cache_health(self, client) -> HealthCheck:
         """Check cache health (if enhanced client)."""
         try:
-            if hasattr(client, 'get_cache_stats'):
+            if hasattr(client, "get_cache_stats"):
                 stats = client.get_cache_stats()
-                hit_rate = stats.get('hit_rate', 0)
+                hit_rate = stats.get("hit_rate", 0)
 
                 if hit_rate < 50:
                     status = HealthStatus.DEGRADED
@@ -181,21 +187,21 @@ class HealthMonitor:
                     name="cache_health",
                     status=status,
                     message=message,
-                    details=stats
+                    details=stats,
                 )
             else:
                 return HealthCheck(
                     name="cache_health",
                     status=HealthStatus.UNKNOWN,
                     message="Cache not available (standard client)",
-                    details={}
+                    details={},
                 )
         except Exception as e:
             return HealthCheck(
                 name="cache_health",
                 status=HealthStatus.UNKNOWN,
                 message=f"Cannot check cache: {e}",
-                details={"error": str(e)}
+                details={"error": str(e)},
             )
 
     def check_metrics_health(self) -> HealthCheck:
@@ -227,8 +233,8 @@ class HealthMonitor:
                 details={
                     "total_requests": self.metrics.total_requests,
                     "error_rate": error_rate,
-                    "avg_latency_ms": avg_time
-                }
+                    "avg_latency_ms": avg_time,
+                },
             )
 
     def run_all_checks(self, client) -> Dict[str, HealthCheck]:
@@ -236,7 +242,7 @@ class HealthMonitor:
         checks = {
             "imhex_connection": self.check_imhex_connection(client),
             "cache": self.check_cache_health(client),
-            "metrics": self.check_metrics_health()
+            "metrics": self.check_metrics_health(),
         }
 
         with self._lock:
@@ -276,9 +282,11 @@ class HealthMonitor:
 
             self.metrics.total_request_time_ms += duration_ms
             self.metrics.min_request_time_ms = min(
-                self.metrics.min_request_time_ms, duration_ms)
+                self.metrics.min_request_time_ms, duration_ms
+            )
             self.metrics.max_request_time_ms = max(
-                self.metrics.max_request_time_ms, duration_ms)
+                self.metrics.max_request_time_ms, duration_ms
+            )
 
     def record_cache_hit(self):
         """Record a cache hit."""
@@ -325,8 +333,11 @@ class HealthMonitor:
                 "status": overall_status.value,
                 "timestamp": time.time(),
                 "uptime_seconds": self.metrics.uptime_seconds(),
-                "checks": {name: check.to_dict() for name, check in self.health_checks.items()},
-                "metrics": self.metrics.to_dict()
+                "checks": {
+                    name: check.to_dict()
+                    for name, check in self.health_checks.items()
+                },
+                "metrics": self.metrics.to_dict(),
             }
 
     def get_prometheus_metrics(self) -> str:
@@ -337,15 +348,18 @@ class HealthMonitor:
 
             # Request metrics
             lines.append(
-                "# HELP imhex_requests_total Total number of requests")
+                "# HELP imhex_requests_total Total number of requests"
+            )
             lines.append("# TYPE imhex_requests_total counter")
             lines.append(f"imhex_requests_total {metrics.total_requests}")
 
             lines.append(
-                "# HELP imhex_requests_successful Successful requests")
+                "# HELP imhex_requests_successful Successful requests"
+            )
             lines.append("# TYPE imhex_requests_successful counter")
             lines.append(
-                f"imhex_requests_successful {metrics.successful_requests}")
+                f"imhex_requests_successful {metrics.successful_requests}"
+            )
 
             lines.append("# HELP imhex_requests_failed Failed requests")
             lines.append("# TYPE imhex_requests_failed counter")
@@ -353,12 +367,15 @@ class HealthMonitor:
 
             # Timing metrics
             lines.append(
-                "# HELP imhex_request_duration_seconds Request duration")
+                "# HELP imhex_request_duration_seconds Request duration"
+            )
             lines.append("# TYPE imhex_request_duration_seconds summary")
             lines.append(
-                f"imhex_request_duration_seconds_sum {metrics.total_request_time_ms / 1000}")
+                f"imhex_request_duration_seconds_sum {metrics.total_request_time_ms / 1000}"
+            )
             lines.append(
-                f"imhex_request_duration_seconds_count {metrics.total_requests}")
+                f"imhex_request_duration_seconds_count {metrics.total_requests}"
+            )
 
             # Cache metrics
             lines.append("# HELP imhex_cache_hits Cache hits")
@@ -373,12 +390,14 @@ class HealthMonitor:
             lines.append("# HELP imhex_connections_total Total connections")
             lines.append("# TYPE imhex_connections_total counter")
             lines.append(
-                f"imhex_connections_total {metrics.total_connections}")
+                f"imhex_connections_total {metrics.total_connections}"
+            )
 
             lines.append("# HELP imhex_connections_active Active connections")
             lines.append("# TYPE imhex_connections_active gauge")
             lines.append(
-                f"imhex_connections_active {metrics.active_connections}")
+                f"imhex_connections_active {metrics.active_connections}"
+            )
 
             # Error metrics
             lines.append("# HELP imhex_errors_timeout Timeout errors")
@@ -388,7 +407,8 @@ class HealthMonitor:
             lines.append("# HELP imhex_errors_connection Connection errors")
             lines.append("# TYPE imhex_errors_connection counter")
             lines.append(
-                f"imhex_errors_connection {metrics.connection_errors}")
+                f"imhex_errors_connection {metrics.connection_errors}"
+            )
 
             # Uptime
             lines.append("# HELP imhex_uptime_seconds Uptime in seconds")
@@ -438,19 +458,26 @@ class HealthMonitor:
             print(f"  Failures: {self.metrics.connection_failures}")
 
             # Errors
-            if self.metrics.timeouts + self.metrics.connection_errors + self.metrics.other_errors > 0:
+            if (
+                self.metrics.timeouts
+                + self.metrics.connection_errors
+                + self.metrics.other_errors
+                > 0
+            ):
                 print("\nErrors:")
                 if self.metrics.timeouts > 0:
                     print(f"  Timeouts: {self.metrics.timeouts}")
                 if self.metrics.connection_errors > 0:
                     print(
-                        f"  Connection Errors: {self.metrics.connection_errors}")
+                        f"  Connection Errors: {self.metrics.connection_errors}"
+                    )
                 if self.metrics.other_errors > 0:
                     print(f"  Other Errors: {self.metrics.other_errors}")
 
             # Health status
             print(
-                f"\nOverall Status: {self.get_overall_status().value.upper()}")
+                f"\nOverall Status: {self.get_overall_status().value.upper()}"
+            )
 
             print("=" * 70 + "\n")
 

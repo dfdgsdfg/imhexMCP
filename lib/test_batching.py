@@ -16,7 +16,7 @@ from batching import (
     RequestBatcher,
     BatchBuilder,
     batch_read_operations,
-    batch_hash_operations
+    batch_hash_operations,
 )
 
 
@@ -42,8 +42,9 @@ class MockImHexServer:
         """Start mock server."""
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(
-            socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.server_socket.bind(('localhost', self.port))
+            socket.SOL_SOCKET, socket.SO_REUSEADDR, 1
+        )
+        self.server_socket.bind(("localhost", self.port))
         self.server_socket.listen(10)
         self.running = True
 
@@ -116,8 +117,8 @@ class MockImHexServer:
                 "status": "success",
                 "data": {
                     "version": "1.0.0",
-                    "endpoints": ["capabilities", "file/list", "data/read"]
-                }
+                    "endpoints": ["capabilities", "file/list", "data/read"],
+                },
             }
         elif endpoint == "file/list":
             return {
@@ -126,9 +127,9 @@ class MockImHexServer:
                     "count": 2,
                     "files": [
                         {"id": 0, "name": "test1.bin", "size": 1024},
-                        {"id": 1, "name": "test2.bin", "size": 2048}
-                    ]
-                }
+                        {"id": 1, "name": "test2.bin", "size": 2048},
+                    ],
+                },
             }
         elif endpoint == "data/read":
             offset = data.get("offset", 0)
@@ -138,29 +139,21 @@ class MockImHexServer:
                 "data": {
                     "offset": offset,
                     "size": size,
-                    "data": "00" * size  # Dummy hex data
-                }
+                    "data": "00" * size,  # Dummy hex data
+                },
             }
         elif endpoint == "data/hash":
             return {
                 "status": "success",
                 "data": {
                     "algorithm": data.get("algorithm", "md5"),
-                    "hash": "d41d8cd98f00b204e9800998ecf8427e"
-                }
+                    "hash": "d41d8cd98f00b204e9800998ecf8427e",
+                },
             }
         elif endpoint == "error":
-            return {
-                "status": "error",
-                "data": {
-                    "error": "Test error"
-                }
-            }
+            return {"status": "error", "data": {"error": "Test error"}}
         else:
-            return {
-                "status": "success",
-                "data": {}
-            }
+            return {"status": "success", "data": {}}
 
 
 class TestRequestBatcher:
@@ -184,7 +177,7 @@ class TestRequestBatcher:
         requests = [
             BatchRequest("req1", "capabilities"),
             BatchRequest("req2", "file/list"),
-            BatchRequest("req3", "data/read", {"offset": 0, "size": 16})
+            BatchRequest("req3", "data/read", {"offset": 0, "size": 16}),
         ]
 
         start = time.perf_counter()
@@ -206,7 +199,7 @@ class TestRequestBatcher:
             BatchRequest("req1", "capabilities"),
             BatchRequest("req2", "file/list"),
             BatchRequest("req3", "data/read", {"offset": 0, "size": 16}),
-            BatchRequest("req4", "data/read", {"offset": 16, "size": 16})
+            BatchRequest("req4", "data/read", {"offset": 16, "size": 16}),
         ]
 
         start = time.perf_counter()
@@ -225,7 +218,7 @@ class TestRequestBatcher:
         requests = [
             BatchRequest("req1", "capabilities"),
             BatchRequest("req2", "file/list"),
-            BatchRequest("req3", "data/read", {"offset": 0, "size": 16})
+            BatchRequest("req3", "data/read", {"offset": 0, "size": 16}),
         ]
 
         responses = batcher.execute_batch(requests, BatchStrategy.PIPELINED)
@@ -244,7 +237,7 @@ class TestRequestBatcher:
         requests = [
             BatchRequest("req1", "capabilities"),
             BatchRequest("req2", "error"),  # Endpoint that returns error
-            BatchRequest("req3", "file/list")
+            BatchRequest("req3", "file/list"),
         ]
 
         responses = batcher.execute_batch(requests, BatchStrategy.SEQUENTIAL)
@@ -255,8 +248,9 @@ class TestRequestBatcher:
         assert responses[2].success is True
 
         # Error should be recorded
-        assert responses[1].error is not None or "error" in responses[1].result.get(
-            "status", "")
+        assert responses[1].error is not None or "error" in responses[
+            1
+        ].result.get("status", "")
 
     def test_empty_batch(self, batcher):
         """Test empty batch."""
@@ -268,11 +262,12 @@ class TestRequestBatcher:
         requests = [
             ("capabilities", None),
             ("file/list", None),
-            ("data/read", {"offset": 0, "size": 16})
+            ("data/read", {"offset": 0, "size": 16}),
         ]
 
         results = batcher.execute_batch_dict(
-            requests, BatchStrategy.SEQUENTIAL)
+            requests, BatchStrategy.SEQUENTIAL
+        )
 
         assert len(results) == 3
         assert all(r.get("status") == "success" for r in results)
@@ -283,11 +278,13 @@ class TestBatchBuilder:
 
     def test_add_requests(self):
         """Test adding requests to builder."""
-        batch = (BatchBuilder()
-                 .add("capabilities")
-                 .add("file/list")
-                 .add("data/read", {"offset": 0, "size": 16})
-                 .build())
+        batch = (
+            BatchBuilder()
+            .add("capabilities")
+            .add("file/list")
+            .add("data/read", {"offset": 0, "size": 16})
+            .build()
+        )
 
         assert len(batch) == 3
         assert batch[0].endpoint == "capabilities"
@@ -300,12 +297,10 @@ class TestBatchBuilder:
         data_list = [
             {"offset": 0, "size": 16},
             {"offset": 16, "size": 16},
-            {"offset": 32, "size": 16}
+            {"offset": 32, "size": 16},
         ]
 
-        batch = (BatchBuilder()
-                 .add_multiple("data/read", data_list)
-                 .build())
+        batch = BatchBuilder().add_multiple("data/read", data_list).build()
 
         assert len(batch) == 3
         assert all(r.endpoint == "data/read" for r in batch)
@@ -328,10 +323,12 @@ class TestBatchBuilder:
 
     def test_custom_request_id(self):
         """Test custom request IDs."""
-        batch = (BatchBuilder()
-                 .add("capabilities", request_id="custom_1")
-                 .add("file/list", request_id="custom_2")
-                 .build())
+        batch = (
+            BatchBuilder()
+            .add("capabilities", request_id="custom_1")
+            .add("file/list", request_id="custom_2")
+            .build()
+        )
 
         assert batch[0].request_id == "custom_1"
         assert batch[1].request_id == "custom_2"
@@ -355,7 +352,8 @@ class TestBatchHelpers:
         """Test batch_hash_operations helper."""
         regions = [(0, 256), (256, 512), (512, 1024)]
         batch = batch_hash_operations(
-            provider_id=0, regions=regions, algorithm="sha256")
+            provider_id=0, regions=regions, algorithm="sha256"
+        )
 
         assert len(batch) == 3
         assert all(r.endpoint == "data/hash" for r in batch)
@@ -373,7 +371,8 @@ class TestBatchPerformance:
     def mock_server(self):
         """Fixture providing mock ImHex server."""
         server = MockImHexServer(
-            port=31338, delay_ms=50)  # Higher delay for performance tests
+            port=31338, delay_ms=50
+        )  # Higher delay for performance tests
         server.start()
         yield server
         server.stop()
@@ -388,20 +387,23 @@ class TestBatchPerformance:
         num_requests = 5
         requests = [
             BatchRequest(
-                f"req{i} ", "data/read",
-                {"offset": i * 16, "size": 16})
-            for i in range(num_requests)]
+                f"req{i} ", "data/read", {"offset": i * 16, "size": 16}
+            )
+            for i in range(num_requests)
+        ]
 
         # Sequential
         start = time.perf_counter()
         seq_responses = batcher.execute_batch(
-            requests, BatchStrategy.SEQUENTIAL)
+            requests, BatchStrategy.SEQUENTIAL
+        )
         seq_elapsed = time.perf_counter() - start
 
         # Concurrent
         start = time.perf_counter()
         con_responses = batcher.execute_batch(
-            requests, BatchStrategy.CONCURRENT)
+            requests, BatchStrategy.CONCURRENT
+        )
         con_elapsed = time.perf_counter() - start
 
         assert len(seq_responses) == num_requests
@@ -423,7 +425,7 @@ class TestBatchPerformance:
         """Test that latency is tracked for each request."""
         requests = [
             BatchRequest("req1", "capabilities"),
-            BatchRequest("req2", "file/list")
+            BatchRequest("req2", "file/list"),
         ]
 
         responses = batcher.execute_batch(requests, BatchStrategy.SEQUENTIAL)
@@ -452,7 +454,7 @@ async def main():
         requests = [
             BatchRequest("req1", "capabilities"),
             BatchRequest("req2", "file/list"),
-            BatchRequest("req3", "data/read", {"offset": 0, "size": 16})
+            BatchRequest("req3", "data/read", {"offset": 0, "size": 16}),
         ]
         responses = batcher.execute_batch(requests, BatchStrategy.SEQUENTIAL)
         assert len(responses) == 3
@@ -475,11 +477,13 @@ async def main():
 
         # Test BatchBuilder
         print("[4/8] Testing BatchBuilder...")
-        batch = (BatchBuilder()
-                 .add("capabilities")
-                 .add("file/list")
-                 .add("data/read", {"offset": 0, "size": 16})
-                 .build())
+        batch = (
+            BatchBuilder()
+            .add("capabilities")
+            .add("file/list")
+            .add("data/read", {"offset": 0, "size": 16})
+            .build()
+        )
         assert len(batch) == 3
         print("  ✓ PASSED")
 
@@ -499,10 +503,11 @@ async def main():
         requests_with_error = [
             BatchRequest("req1", "capabilities"),
             BatchRequest("req2", "error"),
-            BatchRequest("req3", "file/list")
+            BatchRequest("req3", "file/list"),
         ]
         responses = batcher.execute_batch(
-            requests_with_error, BatchStrategy.SEQUENTIAL)
+            requests_with_error, BatchStrategy.SEQUENTIAL
+        )
         assert len(responses) == 3
         assert responses[0].success is True
         assert responses[1].success is False
@@ -514,9 +519,10 @@ async def main():
         num_requests = 5
         requests = [
             BatchRequest(
-                f"req{i} ", "data/read",
-                {"offset": i * 16, "size": 16})
-            for i in range(num_requests)]
+                f"req{i} ", "data/read", {"offset": i * 16, "size": 16}
+            )
+            for i in range(num_requests)
+        ]
 
         start = time.perf_counter()
         batcher.execute_batch(requests, BatchStrategy.SEQUENTIAL)

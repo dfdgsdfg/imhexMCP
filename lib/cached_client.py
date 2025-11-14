@@ -39,7 +39,7 @@ class CachedImHexClient:
         timeout: int = 10,
         cache_enabled: bool = True,
         cache_max_size: int = 1000,
-        default_ttl: Optional[float] = None
+        default_ttl: Optional[float] = None,
     ):
         """
         Initialize cached client.
@@ -58,10 +58,11 @@ class CachedImHexClient:
         self.cache_enabled = cache_enabled
 
         # Initialize cache
-        self.cache = ResponseCache(
-            max_size=cache_max_size,
-            default_ttl=default_ttl
-        ) if cache_enabled else None
+        self.cache = (
+            ResponseCache(max_size=cache_max_size, default_ttl=default_ttl)
+            if cache_enabled
+            else None
+        )
 
         # Track cacheable endpoints (read-only operations)
         self.cacheable_endpoints = {
@@ -95,12 +96,11 @@ class CachedImHexClient:
         """Get appropriate TTL for endpoint."""
         return CachingStrategy.get_ttl_for_endpoint(endpoint)
 
-    @retry_with_backoff(max_attempts=3, initial_delay=0.5,
-                        exponential_base=2.0)
+    @retry_with_backoff(
+        max_attempts=3, initial_delay=0.5, exponential_base=2.0
+    )
     def _send_request(
-        self,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None
+        self, endpoint: str, data: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Send raw request to ImHex MCP.
@@ -122,10 +122,9 @@ class CachedImHexClient:
             sock.settimeout(self.timeout)
             sock.connect((self.host, self.port))
 
-            request = json.dumps({
-                "endpoint": endpoint,
-                "data": data or {}
-            }) + "\n"
+            request = (
+                json.dumps({"endpoint": endpoint, "data": data or {}}) + "\n"
+            )
 
             sock.sendall(request.encode())
 
@@ -147,7 +146,7 @@ class CachedImHexClient:
         self,
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
-        bypass_cache: bool = False
+        bypass_cache: bool = False,
     ) -> Dict[str, Any]:
         """
         Send request with automatic caching.
@@ -161,8 +160,11 @@ class CachedImHexClient:
             Response dictionary
         """
         # Check cache first (if enabled and cacheable)
-        if not bypass_cache and self.cache_enabled and self._is_cacheable(
-                endpoint):
+        if (
+            not bypass_cache
+            and self.cache_enabled
+            and self._is_cacheable(endpoint)
+        ):
             cached_result = self.cache.get(endpoint, data)
             if cached_result is not None:
                 return cached_result
@@ -176,9 +178,11 @@ class CachedImHexClient:
                 self.cache.invalidate(invalidated_endpoint)
 
         # Cache successful responses for cacheable endpoints
-        if (self.cache_enabled and
-            self._is_cacheable(endpoint) and
-                result.get("status") == "success"):
+        if (
+            self.cache_enabled
+            and self._is_cacheable(endpoint)
+            and result.get("status") == "success"
+        ):
             ttl = self._get_cache_ttl(endpoint)
             self.cache.set(endpoint, data, result, ttl=ttl)
 
@@ -202,9 +206,7 @@ class CachedImHexClient:
             self.cache.clear()
 
     def invalidate_endpoint(
-        self,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None
+        self, endpoint: str, data: Optional[Dict[str, Any]] = None
     ) -> int:
         """
         Manually invalidate cached entries.
@@ -252,32 +254,27 @@ class CachedImHexClient:
         return self.send_request("file/info", {"provider_id": provider_id})
 
     def read_data(
-        self,
-        provider_id: int,
-        offset: int,
-        size: int
+        self, provider_id: int, offset: int, size: int
     ) -> Dict[str, Any]:
         """Read data from provider."""
-        return self.send_request("data/read", {
-            "provider_id": provider_id,
-            "offset": offset,
-            "size": size
-        })
+        return self.send_request(
+            "data/read",
+            {"provider_id": provider_id, "offset": offset, "size": size},
+        )
 
     def hash_data(
-        self,
-        provider_id: int,
-        offset: int,
-        size: int,
-        algorithm: str = "md5"
+        self, provider_id: int, offset: int, size: int, algorithm: str = "md5"
     ) -> Dict[str, Any]:
         """Calculate hash of data."""
-        return self.send_request("data/hash", {
-            "provider_id": provider_id,
-            "offset": offset,
-            "size": size,
-            "algorithm": algorithm
-        })
+        return self.send_request(
+            "data/hash",
+            {
+                "provider_id": provider_id,
+                "offset": offset,
+                "size": size,
+                "algorithm": algorithm,
+            },
+        )
 
     def search_data(
         self,
@@ -285,14 +282,14 @@ class CachedImHexClient:
         pattern: str,
         pattern_type: str = "hex",
         offset: int = 0,
-        size: Optional[int] = None
+        size: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Search for pattern in data."""
         params = {
             "provider_id": provider_id,
             "pattern": pattern,
             "type": pattern_type,
-            "offset": offset
+            "offset": offset,
         }
         if size is not None:
             params["size"] = size
@@ -300,39 +297,34 @@ class CachedImHexClient:
         return self.send_request("data/search", params)
 
     def get_entropy(
-        self,
-        provider_id: int,
-        offset: int,
-        size: int,
-        block_size: int = 256
+        self, provider_id: int, offset: int, size: int, block_size: int = 256
     ) -> Dict[str, Any]:
         """Calculate entropy of data."""
-        return self.send_request("data/entropy", {
-            "provider_id": provider_id,
-            "offset": offset,
-            "size": size,
-            "block_size": block_size
-        })
+        return self.send_request(
+            "data/entropy",
+            {
+                "provider_id": provider_id,
+                "offset": offset,
+                "size": size,
+                "block_size": block_size,
+            },
+        )
 
     def get_statistics(
-        self,
-        provider_id: int,
-        offset: int,
-        size: int
+        self, provider_id: int, offset: int, size: int
     ) -> Dict[str, Any]:
         """Get byte statistics for data."""
-        return self.send_request("data/statistics", {
-            "provider_id": provider_id,
-            "offset": offset,
-            "size": size
-        })
+        return self.send_request(
+            "data/statistics",
+            {"provider_id": provider_id, "offset": offset, "size": size},
+        )
 
 
 def create_client(
     host: str = "localhost",
     port: int = 31337,
     cache_enabled: bool = True,
-    **kwargs
+    **kwargs,
 ) -> CachedImHexClient:
     """
     Factory function to create cached client.
@@ -352,8 +344,5 @@ def create_client(
         >>> print(result)
     """
     return CachedImHexClient(
-        host=host,
-        port=port,
-        cache_enabled=cache_enabled,
-        **kwargs
+        host=host, port=port, cache_enabled=cache_enabled, **kwargs
     )

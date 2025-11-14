@@ -21,24 +21,27 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 # ============================================================================
 # Cache Configuration
 # ============================================================================
 
+
 class CachePolicy(Enum):
     """Cache eviction policies."""
-    LRU = "lru"        # Least Recently Used
-    LFU = "lfu"        # Least Frequently Used
-    FIFO = "fifo"      # First In First Out
+
+    LRU = "lru"  # Least Recently Used
+    LFU = "lfu"  # Least Frequently Used
+    FIFO = "fifo"  # First In First Out
     ADAPTIVE = "adaptive"  # Adaptive based on workload
 
 
 @dataclass
 class CacheTierConfig:
     """Configuration for a cache tier."""
+
     max_size: int = 100  # Maximum number of entries
     max_bytes: int = 10 * 1024 * 1024  # Maximum bytes (10MB default)
     ttl: float = 300.0  # Time to live in seconds
@@ -49,6 +52,7 @@ class CacheTierConfig:
 @dataclass
 class PredictiveCacheConfig:
     """Configuration for predictive caching."""
+
     enable_prefetch: bool = True
     prefetch_distance: int = 5  # Chunks to prefetch ahead
     sequential_threshold: int = 3  # Accesses before pattern detected
@@ -59,6 +63,7 @@ class PredictiveCacheConfig:
 @dataclass
 class CacheStats:
     """Cache statistics."""
+
     hits: int = 0
     misses: int = 0
     promotions: int = 0
@@ -77,9 +82,11 @@ class CacheStats:
 # Cache Entry
 # ============================================================================
 
+
 @dataclass
 class CacheEntry:
     """Entry in cache with metadata."""
+
     key: str
     value: Any
     size: int  # Size in bytes
@@ -100,6 +107,7 @@ class CacheEntry:
 # ============================================================================
 # Cache Tier
 # ============================================================================
+
 
 class CacheTier:
     """
@@ -154,8 +162,10 @@ class CacheTier:
             entry = CacheEntry(key=key, value=value, size=size)
 
             # Evict if necessary
-            while (len(self._cache) >= self.config.max_size or
-                   self._size_bytes + size > self.config.max_bytes):
+            while (
+                len(self._cache) >= self.config.max_size
+                or self._size_bytes + size > self.config.max_bytes
+            ):
                 if not self._cache:
                     break
                 await self._evict_one()
@@ -190,8 +200,9 @@ class CacheTier:
 
         elif self.config.policy == CachePolicy.LFU:
             # Remove least frequently used
-            key = min(self._cache.keys(),
-                      key=lambda k: self._cache[k].access_count)
+            key = min(
+                self._cache.keys(), key=lambda k: self._cache[k].access_count
+            )
             await self._evict(key)
 
         elif self.config.policy == CachePolicy.FIFO:
@@ -227,9 +238,11 @@ class CacheTier:
 # Access Pattern Detector
 # ============================================================================
 
+
 @dataclass
 class AccessPattern:
     """Detected access pattern."""
+
     pattern_type: str  # "sequential", "strided", "random"
     stride: int = 1  # Stride for sequential/strided access
     confidence: float = 0.0  # Confidence in pattern (0-1)
@@ -262,12 +275,13 @@ class PatternDetector:
                 return None
 
             # Get recent offsets
-            recent = list(self._history)[-self.config.sequential_threshold:]
+            recent = list(self._history)[-self.config.sequential_threshold :]
             offsets = [offset for _, offset in recent]
 
             # Check for sequential access
-            differences = [offsets[i + 1] - offsets[i]
-                           for i in range(len(offsets) - 1)]
+            differences = [
+                offsets[i + 1] - offsets[i] for i in range(len(offsets) - 1)
+            ]
 
             if not differences:
                 return None
@@ -276,34 +290,36 @@ class PatternDetector:
             avg_diff = sum(differences) / len(differences)
 
             # Check if consistent stride
-            variance = sum((d - avg_diff) **
-                           2 for d in differences) / len(differences)
+            variance = sum((d - avg_diff) ** 2 for d in differences) / len(
+                differences
+            )
 
-            if variance < 0.1 * abs(avg_diff):  # Low variance = consistent stride
+            if variance < 0.1 * abs(
+                avg_diff
+            ):  # Low variance = consistent stride
                 if abs(avg_diff) < 2:  # Small stride = sequential
                     return AccessPattern(
                         pattern_type="sequential",
                         stride=int(avg_diff) if avg_diff != 0 else 1,
-                        confidence=1.0 - min(variance, 1.0)
+                        confidence=1.0 - min(variance, 1.0),
                     )
                 else:  # Larger stride
                     return AccessPattern(
                         pattern_type="strided",
                         stride=int(avg_diff),
-                        confidence=1.0 - min(variance / abs(avg_diff), 1.0)
+                        confidence=1.0 - min(variance / abs(avg_diff), 1.0),
                     )
 
             # Random access
             return AccessPattern(
-                pattern_type="random",
-                stride=0,
-                confidence=0.5
+                pattern_type="random", stride=0, confidence=0.5
             )
 
 
 # ============================================================================
 # Multi-Tier Cache
 # ============================================================================
+
 
 class MultiTierCache:
     """
@@ -321,7 +337,7 @@ class MultiTierCache:
         l1_config: Optional[CacheTierConfig] = None,
         l2_config: Optional[CacheTierConfig] = None,
         predictive_config: Optional[PredictiveCacheConfig] = None,
-        data_loader: Optional[Callable[[str], Any]] = None
+        data_loader: Optional[Callable[[str], Any]] = None,
     ):
         """
         Initialize multi-tier cache.
@@ -339,7 +355,7 @@ class MultiTierCache:
                 max_bytes=5 * 1024 * 1024,  # 5MB
                 ttl=600.0,  # 10 minutes
                 policy=CachePolicy.LRU,
-                promotion_threshold=2
+                promotion_threshold=2,
             )
 
         if l2_config is None:
@@ -348,7 +364,7 @@ class MultiTierCache:
                 max_bytes=20 * 1024 * 1024,  # 20MB
                 ttl=1800.0,  # 30 minutes
                 policy=CachePolicy.ADAPTIVE,
-                promotion_threshold=1
+                promotion_threshold=1,
             )
 
         if predictive_config is None:
@@ -364,7 +380,8 @@ class MultiTierCache:
         self._lock = asyncio.Lock()
 
     async def get(
-            self, key: str, offset: Optional[int] = None) -> Optional[Any]:
+        self, key: str, offset: Optional[int] = None
+    ) -> Optional[Any]:
         """
         Get value from cache with multi-tier lookup.
 
@@ -397,7 +414,10 @@ class MultiTierCache:
 
             # Check for promotion to L1
             entry = await self.l2.get_entry(key)
-            if entry and entry.access_count >= self.l2.config.promotion_threshold:
+            if (
+                entry
+                and entry.access_count >= self.l2.config.promotion_threshold
+            ):
                 await self._promote_to_l1(key, value, entry.size)
 
             # Trigger predictive prefetch
@@ -458,10 +478,7 @@ class MultiTierCache:
             await self._prefetch_sequential(key, offset, pattern.stride)
 
     async def _prefetch_sequential(
-        self,
-        base_key: str,
-        current_offset: int,
-        stride: int
+        self, base_key: str, current_offset: int, stride: int
     ) -> None:
         """Prefetch data for sequential access pattern."""
         if not self.data_loader:
@@ -475,7 +492,9 @@ class MultiTierCache:
             prefetch_key = f"{base_key}_{next_offset}"
 
             # Check if already cached
-            if await self.l1.get(prefetch_key) or await self.l2.get(prefetch_key):
+            if await self.l1.get(prefetch_key) or await self.l2.get(
+                prefetch_key
+            ):
                 continue
 
             # Check if already prefetching
@@ -483,9 +502,7 @@ class MultiTierCache:
                 continue
 
             # Start prefetch task
-            task = asyncio.create_task(
-                self._prefetch_data(prefetch_key)
-            )
+            task = asyncio.create_task(self._prefetch_data(prefetch_key))
             self._prefetch_tasks[prefetch_key] = task
 
     async def _prefetch_data(self, key: str) -> None:
@@ -494,8 +511,9 @@ class MultiTierCache:
             if self.data_loader:
                 value = await self.data_loader(key)
                 if value is not None:
-                    size = len(value) if isinstance(
-                        value, (bytes, str)) else 1024
+                    size = (
+                        len(value) if isinstance(value, (bytes, str)) else 1024
+                    )
                     await self.l2.put(key, value, size)
                     self.l2.stats.prefetches += 1
                     logger.debug(f"Prefetched: {key}")
@@ -548,7 +566,12 @@ class MultiTierCache:
                 "size_bytes": self.l2.stats.total_bytes,
                 "entries": len(self.l2._cache),
             },
-            "total_hit_rate": (self.l1.stats.hits + self.l2.stats.hits) /
-            max(self.l1.stats.hits + self.l1.stats.misses +
-                self.l2.stats.hits + self.l2.stats.misses, 1),
+            "total_hit_rate": (self.l1.stats.hits + self.l2.stats.hits)
+            / max(
+                self.l1.stats.hits
+                + self.l1.stats.misses
+                + self.l2.stats.hits
+                + self.l2.stats.misses,
+                1,
+            ),
         }

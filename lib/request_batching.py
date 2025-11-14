@@ -15,6 +15,7 @@ Performance Impact:
 """
 
 import asyncio
+
 # json import removed (unused)
 import time
 from typing import Dict, Any, List, Optional, Tuple, Callable
@@ -24,14 +25,16 @@ from enum import Enum
 
 class BatchMode(Enum):
     """Batch processing mode."""
-    PARALLEL = "parallel"      # Execute all requests concurrently
+
+    PARALLEL = "parallel"  # Execute all requests concurrently
     SEQUENTIAL = "sequential"  # Execute requests in order (pipelining)
-    ADAPTIVE = "adaptive"      # Auto-detect dependencies and optimize
+    ADAPTIVE = "adaptive"  # Auto-detect dependencies and optimize
 
 
 @dataclass
 class BatchRequest:
     """Single request within a batch."""
+
     request_id: str
     endpoint: str
     data: Dict[str, Any] = field(default_factory=dict)
@@ -42,7 +45,7 @@ class BatchRequest:
         result = {
             "request_id": self.request_id,
             "endpoint": self.endpoint,
-            "data": self.data
+            "data": self.data,
         }
         if self.depends_on:
             result["depends_on"] = self.depends_on
@@ -55,13 +58,14 @@ class BatchRequest:
             request_id=data["request_id"],
             endpoint=data["endpoint"],
             data=data.get("data", {}),
-            depends_on=data.get("depends_on")
+            depends_on=data.get("depends_on"),
         )
 
 
 @dataclass
 class BatchResponse:
     """Single response within a batch."""
+
     request_id: str
     status: str
     data: Dict[str, Any]
@@ -73,7 +77,7 @@ class BatchResponse:
             "request_id": self.request_id,
             "status": self.status,
             "data": self.data,
-            "elapsed_ms": self.elapsed_ms
+            "elapsed_ms": self.elapsed_ms,
         }
 
     @classmethod
@@ -83,7 +87,7 @@ class BatchResponse:
             request_id=data["request_id"],
             status=data["status"],
             data=data["data"],
-            elapsed_ms=data.get("elapsed_ms", 0.0)
+            elapsed_ms=data.get("elapsed_ms", 0.0),
         )
 
     def is_success(self) -> bool:
@@ -94,6 +98,7 @@ class BatchResponse:
 @dataclass
 class BatchStats:
     """Statistics for batch execution."""
+
     total_requests: int = 0
     successful_requests: int = 0
     failed_requests: int = 0
@@ -103,7 +108,11 @@ class BatchStats:
 
     def success_rate(self) -> float:
         """Calculate success rate percentage."""
-        return (self.successful_requests / self.total_requests * 100) if self.total_requests > 0 else 0.0
+        return (
+            (self.successful_requests / self.total_requests * 100)
+            if self.total_requests > 0
+            else 0.0
+        )
 
 
 class RequestBatcher:
@@ -143,7 +152,7 @@ class RequestBatcher:
         request_id: Optional[str] = None,
         endpoint: str = "",
         data: Optional[Dict[str, Any]] = None,
-        depends_on: Optional[List[str]] = None
+        depends_on: Optional[List[str]] = None,
     ) -> str:
         """
         Add request to batch.
@@ -165,7 +174,7 @@ class RequestBatcher:
             request_id=request_id,
             endpoint=endpoint,
             data=data or {},
-            depends_on=depends_on
+            depends_on=depends_on,
         )
 
         self.requests.append(request)
@@ -194,8 +203,7 @@ class RequestBatcher:
         return len(self.requests)
 
     async def execute_parallel(
-        self,
-        executor: Callable
+        self, executor: Callable
     ) -> Tuple[List[BatchResponse], BatchStats]:
         """
         Execute all requests in parallel.
@@ -220,11 +228,13 @@ class RequestBatcher:
         final_responses = []
         for i, response in enumerate(responses):
             if isinstance(response, Exception):
-                final_responses.append(BatchResponse(
-                    request_id=self.requests[i].request_id,
-                    status="error",
-                    data={"error": str(response)}
-                ))
+                final_responses.append(
+                    BatchResponse(
+                        request_id=self.requests[i].request_id,
+                        status="error",
+                        data={"error": str(response)},
+                    )
+                )
             else:
                 final_responses.append(response)
 
@@ -235,8 +245,7 @@ class RequestBatcher:
         return final_responses, stats
 
     async def execute_sequential(
-        self,
-        executor: Callable
+        self, executor: Callable
     ) -> Tuple[List[BatchResponse], BatchStats]:
         """
         Execute requests sequentially (pipelining).
@@ -258,11 +267,13 @@ class RequestBatcher:
                 response = await self._execute_single_request(req, executor)
                 responses.append(response)
             except Exception as e:
-                responses.append(BatchResponse(
-                    request_id=req.request_id,
-                    status="error",
-                    data={"error": str(e)}
-                ))
+                responses.append(
+                    BatchResponse(
+                        request_id=req.request_id,
+                        status="error",
+                        data={"error": str(e)},
+                    )
+                )
 
         # Calculate statistics
         elapsed = (time.perf_counter() - start_time) * 1000
@@ -271,8 +282,7 @@ class RequestBatcher:
         return responses, stats
 
     async def execute_adaptive(
-        self,
-        executor: Callable
+        self, executor: Callable
     ) -> Tuple[List[BatchResponse], BatchStats]:
         """
         Execute with automatic dependency resolution.
@@ -298,7 +308,8 @@ class RequestBatcher:
             ready = []
             for req_id, req in list(pending.items()):
                 if not req.depends_on or all(
-                        dep in completed for dep in req.depends_on):
+                    dep in completed for dep in req.depends_on
+                ):
                     ready.append(req)
                     del pending[req_id]
 
@@ -308,14 +319,13 @@ class RequestBatcher:
                     responses_dict[req_id] = BatchResponse(
                         request_id=req_id,
                         status="error",
-                        data={"error": "Unresolved dependency"}
+                        data={"error": "Unresolved dependency"},
                     )
                 break
 
             # Execute ready requests in parallel
             tasks = [
-                self._execute_single_request(req, executor)
-                for req in ready
+                self._execute_single_request(req, executor) for req in ready
             ]
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -326,7 +336,7 @@ class RequestBatcher:
                     responses_dict[req.request_id] = BatchResponse(
                         request_id=req.request_id,
                         status="error",
-                        data={"error": str(result)}
+                        data={"error": str(result)},
                     )
                 else:
                     responses_dict[req.request_id] = result
@@ -342,8 +352,7 @@ class RequestBatcher:
         return responses, stats
 
     async def execute(
-        self,
-        executor: Callable
+        self, executor: Callable
     ) -> Tuple[List[BatchResponse], BatchStats]:
         """
         Execute batch using configured mode.
@@ -365,9 +374,7 @@ class RequestBatcher:
             return await self.execute_adaptive(executor)
 
     async def _execute_single_request(
-        self,
-        request: BatchRequest,
-        executor: Callable
+        self, request: BatchRequest, executor: Callable
     ) -> BatchResponse:
         """Execute a single request and return response."""
         start_time = time.perf_counter()
@@ -380,7 +387,7 @@ class RequestBatcher:
                 request_id=request.request_id,
                 status=result.get("status", "error"),
                 data=result.get("data", {}),
-                elapsed_ms=elapsed
+                elapsed_ms=elapsed,
             )
         except Exception as e:
             elapsed = (time.perf_counter() - start_time) * 1000
@@ -388,13 +395,11 @@ class RequestBatcher:
                 request_id=request.request_id,
                 status="error",
                 data={"error": str(e)},
-                elapsed_ms=elapsed
+                elapsed_ms=elapsed,
             )
 
     def _calculate_stats(
-        self,
-        responses: List[BatchResponse],
-        total_time_ms: float
+        self, responses: List[BatchResponse], total_time_ms: float
     ) -> BatchStats:
         """Calculate batch execution statistics."""
         successful = sum(1 for r in responses if r.is_success())
@@ -415,16 +420,20 @@ class RequestBatcher:
 
         return BatchStats(
             total_requests=len(responses),
-            successful_requests=successful, failed_requests=failed,
-            total_time_ms=total_time_ms, avg_request_time_ms=total_time_ms /
-            len(responses) if responses else 0,
-            round_trips_saved=round_trips_saved)
+            successful_requests=successful,
+            failed_requests=failed,
+            total_time_ms=total_time_ms,
+            avg_request_time_ms=(
+                total_time_ms / len(responses) if responses else 0
+            ),
+            round_trips_saved=round_trips_saved,
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert batch to dictionary for serialization."""
         return {
             "mode": self.mode.value,
-            "requests": [req.to_dict() for req in self.requests]
+            "requests": [req.to_dict() for req in self.requests],
         }
 
     @classmethod
@@ -442,10 +451,9 @@ class RequestBatcher:
 
 # Helper functions for common batching patterns
 
+
 def create_multi_read_batch(
-    provider_id: int,
-    offsets: List[int],
-    size: int
+    provider_id: int, offsets: List[int], size: int
 ) -> RequestBatcher:
     """
     Create batch for reading multiple regions from same file.
@@ -466,11 +474,7 @@ def create_multi_read_batch(
         batcher.add(
             request_id=f"read_{i}",
             endpoint="data/read",
-            data={
-                "provider_id": provider_id,
-                "offset": offset,
-                "size": size
-            }
+            data={"provider_id": provider_id, "offset": offset, "size": size},
         )
 
     return batcher
@@ -479,7 +483,7 @@ def create_multi_read_batch(
 def create_multi_file_batch(
     provider_ids: List[int],
     endpoint: str,
-    data_template: Optional[Dict[str, Any]] = None
+    data_template: Optional[Dict[str, Any]] = None,
 ) -> RequestBatcher:
     """
     Create batch for same operation across multiple files.
@@ -497,18 +501,12 @@ def create_multi_file_batch(
 
     for i, provider_id in enumerate(provider_ids):
         data = {**base_data, "provider_id": provider_id}
-        batcher.add(
-            request_id=f"file_{i}",
-            endpoint=endpoint,
-            data=data
-        )
+        batcher.add(request_id=f"file_{i}", endpoint=endpoint, data=data)
 
     return batcher
 
 
-def create_analysis_pipeline(
-    provider_id: int
-) -> RequestBatcher:
+def create_analysis_pipeline(provider_id: int) -> RequestBatcher:
     """
     Create sequential batch for common analysis workflow.
 
@@ -526,7 +524,7 @@ def create_analysis_pipeline(
     batcher.add(
         request_id="get_info",
         endpoint="file/info",
-        data={"provider_id": provider_id}
+        data={"provider_id": provider_id},
     )
 
     # Step 2: Read header
@@ -534,7 +532,7 @@ def create_analysis_pipeline(
         request_id="read_header",
         endpoint="data/read",
         data={"provider_id": provider_id, "offset": 0, "size": 256},
-        depends_on=["get_info"]
+        depends_on=["get_info"],
     )
 
     # Step 3: Get magic signatures
@@ -542,7 +540,7 @@ def create_analysis_pipeline(
         request_id="magic",
         endpoint="data/magic",
         data={"provider_id": provider_id},
-        depends_on=["read_header"]
+        depends_on=["read_header"],
     )
 
     return batcher

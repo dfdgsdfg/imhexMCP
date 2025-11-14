@@ -19,6 +19,7 @@ from enum import Enum
 
 # Custom Exception Classes
 
+
 class ImHexMCPError(Exception):
     """Base exception for all ImHex MCP errors."""
 
@@ -84,7 +85,9 @@ class InvalidEndpointError(ImHexMCPError):
 
     def __init__(self, endpoint: str, available: Optional[List[str]] = None):
         message = f"Invalid endpoint: '{endpoint}'"
-        recovery_hint = "Check available endpoints with 'capabilities' endpoint"
+        recovery_hint = (
+            "Check available endpoints with 'capabilities' endpoint"
+        )
         if available:
             recovery_hint += f"\nAvailable: {
                 ', '.join(sorted(available)[: 10])} "
@@ -115,17 +118,20 @@ class CircuitBreakerOpenError(ImHexMCPError):
 
 # Error Classification
 
+
 class ErrorSeverity(Enum):
     """Error severity levels."""
-    LOW = "low"           # Recoverable, can retry immediately
-    MEDIUM = "medium"     # Recoverable, should backoff
-    HIGH = "high"         # May be recoverable, exponential backoff
+
+    LOW = "low"  # Recoverable, can retry immediately
+    MEDIUM = "medium"  # Recoverable, should backoff
+    HIGH = "high"  # May be recoverable, exponential backoff
     CRITICAL = "critical"  # Not recoverable, fail fast
 
 
 @dataclass
 class ErrorInfo:
     """Error information for classification."""
+
     severity: ErrorSeverity
     retryable: bool
     backoff_multiplier: float
@@ -134,21 +140,23 @@ class ErrorInfo:
 def classify_error(error: Exception) -> ErrorInfo:
     """Classify error and determine retry strategy."""
 
-    # Timeout errors - check FIRST since socket.timeout is subclass of socket.error
+    # Timeout errors - check FIRST since socket.timeout is subclass of
+    # socket.error
     if isinstance(error, socket.timeout) or isinstance(error, TimeoutError):
         return ErrorInfo(
             severity=ErrorSeverity.MEDIUM,
             retryable=True,
-            backoff_multiplier=1.5
+            backoff_multiplier=1.5,
         )
 
     # Connection errors - usually retryable with backoff
     if isinstance(
-            error, (socket.error, ConnectionRefusedError, ConnectionResetError)):
+        error, (socket.error, ConnectionRefusedError, ConnectionResetError)
+    ):
         return ErrorInfo(
             severity=ErrorSeverity.MEDIUM,
             retryable=True,
-            backoff_multiplier=2.0
+            backoff_multiplier=2.0,
         )
 
     # Circuit breaker - not retryable immediately
@@ -156,7 +164,7 @@ def classify_error(error: Exception) -> ErrorInfo:
         return ErrorInfo(
             severity=ErrorSeverity.HIGH,
             retryable=False,
-            backoff_multiplier=1.0
+            backoff_multiplier=1.0,
         )
 
     # Protocol/validation errors - not retryable
@@ -164,7 +172,7 @@ def classify_error(error: Exception) -> ErrorInfo:
         return ErrorInfo(
             severity=ErrorSeverity.CRITICAL,
             retryable=False,
-            backoff_multiplier=1.0
+            backoff_multiplier=1.0,
         )
 
     # Provider errors - may be retryable after file opens
@@ -172,20 +180,18 @@ def classify_error(error: Exception) -> ErrorInfo:
         return ErrorInfo(
             severity=ErrorSeverity.MEDIUM,
             retryable=True,
-            backoff_multiplier=1.0
+            backoff_multiplier=1.0,
         )
 
     # Unknown errors - treat as potentially retryable but with caution
     return ErrorInfo(
-        severity=ErrorSeverity.HIGH,
-        retryable=True,
-        backoff_multiplier=2.5
+        severity=ErrorSeverity.HIGH, retryable=True, backoff_multiplier=2.5
     )
 
 
 # Retry Decorator with Exponential Backoff
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def retry_with_backoff(
@@ -193,7 +199,7 @@ def retry_with_backoff(
     initial_delay: float = 0.1,
     max_delay: float = 10.0,
     exponential_base: float = 2.0,
-    exceptions: tuple = (socket.error, ConnectionRefusedError, socket.timeout)
+    exceptions: tuple = (socket.error, ConnectionRefusedError, socket.timeout),
 ) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """
     Retry decorator with exponential backoff.
@@ -213,6 +219,7 @@ def retry_with_backoff(
         def fetch_data():
             return request_data()
     """
+
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> T:
@@ -235,18 +242,23 @@ def retry_with_backoff(
                         # Wrap in ImHexMCPError with recovery hint
                         if isinstance(e, socket.error):
                             raise ConnectionError(
-                                "localhost", 31337, str(e)) from e
+                                "localhost", 31337, str(e)
+                            ) from e
                         raise ImHexMCPError(
-                            f"Operation failed after {max_attempts} attempts: {str(e)}",
-                            "Check network connection and ImHex status"
+                            f"Operation failed after {max_attempts} attempts: {
+                                str(e)}",
+                            "Check network connection and ImHex status",
                         ) from e
 
                     # Calculate backoff delay
                     error_info = classify_error(e)
                     if error_info.retryable:
                         backoff_delay = min(
-                            delay * (exponential_base ** (attempt - 1)) *
-                            error_info.backoff_multiplier, max_delay)
+                            delay
+                            * (exponential_base ** (attempt - 1))
+                            * error_info.backoff_multiplier,
+                            max_delay,
+                        )
 
                         # Optional: log retry attempt
                         # print(f"Retry attempt {attempt}/{max_attempts} after {backoff_delay:.2f}s...")
@@ -260,15 +272,18 @@ def retry_with_backoff(
             raise RuntimeError("Unexpected retry loop exit")
 
         return wrapper
+
     return decorator
 
 
 # Circuit Breaker Pattern
 
+
 class CircuitBreakerState(Enum):
     """Circuit breaker states."""
-    CLOSED = "closed"       # Normal operation
-    OPEN = "open"           # Failing, reject requests
+
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Failing, reject requests
     HALF_OPEN = "half_open"  # Testing if service recovered
 
 
@@ -284,7 +299,7 @@ class CircuitBreaker:
         self,
         failure_threshold: int = 5,
         recovery_timeout: float = 60.0,
-        success_threshold: int = 2
+        success_threshold: int = 2,
     ):
         """
         Initialize circuit breaker.
@@ -308,14 +323,18 @@ class CircuitBreaker:
 
         if self.state == CircuitBreakerState.OPEN:
             # Check if recovery timeout has elapsed
-            if self.last_failure_time and \
-               time.time() - self.last_failure_time >= self.recovery_timeout:
+            if (
+                self.last_failure_time
+                and time.time() - self.last_failure_time
+                >= self.recovery_timeout
+            ):
                 self.state = CircuitBreakerState.HALF_OPEN
                 self.success_count = 0
             else:
                 raise CircuitBreakerOpenError(
                     self.last_failure_time + self.recovery_timeout
-                    if self.last_failure_time else time.time()
+                    if self.last_failure_time
+                    else time.time()
                 )
 
         try:
@@ -363,11 +382,12 @@ class CircuitBreaker:
             "state": self.state.value,
             "failure_count": self.failure_count,
             "success_count": self.success_count,
-            "last_failure_time": self.last_failure_time
+            "last_failure_time": self.last_failure_time,
         }
 
 
 # Health Check
+
 
 class HealthCheck:
     """
@@ -407,8 +427,9 @@ class HealthCheck:
         return {
             "healthy": self.last_status,
             "last_check": self.last_check,
-            "age": time.time() - self.last_check if self.last_check else None
+            "age": time.time() - self.last_check if self.last_check else None,
         }
+
 
 # Connection Pooling
 
@@ -425,7 +446,7 @@ class ConnectionPool:
         host: str = "localhost",
         port: int = 31337,
         max_connections: int = 5,
-        timeout: float = 10.0
+        timeout: float = 10.0,
     ):
         """
         Initialize connection pool.
@@ -519,5 +540,5 @@ class ConnectionPool:
         return {
             "available": self._pool.qsize(),
             "total_created": self._created_connections,
-            "max_connections": self.max_connections
+            "max_connections": self.max_connections,
         }

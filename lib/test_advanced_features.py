@@ -44,6 +44,7 @@ class TestPriorityQueue:
             async def coro():
                 results.append(value)
                 return value
+
             return coro
 
         # Submit in mixed order
@@ -148,8 +149,7 @@ class TestPriorityScheduler:
         futures = []
         for i in range(10):
             future = await queue.submit(
-                lambda v=i: test_coro(v),
-                Priority.NORMAL
+                lambda v=i: test_coro(v), Priority.NORMAL
             )
             futures.append(future)
 
@@ -229,10 +229,7 @@ class TestCircuitBreaker:
     @pytest.mark.asyncio
     async def test_half_open_recovery(self):
         """Test circuit transitions to HALF_OPEN after timeout."""
-        config = CircuitBreakerConfig(
-            failure_threshold=2,
-            timeout=0.1
-        )
+        config = CircuitBreakerConfig(failure_threshold=2, timeout=0.1)
         breaker = CircuitBreaker("test", config)
 
         async def failing_coro():
@@ -262,9 +259,7 @@ class TestCircuitBreaker:
     async def test_close_after_recovery(self):
         """Test circuit closes after successful recovery."""
         config = CircuitBreakerConfig(
-            failure_threshold=2,
-            success_threshold=2,
-            timeout=0.1
+            failure_threshold=2, success_threshold=2, timeout=0.1
         )
         breaker = CircuitBreaker("test", config)
 
@@ -344,7 +339,7 @@ class TestAdvancedRequestManager:
         """Test circuit breaker integration."""
         manager = AdvancedRequestManager(
             circuit_config=CircuitBreakerConfig(failure_threshold=2),
-            num_workers=2
+            num_workers=2,
         )
         await manager.start()
 
@@ -376,7 +371,7 @@ class TestAdvancedRequestManager:
         """Test bypassing circuit breaker."""
         manager = AdvancedRequestManager(
             circuit_config=CircuitBreakerConfig(failure_threshold=1),
-            num_workers=2
+            num_workers=2,
         )
         await manager.start()
 
@@ -392,9 +387,7 @@ class TestAdvancedRequestManager:
         # This should still work with circuit breaker bypassed
         try:
             await manager.execute(
-                failing_coro,
-                Priority.NORMAL,
-                use_circuit_breaker=False
+                failing_coro, Priority.NORMAL, use_circuit_breaker=False
             )
         except RuntimeError:
             pass  # Expected to fail, but not with CircuitBreakerError
@@ -433,18 +426,16 @@ class TestAdvancedRequestManager:
             return value
 
         # Submit mixed priority requests
-        futures = [manager.execute(
-            lambda: test_coro("critical", 0.05),
-            Priority.CRITICAL),
+        futures = [
             manager.execute(
-            lambda: test_coro("low", 0.01),
-            Priority.LOW),
+                lambda: test_coro("critical", 0.05), Priority.CRITICAL
+            ),
+            manager.execute(lambda: test_coro("low", 0.01), Priority.LOW),
+            manager.execute(lambda: test_coro("high", 0.03), Priority.HIGH),
             manager.execute(
-            lambda: test_coro("high", 0.03),
-            Priority.HIGH),
-            manager.execute(
-            lambda: test_coro("normal", 0.02),
-            Priority.NORMAL),]
+                lambda: test_coro("normal", 0.02), Priority.NORMAL
+            ),
+        ]
 
         await asyncio.gather(*futures)
 

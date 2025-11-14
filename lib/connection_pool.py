@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ConnectionStats:
     """Statistics for connection pool monitoring."""
+
     total_created: int = 0
     total_reused: int = 0
     total_closed: int = 0
@@ -43,6 +44,7 @@ class ConnectionStats:
 @dataclass
 class PooledConnection:
     """Wrapper for a pooled socket connection."""
+
     reader: asyncio.StreamReader
     writer: asyncio.StreamWriter
     created_at: float = field(default_factory=time.time)
@@ -148,7 +150,8 @@ class ConnectionPool:
             return
 
         logger.info(
-            f"Initializing connection pool: {self.min_size}-{self.max_size} connections")
+            f"Initializing connection pool: {self.min_size}-{self.max_size} connections"
+        )
 
         # Create minimum number of connections
         for _ in range(self.min_size):
@@ -162,25 +165,28 @@ class ConnectionPool:
 
         # Start health check background task
         self._health_check_task = asyncio.create_task(
-            self._health_check_loop())
+            self._health_check_loop()
+        )
 
         self._initialized = True
         logger.info(
-            f"Connection pool initialized with {len(self._available)} connections")
+            f"Connection pool initialized with {len(self._available)} connections"
+        )
 
     async def _create_connection(self) -> PooledConnection:
         """Create a new TCP connection."""
         try:
             reader, writer = await asyncio.wait_for(
                 asyncio.open_connection(self.host, self.port),
-                timeout=self.connection_timeout
+                timeout=self.connection_timeout,
             )
 
             conn = PooledConnection(reader=reader, writer=writer)
             self.stats.total_created += 1
 
             logger.debug(
-                f"Created new connection (total: {self.stats.total_created})")
+                f"Created new connection (total: {self.stats.total_created})"
+            )
             return conn
 
         except Exception as e:
@@ -219,7 +225,8 @@ class ConnectionPool:
                     self._in_use.add(conn)
                     self.stats.total_reused += 1
                     logger.debug(
-                        f"Reused connection (reuse rate: {self.stats.reuse_rate():.1f}%)")
+                        f"Reused connection (reuse rate: {self.stats.reuse_rate():.1f}%)"
+                    )
                     return conn
                 else:
                     # Connection is dead, close it
@@ -265,7 +272,8 @@ class ConnectionPool:
             # Check if connection should be retired
             if conn.age() > self.max_connection_age:
                 logger.debug(
-                    f"Retiring old connection (age: {conn.age():.1f}s)")
+                    f"Retiring old connection (age: {conn.age():.1f}s)"
+                )
                 await conn.close()
                 self.stats.total_closed += 1
                 self.stats.active_connections -= 1
@@ -298,7 +306,7 @@ class ConnectionPool:
                 return False
 
             # Check socket state (non-blocking peek)
-            sock = conn.writer.get_extra_info('socket')
+            sock = conn.writer.get_extra_info("socket")
             if sock is None:
                 return False
 
@@ -341,8 +349,10 @@ class ConnectionPool:
 
             for conn in self._available:
                 # Check if connection is too old or idle
-                if (conn.age() > self.max_connection_age or
-                        conn.idle_time() > self.max_idle_time):
+                if (
+                    conn.age() > self.max_connection_age
+                    or conn.idle_time() > self.max_idle_time
+                ):
                     to_remove.append(conn)
                 # Check health
                 elif not await self._is_healthy(conn):
@@ -359,7 +369,8 @@ class ConnectionPool:
 
             if to_remove:
                 logger.debug(
-                    f"Cleaned up {len(to_remove)} idle/unhealthy connections")
+                    f"Cleaned up {len(to_remove)} idle/unhealthy connections"
+                )
 
             # Maintain minimum pool size
             current_size = len(self._available) + len(self._in_use)
@@ -373,7 +384,8 @@ class ConnectionPool:
                         self.stats.idle_connections += 1
                     except Exception as e:
                         logger.warning(
-                            f"Failed to create connection during cleanup: {e}")
+                            f"Failed to create connection during cleanup: {e}"
+                        )
 
     async def close(self):
         """Close all connections and shut down the pool."""
@@ -407,7 +419,8 @@ class ConnectionPool:
             self._in_use.clear()
 
         logger.info(
-            f"Connection pool closed (total reuse rate: {self.stats.reuse_rate():.1f}%)")
+            f"Connection pool closed (total reuse rate: {self.stats.reuse_rate():.1f}%)"
+        )
 
     def get_stats(self) -> Dict[str, Any]:
         """Get connection pool statistics."""

@@ -42,155 +42,168 @@ class ImHexMCPMetrics:
 
         # Request metrics
         self.request_count = Counter(
-            'imhex_mcp_requests_total',
-            'Total number of requests by endpoint',
-            ['endpoint', 'status'],
-            registry=self.registry
+            "imhex_mcp_requests_total",
+            "Total number of requests by endpoint",
+            ["endpoint", "status"],
+            registry=self.registry,
         )
 
         self.request_duration = Histogram(
-            'imhex_mcp_request_duration_seconds',
-            'Request duration in seconds by endpoint',
-            ['endpoint'],
-            buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0),
-            registry=self.registry
+            "imhex_mcp_request_duration_seconds",
+            "Request duration in seconds by endpoint",
+            ["endpoint"],
+            buckets=(
+                0.001,
+                0.005,
+                0.01,
+                0.025,
+                0.05,
+                0.1,
+                0.25,
+                0.5,
+                1.0,
+                2.5,
+                5.0,
+                10.0,
+            ),
+            registry=self.registry,
         )
 
         self.active_requests = Gauge(
-            'imhex_mcp_active_requests',
-            'Number of currently active requests',
-            registry=self.registry
+            "imhex_mcp_active_requests",
+            "Number of currently active requests",
+            registry=self.registry,
         )
 
         # Compression metrics
         self.compression_ratio = Histogram(
-            'imhex_mcp_compression_ratio',
-            'Compression ratio (compressed/original)',
+            "imhex_mcp_compression_ratio",
+            "Compression ratio (compressed/original)",
             buckets=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0),
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.compression_time = Histogram(
-            'imhex_mcp_compression_duration_seconds',
-            'Compression operation duration',
-            ['operation'],  # compress, decompress
+            "imhex_mcp_compression_duration_seconds",
+            "Compression operation duration",
+            ["operation"],  # compress, decompress
             buckets=(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1),
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.bytes_transferred = Counter(
-            'imhex_mcp_bytes_transferred_total',
-            'Total bytes transferred',
+            "imhex_mcp_bytes_transferred_total",
+            "Total bytes transferred",
             # direction: sent/received, compressed: yes/no
-            ['direction', 'compressed'],
-            registry=self.registry
+            ["direction", "compressed"],
+            registry=self.registry,
         )
 
         self.bytes_saved = Counter(
-            'imhex_mcp_compression_bytes_saved_total',
-            'Total bytes saved through compression',
-            registry=self.registry
+            "imhex_mcp_compression_bytes_saved_total",
+            "Total bytes saved through compression",
+            registry=self.registry,
         )
 
         self.compression_operations = Counter(
-            'imhex_mcp_compression_operations_total',
-            'Compression operations by type and result',
-            # operation: compress/decompress, result: success/skipped_small/skipped_ratio/failed
-            ['operation', 'result'],
-            registry=self.registry
+            "imhex_mcp_compression_operations_total",
+            "Compression operations by type and result",
+            # operation: compress/decompress, result:
+            # success/skipped_small/skipped_ratio/failed
+            ["operation", "result"],
+            registry=self.registry,
         )
 
         # Connection pool metrics
         self.pool_connections = Gauge(
-            'imhex_mcp_pool_connections',
-            'Connection pool statistics',
-            ['state'],  # active, idle, total
-            registry=self.registry
+            "imhex_mcp_pool_connections",
+            "Connection pool statistics",
+            ["state"],  # active, idle, total
+            registry=self.registry,
         )
 
         self.pool_operations = Counter(
-            'imhex_mcp_pool_operations_total',
-            'Connection pool operations',
+            "imhex_mcp_pool_operations_total",
+            "Connection pool operations",
             # operation: acquire/release, result: success/timeout/error
-            ['operation', 'result'],
-            registry=self.registry
+            ["operation", "result"],
+            registry=self.registry,
         )
 
         self.pool_wait_time = Histogram(
-            'imhex_mcp_pool_wait_duration_seconds',
-            'Time spent waiting for pool connection',
+            "imhex_mcp_pool_wait_duration_seconds",
+            "Time spent waiting for pool connection",
             buckets=(0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0),
-            registry=self.registry
+            registry=self.registry,
         )
 
         # Cache metrics
         self.cache_operations = Counter(
-            'imhex_mcp_cache_operations_total',
-            'Cache operations by result',
-            ['result'],  # hit, miss, set, evict
-            registry=self.registry
+            "imhex_mcp_cache_operations_total",
+            "Cache operations by result",
+            ["result"],  # hit, miss, set, evict
+            registry=self.registry,
         )
 
         self.cache_size = Gauge(
-            'imhex_mcp_cache_size',
-            'Current number of items in cache',
-            registry=self.registry
+            "imhex_mcp_cache_size",
+            "Current number of items in cache",
+            registry=self.registry,
         )
 
         self.cache_bytes = Gauge(
-            'imhex_mcp_cache_bytes',
-            'Approximate cache size in bytes',
-            registry=self.registry
+            "imhex_mcp_cache_bytes",
+            "Approximate cache size in bytes",
+            registry=self.registry,
         )
 
         # Error metrics
         self.errors = Counter(
-            'imhex_mcp_errors_total',
-            'Total errors by type and endpoint',
-            ['error_type', 'endpoint'],
-            registry=self.registry
+            "imhex_mcp_errors_total",
+            "Total errors by type and endpoint",
+            ["error_type", "endpoint"],
+            registry=self.registry,
         )
 
         # Batching metrics
         self.batch_size = Histogram(
-            'imhex_mcp_batch_size',
-            'Number of requests in batch',
+            "imhex_mcp_batch_size",
+            "Number of requests in batch",
             buckets=(1, 2, 5, 10, 20, 50, 100),
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.batch_wait_time = Histogram(
-            'imhex_mcp_batch_wait_duration_seconds',
-            'Time requests waited in batch window',
+            "imhex_mcp_batch_wait_duration_seconds",
+            "Time requests waited in batch window",
             buckets=(0.001, 0.005, 0.01, 0.02, 0.05, 0.1),
-            registry=self.registry
+            registry=self.registry,
         )
 
         # System info
         self.info = Info(
-            'imhex_mcp',
-            'ImHex MCP server information',
-            registry=self.registry
+            "imhex_mcp", "ImHex MCP server information", registry=self.registry
         )
 
         # Health metrics
         self.health_checks = Counter(
-            'imhex_mcp_health_checks_total',
-            'Health check results',
-            ['status'],  # healthy, unhealthy
-            registry=self.registry
+            "imhex_mcp_health_checks_total",
+            "Health check results",
+            ["status"],  # healthy, unhealthy
+            registry=self.registry,
         )
 
         self.last_health_check = Gauge(
-            'imhex_mcp_last_health_check_timestamp',
-            'Timestamp of last health check',
-            registry=self.registry
+            "imhex_mcp_last_health_check_timestamp",
+            "Timestamp of last health check",
+            registry=self.registry,
         )
 
         logger.info("Prometheus metrics initialized")
 
     def set_info(
-            self, version: str, python_version: str, **kwargs: Any) -> None:
+        self, version: str, python_version: str, **kwargs: Any
+    ) -> None:
         """Set server information.
 
         Args:
@@ -199,9 +212,9 @@ class ImHexMCPMetrics:
             **kwargs: Additional info fields
         """
         info_dict = {
-            'version': version,
-            'python_version': python_version,
-            **kwargs
+            "version": version,
+            "python_version": python_version,
+            **kwargs,
         }
         self.info.info(info_dict)
 
@@ -219,31 +232,36 @@ class ImHexMCPMetrics:
             async def handle_file_read(data):
                 ...
         """
+
         def decorator(func: Callable) -> Callable:
             @wraps(func)
             async def wrapper(*args: Any, **kwargs: Any) -> Any:
                 self.active_requests.inc()
                 start_time = time.perf_counter()
-                status = 'success'
+                status = "success"
 
                 try:
                     result = await func(*args, **kwargs)
                     return result
                 except Exception as e:
-                    status = 'error'
+                    status = "error"
                     error_type = type(e).__name__
-                    self.errors.labels(error_type=error_type,
-                                       endpoint=endpoint).inc()
+                    self.errors.labels(
+                        error_type=error_type, endpoint=endpoint
+                    ).inc()
                     raise
                 finally:
                     duration = time.perf_counter() - start_time
                     self.request_count.labels(
-                        endpoint=endpoint, status=status).inc()
-                    self.request_duration.labels(
-                        endpoint=endpoint).observe(duration)
+                        endpoint=endpoint, status=status
+                    ).inc()
+                    self.request_duration.labels(endpoint=endpoint).observe(
+                        duration
+                    )
                     self.active_requests.dec()
 
             return wrapper
+
         return decorator
 
     def record_compression(
@@ -252,7 +270,7 @@ class ImHexMCPMetrics:
         duration_seconds: float,
         original_size: int,
         compressed_size: Optional[int] = None,
-        result: str = 'success'
+        result: str = "success",
     ) -> None:
         """Record compression metrics.
 
@@ -263,13 +281,17 @@ class ImHexMCPMetrics:
             compressed_size: Compressed size (for compression operations)
             result: Operation result (success/skipped_small/skipped_ratio/failed)
         """
-        self.compression_time.labels(
-            operation=operation).observe(duration_seconds)
+        self.compression_time.labels(operation=operation).observe(
+            duration_seconds
+        )
         self.compression_operations.labels(
-            operation=operation, result=result).inc()
+            operation=operation, result=result
+        ).inc()
 
-        if compressed_size is not None and result == 'success':
-            ratio = compressed_size / original_size if original_size > 0 else 1.0
+        if compressed_size is not None and result == "success":
+            ratio = (
+                compressed_size / original_size if original_size > 0 else 1.0
+            )
             self.compression_ratio.observe(ratio)
 
             bytes_saved = original_size - compressed_size
@@ -278,15 +300,15 @@ class ImHexMCPMetrics:
 
             # Track sent bytes
             self.bytes_transferred.labels(
-                direction='sent',
-                compressed='yes' if compressed_size < original_size else 'no'
+                direction="sent",
+                compressed="yes" if compressed_size < original_size else "no",
             ).inc(compressed_size)
 
     def record_decompression(
         self,
         duration_seconds: float,
         compressed_size: int,
-        decompressed_size: int
+        decompressed_size: int,
     ) -> None:
         """Record decompression metrics.
 
@@ -295,23 +317,19 @@ class ImHexMCPMetrics:
             compressed_size: Compressed data size
             decompressed_size: Decompressed data size
         """
-        self.compression_time.labels(
-            operation='decompress').observe(duration_seconds)
+        self.compression_time.labels(operation="decompress").observe(
+            duration_seconds
+        )
         self.compression_operations.labels(
-            operation='decompress', result='success').inc()
+            operation="decompress", result="success"
+        ).inc()
 
         # Track received bytes
         self.bytes_transferred.labels(
-            direction='received',
-            compressed='yes'
+            direction="received", compressed="yes"
         ).inc(compressed_size)
 
-    def update_pool_stats(
-        self,
-        active: int,
-        idle: int,
-        total: int
-    ) -> None:
+    def update_pool_stats(self, active: int, idle: int, total: int) -> None:
         """Update connection pool statistics.
 
         Args:
@@ -319,15 +337,15 @@ class ImHexMCPMetrics:
             idle: Number of idle connections
             total: Total connections in pool
         """
-        self.pool_connections.labels(state='active').set(active)
-        self.pool_connections.labels(state='idle').set(idle)
-        self.pool_connections.labels(state='total').set(total)
+        self.pool_connections.labels(state="active").set(active)
+        self.pool_connections.labels(state="idle").set(idle)
+        self.pool_connections.labels(state="total").set(total)
 
     def record_pool_operation(
         self,
         operation: str,
         result: str,
-        wait_time_seconds: Optional[float] = None
+        wait_time_seconds: Optional[float] = None,
     ) -> None:
         """Record connection pool operation.
 
@@ -338,14 +356,14 @@ class ImHexMCPMetrics:
         """
         self.pool_operations.labels(operation=operation, result=result).inc()
 
-        if wait_time_seconds is not None and operation == 'acquire':
+        if wait_time_seconds is not None and operation == "acquire":
             self.pool_wait_time.observe(wait_time_seconds)
 
     def record_cache_operation(
         self,
         result: str,
         size: Optional[int] = None,
-        bytes_size: Optional[int] = None
+        bytes_size: Optional[int] = None,
     ) -> None:
         """Record cache operation.
 
@@ -362,11 +380,7 @@ class ImHexMCPMetrics:
         if bytes_size is not None:
             self.cache_bytes.set(bytes_size)
 
-    def record_batch(
-        self,
-        batch_size: int,
-        wait_time_seconds: float
-    ) -> None:
+    def record_batch(self, batch_size: int, wait_time_seconds: float) -> None:
         """Record batch metrics.
 
         Args:
@@ -382,7 +396,7 @@ class ImHexMCPMetrics:
         Args:
             healthy: Whether system is healthy
         """
-        status = 'healthy' if healthy else 'unhealthy'
+        status = "healthy" if healthy else "unhealthy"
         self.health_checks.labels(status=status).inc()
         self.last_health_check.set(time.time())
 
@@ -429,7 +443,8 @@ def get_metrics() -> ImHexMCPMetrics:
 
 
 def initialize_metrics(
-        version: str = "1.0.0", **kwargs: Any) -> ImHexMCPMetrics:
+    version: str = "1.0.0", **kwargs: Any
+) -> ImHexMCPMetrics:
     """Initialize global metrics with server info.
 
     Args:
@@ -444,7 +459,10 @@ def initialize_metrics(
     metrics = get_metrics()
     metrics.set_info(
         version=version,
-        python_version=f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
-        **kwargs
+        python_version=f"{
+            sys.version_info.major}.{
+            sys.version_info.minor}.{
+            sys.version_info.micro}",
+        **kwargs,
     )
     return metrics

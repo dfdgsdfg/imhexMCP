@@ -38,6 +38,7 @@ class PayloadTooLarge(SecurityViolation):
 @dataclass
 class RateLimitConfig:
     """Configuration for rate limiting."""
+
     enabled: bool = True
     requests_per_second: float = 100.0  # Maximum requests per second
     burst_size: int = 200  # Maximum burst capacity
@@ -47,19 +48,23 @@ class RateLimitConfig:
 @dataclass
 class ValidationConfig:
     """Configuration for input validation."""
+
     enabled: bool = True
     max_payload_size: int = 10 * 1024 * 1024  # 10 MB max payload
     max_string_length: int = 10000  # Max string length
     max_path_length: int = 4096  # Max file path length
     allowed_path_patterns: List[str] = field(
-        default_factory=lambda: [".*"])  # Regex patterns
-    blocked_path_patterns: List[str] = field(default_factory=lambda: [
-        r"\.\./",  # Path traversal
-        r"~",  # Home directory expansion
-        r"/etc/",  # System files
-        r"/proc/",  # Process info
-        r"/sys/",  # System info
-    ])
+        default_factory=lambda: [".*"]
+    )  # Regex patterns
+    blocked_path_patterns: List[str] = field(
+        default_factory=lambda: [
+            r"\.\./",  # Path traversal
+            r"~",  # Home directory expansion
+            r"/etc/",  # System files
+            r"/proc/",  # Process info
+            r"/sys/",  # System info
+        ]
+    )
     sanitize_strings: bool = True  # Remove control characters
 
 
@@ -100,10 +105,7 @@ class TokenBucket:
             elapsed = now - self.last_update
 
             # Add new tokens based on elapsed time
-            self.tokens = min(
-                self.capacity,
-                self.tokens + elapsed * self.rate
-            )
+            self.tokens = min(self.capacity, self.tokens + elapsed * self.rate)
             self.last_update = now
 
             # Try to acquire tokens
@@ -114,7 +116,8 @@ class TokenBucket:
             return False
 
     async def wait_for_tokens(
-            self, tokens: int = 1, timeout: Optional[float] = None) -> bool:
+        self, tokens: int = 1, timeout: Optional[float] = None
+    ) -> bool:
         """
         Wait until tokens are available.
 
@@ -158,8 +161,7 @@ class RateLimiter:
         if config.enabled:
             # Create global rate limiter
             self.global_bucket = TokenBucket(
-                rate=config.requests_per_second,
-                capacity=config.burst_size
+                rate=config.requests_per_second, capacity=config.burst_size
             )
 
     async def check_rate_limit(self, client_id: Optional[str] = None) -> None:
@@ -183,13 +185,15 @@ class RateLimiter:
         if self.config.per_client and client_id:
             if client_id not in self.client_buckets:
                 self.client_buckets[client_id] = TokenBucket(
-                    rate=self.config.requests_per_second / 10,  # 10% of global per client
-                    capacity=self.config.burst_size // 10
+                    rate=self.config.requests_per_second
+                    / 10,  # 10% of global per client
+                    capacity=self.config.burst_size // 10,
                 )
 
             if not await self.client_buckets[client_id].acquire():
                 raise RateLimitExceeded(
-                    f"Rate limit exceeded for client {client_id}")
+                    f"Rate limit exceeded for client {client_id}"
+                )
 
     async def cleanup_old_clients(self, max_age: float = 300.0) -> None:
         """
@@ -243,14 +247,16 @@ class InputValidator:
         # Check length
         if len(value) > self.config.max_string_length:
             raise InvalidInput(
-                f"{field_name} exceeds maximum length of {self.config.max_string_length}"
+                f"{field_name} exceeds maximum length of {
+                    self.config.max_string_length}"
             )
 
         # Sanitize control characters if enabled
         if self.config.sanitize_strings:
             # Remove null bytes and other control characters
-            value = "".join(char for char in value if char >=
-                            ' ' or char in '\n\r\t')
+            value = "".join(
+                char for char in value if char >= " " or char in "\n\r\t"
+            )
 
         return value
 
@@ -259,7 +265,7 @@ class InputValidator:
         value: Any,
         field_name: str = "value",
         min_value: Optional[int] = None,
-        max_value: Optional[int] = None
+        max_value: Optional[int] = None,
     ) -> int:
         """
         Validate integer input.
@@ -315,7 +321,8 @@ class InputValidator:
         for pattern in self.config.blocked_path_patterns:
             if re.search(pattern, path):
                 raise InvalidInput(
-                    f"{field_name} contains forbidden pattern: {pattern}")
+                    f"{field_name} contains forbidden pattern: {pattern}"
+                )
 
         # Check allowed patterns
         allowed = False
@@ -336,12 +343,14 @@ class InputValidator:
         # Additional traversal check
         if ".." in path or path.startswith("~"):
             raise InvalidInput(
-                f"{field_name} contains forbidden path traversal")
+                f"{field_name} contains forbidden path traversal"
+            )
 
         return resolved
 
     def validate_hex_string(
-            self, value: str, field_name: str = "hex_value") -> str:
+        self, value: str, field_name: str = "hex_value"
+    ) -> str:
         """
         Validate hexadecimal string.
 
@@ -358,9 +367,10 @@ class InputValidator:
         value = self.validate_string(value, field_name)
 
         # Check if valid hex
-        if not re.match(r'^[0-9A-Fa-f]*$', value):
+        if not re.match(r"^[0-9A-Fa-f]*$", value):
             raise InvalidInput(
-                f"{field_name} must contain only hex characters")
+                f"{field_name} must contain only hex characters"
+            )
 
         return value.upper()
 
@@ -383,6 +393,7 @@ class InputValidator:
         elif isinstance(payload, dict):
             # Rough estimate for dict size
             import json
+
             size = len(json.dumps(payload))
         else:
             # For other types, skip check
@@ -390,10 +401,13 @@ class InputValidator:
 
         if size > self.config.max_payload_size:
             raise PayloadTooLarge(
-                f"Payload size {size} exceeds limit of {self.config.max_payload_size}"
+                f"Payload size {size} exceeds limit of {
+                    self.config.max_payload_size}"
             )
 
-    def validate_endpoint_data(self, endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_endpoint_data(
+        self, endpoint: str, data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Validate data for specific endpoint.
 
@@ -412,16 +426,12 @@ class InputValidator:
         # Common validations for file operations
         if "provider_id" in data:
             validated["provider_id"] = self.validate_integer(
-                data["provider_id"],
-                "provider_id",
-                min_value=0
+                data["provider_id"], "provider_id", min_value=0
             )
 
         if "offset" in data:
             validated["offset"] = self.validate_integer(
-                data["offset"],
-                "offset",
-                min_value=0
+                data["offset"], "offset", min_value=0
             )
 
         if "size" in data:
@@ -429,7 +439,7 @@ class InputValidator:
                 data["size"],
                 "size",
                 min_value=0,
-                max_value=100 * 1024 * 1024  # 100 MB max read size
+                max_value=100 * 1024 * 1024,  # 100 MB max read size
             )
 
         if "path" in data:
@@ -454,6 +464,7 @@ class InputValidator:
 @dataclass
 class SecurityConfig:
     """Master security configuration."""
+
     rate_limit: RateLimitConfig = field(default_factory=RateLimitConfig)
     validation: ValidationConfig = field(default_factory=ValidationConfig)
 
@@ -475,7 +486,7 @@ class SecurityManager:
         self,
         endpoint: str,
         data: Dict[str, Any],
-        client_id: Optional[str] = None
+        client_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Perform all security checks on a request.

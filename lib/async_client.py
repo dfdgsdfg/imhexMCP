@@ -50,7 +50,7 @@ class AsyncImHexClient:
         enable_compression: bool = True,
         compression_algorithm: str = "zstd",
         compression_level: int = 3,
-        compression_min_size: int = 1024
+        compression_min_size: int = 1024,
     ):
         """
         Initialize async client.
@@ -91,7 +91,7 @@ class AsyncImHexClient:
                 port=port,
                 max_size=pool_max_size,
                 min_size=pool_min_size,
-                connection_timeout=timeout
+                connection_timeout=timeout,
             )
 
         # Response cache
@@ -100,7 +100,7 @@ class AsyncImHexClient:
             self._cache = AsyncResponseCache(
                 max_size=cache_max_size,
                 max_memory_mb=cache_max_memory_mb,
-                enable_auto_cleanup=True
+                enable_auto_cleanup=True,
             )
 
         # Data compressor
@@ -111,7 +111,7 @@ class AsyncImHexClient:
                 algorithm=compression_algorithm,
                 level=compression_level,
                 min_size=compression_min_size,
-                adaptive=True
+                adaptive=True,
             )
             self._compressor = DataCompressor(config=compression_config)
 
@@ -120,7 +120,7 @@ class AsyncImHexClient:
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
         retry: bool = True,
-        use_cache: bool = True
+        use_cache: bool = True,
     ) -> Dict[str, Any]:
         """
         Send async request to ImHex MCP.
@@ -140,11 +140,14 @@ class AsyncImHexClient:
             if cached_response is not None:
                 return cached_response
 
-        # Use semaphore only if not using connection pool (pool has its own limiting)
+        # Use semaphore only if not using connection pool (pool has its own
+        # limiting)
         if self._semaphore:
             async with self._semaphore:
                 if retry:
-                    response = await self._send_request_with_retry(endpoint, data)
+                    response = await self._send_request_with_retry(
+                        endpoint, data
+                    )
                 else:
                     response = await self._send_request_impl(endpoint, data)
         else:
@@ -163,7 +166,7 @@ class AsyncImHexClient:
         self,
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
-        max_attempts: int = 3
+        max_attempts: int = 3,
     ) -> Dict[str, Any]:
         """Send request with exponential backoff retry."""
         last_error = None
@@ -179,12 +182,11 @@ class AsyncImHexClient:
                     delay *= 2
 
         raise ImHexMCPError(
-            f"Failed after {max_attempts} attempts: {last_error}")
+            f"Failed after {max_attempts} attempts: {last_error}"
+        )
 
     async def _send_request_impl(
-        self,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None
+        self, endpoint: str, data: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Implementation of async request.
@@ -198,17 +200,12 @@ class AsyncImHexClient:
             # Fallback to thread-based execution
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(
-                None,
-                self._sync_send_request,
-                endpoint,
-                data
+                None, self._sync_send_request, endpoint, data
             )
             return result
 
     async def _send_request_pooled(
-        self,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None
+        self, endpoint: str, data: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Send request using connection pool (30-50% faster).
@@ -229,10 +226,9 @@ class AsyncImHexClient:
             conn = await self._pool.acquire()
 
             # Build request
-            request = json.dumps({
-                "endpoint": endpoint,
-                "data": data or {}
-            }) + "\n"
+            request = (
+                json.dumps({"endpoint": endpoint, "data": data or {}}) + "\n"
+            )
 
             # Send request
             conn.writer.write(request.encode())
@@ -266,9 +262,7 @@ class AsyncImHexClient:
                 await self._pool.release(conn, healthy=healthy)
 
     def _sync_send_request(
-        self,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None
+        self, endpoint: str, data: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Synchronous socket operation (runs in thread pool) - fallback only."""
         try:
@@ -276,10 +270,9 @@ class AsyncImHexClient:
             sock.settimeout(self.timeout)
             sock.connect((self.host, self.port))
 
-            request = json.dumps({
-                "endpoint": endpoint,
-                "data": data or {}
-            }) + "\n"
+            request = (
+                json.dumps({"endpoint": endpoint, "data": data or {}}) + "\n"
+            )
 
             sock.sendall(request.encode())
 
@@ -305,9 +298,7 @@ class AsyncImHexClient:
             return {"status": "error", "data": {"error": str(e)}}
 
     async def send_batch(
-        self,
-        requests: List[tuple],
-        return_exceptions: bool = False
+        self, requests: List[tuple], return_exceptions: bool = False
     ) -> List[Dict[str, Any]]:
         """
         Send multiple requests concurrently.
@@ -320,8 +311,7 @@ class AsyncImHexClient:
             List of response dictionaries
         """
         tasks = [
-            self.send_request(endpoint, data)
-            for endpoint, data in requests
+            self.send_request(endpoint, data) for endpoint, data in requests
         ]
 
         if return_exceptions:
@@ -332,8 +322,7 @@ class AsyncImHexClient:
         return results
 
     async def send_batch_advanced(
-        self,
-        batcher: RequestBatcher
+        self, batcher: RequestBatcher
     ) -> Tuple[List[Dict[str, Any]], BatchStats]:
         """
         Send batch using RequestBatcher (40-60% round-trip reduction).
@@ -358,8 +347,11 @@ class AsyncImHexClient:
             responses, stats = await client.send_batch_advanced(batcher)
             print(f"Round-trips saved: {stats.round_trips_saved}")
         """
+
         # Execute batch using the batcher's executor
-        async def executor(endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        async def executor(
+            endpoint: str, data: Dict[str, Any]
+        ) -> Dict[str, Any]:
             return await self.send_request(endpoint, data)
 
         responses, stats = await batcher.execute(executor)
@@ -370,7 +362,7 @@ class AsyncImHexClient:
                 "request_id": r.request_id,
                 "status": r.status,
                 "data": r.data,
-                "elapsed_ms": r.elapsed_ms
+                "elapsed_ms": r.elapsed_ms,
             }
             for r in responses
         ]
@@ -378,10 +370,7 @@ class AsyncImHexClient:
         return response_dicts, stats
 
     async def batch_multi_read(
-        self,
-        provider_id: int,
-        offsets: List[int],
-        size: int
+        self, provider_id: int, offsets: List[int], size: int
     ) -> Tuple[List[bytes], BatchStats]:
         """
         Read multiple regions from same file in one batch (40-60% faster).
@@ -423,7 +412,7 @@ class AsyncImHexClient:
         self,
         provider_ids: List[int],
         endpoint: str,
-        data_template: Optional[Dict[str, Any]] = None
+        data_template: Optional[Dict[str, Any]] = None,
     ) -> Tuple[List[Dict[str, Any]], BatchStats]:
         """
         Execute same operation across multiple files in one batch.
@@ -447,12 +436,12 @@ class AsyncImHexClient:
         from request_batching import create_multi_file_batch
 
         batcher = create_multi_file_batch(
-            provider_ids, endpoint, data_template)
+            provider_ids, endpoint, data_template
+        )
         return await self.send_batch_advanced(batcher)
 
     async def batch_analysis_pipeline(
-        self,
-        provider_id: int
+        self, provider_id: int
     ) -> Tuple[List[Dict[str, Any]], BatchStats]:
         """
         Run common analysis pipeline with automatic dependency resolution.
@@ -478,8 +467,7 @@ class AsyncImHexClient:
         return await self.send_batch_advanced(batcher)
 
     def create_batcher(
-        self,
-        mode: BatchMode = BatchMode.PARALLEL
+        self, mode: BatchMode = BatchMode.PARALLEL
     ) -> RequestBatcher:
         """
         Create a new RequestBatcher for custom batching.
@@ -507,7 +495,7 @@ class AsyncImHexClient:
         provider_id: int,
         offset: int = 0,
         total_size: Optional[int] = None,
-        chunk_size: int = 4096
+        chunk_size: int = 4096,
     ):
         """
         Stream data from provider asynchronously.
@@ -523,7 +511,9 @@ class AsyncImHexClient:
         """
         if total_size is None:
             # Get provider size
-            info = await self.send_request("file/info", {"provider_id": provider_id})
+            info = await self.send_request(
+                "file/info", {"provider_id": provider_id}
+            )
             if info.get("status") != "success":
                 raise ImHexMCPError(f"Failed to get provider info: {info}")
             total_size = info["data"]["size"]
@@ -534,11 +524,14 @@ class AsyncImHexClient:
         while bytes_read < total_size:
             read_size = min(chunk_size, total_size - bytes_read)
 
-            response = await self.send_request("data/read", {
-                "provider_id": provider_id,
-                "offset": current_offset,
-                "size": read_size
-            })
+            response = await self.send_request(
+                "data/read",
+                {
+                    "provider_id": provider_id,
+                    "offset": current_offset,
+                    "size": read_size,
+                },
+            )
 
             if response.get("status") != "success":
                 raise ImHexMCPError(f"Read failed: {response}")
@@ -557,20 +550,18 @@ class AsyncImHexClient:
 
     async def get_file_info(self, provider_id: int) -> Dict[str, Any]:
         """Get file info."""
-        return await self.send_request("file/info", {"provider_id": provider_id})
+        return await self.send_request(
+            "file/info", {"provider_id": provider_id}
+        )
 
     async def read_data(
-        self,
-        provider_id: int,
-        offset: int,
-        size: int
+        self, provider_id: int, offset: int, size: int
     ) -> Dict[str, Any]:
         """Read data from file."""
-        return await self.send_request("data/read", {
-            "provider_id": provider_id,
-            "offset": offset,
-            "size": size
-        })
+        return await self.send_request(
+            "data/read",
+            {"provider_id": provider_id, "offset": offset, "size": size},
+        )
 
     async def open_file(self, path: str) -> Dict[str, Any]:
         """Open file."""
@@ -578,7 +569,9 @@ class AsyncImHexClient:
 
     async def close_file(self, provider_id: int) -> Dict[str, Any]:
         """Close file."""
-        return await self.send_request("file/close", {"provider_id": provider_id})
+        return await self.send_request(
+            "file/close", {"provider_id": provider_id}
+        )
 
     async def get_capabilities(self) -> Dict[str, Any]:
         """Get server capabilities."""
@@ -601,7 +594,7 @@ class AsyncImHexClient:
     async def cache_invalidate(
         self,
         endpoint: Optional[str] = None,
-        data: Optional[Dict[str, Any]] = None
+        data: Optional[Dict[str, Any]] = None,
     ):
         """
         Invalidate cache entries.
@@ -645,10 +638,7 @@ class AsyncImHexClient:
             - decompressions: Number of decompressions performed
         """
         if not self._compressor:
-            return {
-                "enabled": False,
-                "message": "Compression is disabled"
-            }
+            return {"enabled": False, "message": "Compression is disabled"}
 
         stats = self._compressor.get_stats()
         stats["enabled"] = True
@@ -675,7 +665,7 @@ class AsyncImHexClient:
             return {
                 "data": hex_data,
                 "compressed": False,
-                "size": len(hex_data) // 2
+                "size": len(hex_data) // 2,
             }
 
         # Convert hex to bytes
@@ -685,7 +675,8 @@ class AsyncImHexClient:
         return self._compressor.compress_data(binary_data)
 
     def decompress_binary_data(
-            self, compressed_payload: Dict[str, Any]) -> str:
+        self, compressed_payload: Dict[str, Any]
+    ) -> str:
         """
         Decompress binary data back to hex string.
 
@@ -704,6 +695,7 @@ class AsyncImHexClient:
 
         # Convert bytes to hex
         return binary_data.hex()
+
     # Context manager support
 
     async def __aenter__(self):
@@ -748,7 +740,7 @@ class AsyncEnhancedImHexClient(AsyncImHexClient):
         max_concurrent: int = 10,
         enable_cache: bool = True,
         cache_max_size: int = 1000,
-        enable_profiling: bool = False
+        enable_profiling: bool = False,
     ):
         """
         Initialize enhanced async client.
@@ -779,7 +771,8 @@ class AsyncEnhancedImHexClient(AsyncImHexClient):
             self._request_count = 0
 
     def _make_cache_key(
-            self, endpoint: str, data: Optional[Dict[str, Any]]) -> str:
+        self, endpoint: str, data: Optional[Dict[str, Any]]
+    ) -> str:
         """Create cache key from endpoint and data."""
         data_str = json.dumps(data or {}, sort_keys=True)
         return f"{endpoint}:{data_str}"
@@ -789,7 +782,7 @@ class AsyncEnhancedImHexClient(AsyncImHexClient):
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
         retry: bool = True,
-        use_cache: bool = True
+        use_cache: bool = True,
     ) -> Dict[str, Any]:
         """
         Send async request with caching and profiling.
@@ -804,6 +797,7 @@ class AsyncEnhancedImHexClient(AsyncImHexClient):
             Response dictionary
         """
         import time
+
         start_time = time.perf_counter()
 
         # Check cache
@@ -822,7 +816,11 @@ class AsyncEnhancedImHexClient(AsyncImHexClient):
         result = await super().send_request(endpoint, data, retry)
 
         # Update cache
-        if self.enable_cache and use_cache and result.get("status") == "success":
+        if (
+            self.enable_cache
+            and use_cache
+            and result.get("status") == "success"
+        ):
             cache_key = self._make_cache_key(endpoint, data)
 
             async with self._cache_lock:
@@ -856,7 +854,7 @@ class AsyncEnhancedImHexClient(AsyncImHexClient):
         return {
             "enabled": True,
             "size": len(self._cache),
-            "max_size": self._cache_max_size
+            "max_size": self._cache_max_size,
         }
 
     def get_performance_stats(self) -> Dict[str, Any]:
@@ -875,17 +873,18 @@ class AsyncEnhancedImHexClient(AsyncImHexClient):
             "max_time_ms": max(times),
             "p50_time_ms": times_sorted[len(times_sorted) // 2],
             "p95_time_ms": times_sorted[int(len(times_sorted) * 0.95)],
-            "p99_time_ms": times_sorted[int(len(times_sorted) * 0.99)]
+            "p99_time_ms": times_sorted[int(len(times_sorted) * 0.99)],
         }
 
 
 # Helper functions for easier async usage
 
+
 async def async_read_file(
     client: AsyncImHexClient,
     provider_id: int,
     output_path: str,
-    chunk_size: int = 4096
+    chunk_size: int = 4096,
 ) -> int:
     """
     Read file asynchronously and save to disk.
@@ -901,8 +900,10 @@ async def async_read_file(
     """
     bytes_written = 0
 
-    with open(output_path, 'wb') as f:
-        async for chunk in client.stream_read(provider_id, chunk_size=chunk_size):
+    with open(output_path, "wb") as f:
+        async for chunk in client.stream_read(
+            provider_id, chunk_size=chunk_size
+        ):
             f.write(chunk)
             bytes_written += len(chunk)
 
@@ -910,10 +911,7 @@ async def async_read_file(
 
 
 async def async_batch_read(
-    client: AsyncImHexClient,
-    provider_id: int,
-    offsets: List[int],
-    size: int
+    client: AsyncImHexClient, provider_id: int, offsets: List[int], size: int
 ) -> List[bytes]:
     """
     Read multiple regions concurrently.
@@ -928,11 +926,10 @@ async def async_batch_read(
         List of data chunks as bytes
     """
     requests = [
-        ("data/read", {
-            "provider_id": provider_id,
-            "offset": offset,
-            "size": size
-        })
+        (
+            "data/read",
+            {"provider_id": provider_id, "offset": offset, "size": size},
+        )
         for offset in offsets
     ]
 
@@ -951,6 +948,7 @@ async def async_batch_read(
 
 
 # Sync-to-async bridge for backward compatibility
+
 
 def run_async(coro):
     """

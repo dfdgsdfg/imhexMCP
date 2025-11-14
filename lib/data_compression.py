@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CompressionConfig:
     """Compression configuration."""
+
     enabled: bool = True
     algorithm: str = "zstd"  # zstd, gzip, zlib
     level: int = 3  # 1-22 for zstd, 1-9 for gzip/zlib
@@ -32,6 +33,7 @@ class CompressionConfig:
 @dataclass
 class CompressionStats:
     """Compression statistics."""
+
     bytes_sent: int = 0
     bytes_received: int = 0
     bytes_saved: int = 0  # Due to compression
@@ -88,15 +90,18 @@ class DataCompressor:
             self._init_zlib()
         else:
             raise ValueError(
-                f"Unsupported compression algorithm: {self.config.algorithm}")
+                f"Unsupported compression algorithm: {self.config.algorithm}"
+            )
 
         logger.info(
-            f"Compression enabled: {self.config.algorithm} level {self.config.level}")
+            f"Compression enabled: {self.config.algorithm} level {self.config.level}"
+        )
 
     def _init_zstd(self) -> None:
         """Initialize zstd compression."""
         try:
             import zstandard as zstd
+
             self._compressor = zstd.ZstdCompressor(level=self.config.level)
             self._decompressor = zstd.ZstdDecompressor()
             logger.debug("Using zstd compression")
@@ -108,16 +113,20 @@ class DataCompressor:
     def _init_gzip(self) -> None:
         """Initialize gzip compression."""
         import gzip
+
         self._compress_func = lambda data: gzip.compress(
-            data, compresslevel=self.config.level)
+            data, compresslevel=self.config.level
+        )
         self._decompress_func = gzip.decompress
         logger.debug("Using gzip compression")
 
     def _init_zlib(self) -> None:
         """Initialize zlib compression."""
         import zlib
+
         self._compress_func = lambda data: zlib.compress(
-            data, level=self.config.level)
+            data, level=self.config.level
+        )
         self._decompress_func = zlib.decompress
         logger.debug("Using zlib compression")
 
@@ -144,7 +153,7 @@ class DataCompressor:
             return {
                 "data": data.hex(),
                 "compressed": False,
-                "size": original_size
+                "size": original_size,
             }
 
         # Skip compression for small payloads
@@ -153,7 +162,7 @@ class DataCompressor:
             return {
                 "data": data.hex(),
                 "compressed": False,
-                "size": original_size
+                "size": original_size,
             }
 
         # Compress
@@ -172,7 +181,7 @@ class DataCompressor:
             return {
                 "data": data.hex(),
                 "compressed": False,
-                "size": original_size
+                "size": original_size,
             }
 
         compressed_size = len(compressed)
@@ -185,25 +194,29 @@ class DataCompressor:
             return {
                 "data": data.hex(),
                 "compressed": False,
-                "size": original_size
+                "size": original_size,
             }
 
         # Use compressed data
         self.stats.compressions += 1
-        self.stats.bytes_saved += (original_size - compressed_size)
-        self.stats.compression_ratio = self.stats.bytes_saved / \
-            self.stats.bytes_sent if self.stats.bytes_sent > 0 else 0.0
+        self.stats.bytes_saved += original_size - compressed_size
+        self.stats.compression_ratio = (
+            self.stats.bytes_saved / self.stats.bytes_sent
+            if self.stats.bytes_sent > 0
+            else 0.0
+        )
 
         logger.debug(
-            f"Compressed {original_size} -> {compressed_size} bytes ({ratio:.2%})")
+            f"Compressed {original_size} -> {compressed_size} bytes ({ratio:.2%})"
+        )
 
         return {
-            "data": base64.b64encode(compressed).decode('ascii'),
+            "data": base64.b64encode(compressed).decode("ascii"),
             "compressed": True,
             "algorithm": self.config.algorithm,
             "original_size": original_size,
             "compressed_size": compressed_size,
-            "ratio": ratio
+            "ratio": ratio,
         }
 
     def decompress_data(self, payload: Dict[str, Any]) -> bytes:
@@ -226,7 +239,10 @@ class DataCompressor:
         try:
             compressed_data = base64.b64decode(payload["data"])
 
-            if payload.get("algorithm") == "zstd" or self.config.algorithm == "zstd":
+            if (
+                payload.get("algorithm") == "zstd"
+                or self.config.algorithm == "zstd"
+            ):
                 decompressed = self._decompressor.decompress(compressed_data)
             else:
                 decompressed = self._decompress_func(compressed_data)
@@ -237,7 +253,8 @@ class DataCompressor:
             self.stats.bytes_received += len(decompressed)
 
             logger.debug(
-                f"Decompressed {len(compressed_data)} -> {len(decompressed)} bytes")
+                f"Decompressed {len(compressed_data)} -> {len(decompressed)} bytes"
+            )
 
             return decompressed
 
@@ -267,7 +284,8 @@ class DataCompressor:
         print("\nData Transfer:")
         print(f"  Bytes sent: {self.stats.bytes_sent:,} bytes")
         print(
-            f"  Bytes saved: {self.stats.bytes_saved:,} bytes ({self.stats.compression_ratio:.1%} reduction)")
+            f"  Bytes saved: {self.stats.bytes_saved:,} bytes ({self.stats.compression_ratio:.1%} reduction)"
+        )
         print(f"  Bytes received: {self.stats.bytes_received:,} bytes")
 
         print("\nOperations:")
@@ -277,12 +295,16 @@ class DataCompressor:
         print(f"  Skipped (poor ratio): {self.stats.skipped_ratio}")
 
         if self.stats.compressions > 0:
-            avg_compression_time = self.stats.compression_time_ms / self.stats.compressions
+            avg_compression_time = (
+                self.stats.compression_time_ms / self.stats.compressions
+            )
             print("\nTiming:")
             print(f"  Avg compression time: {avg_compression_time:.2f}ms")
 
         if self.stats.decompressions > 0:
-            avg_decompression_time = self.stats.decompression_time_ms / self.stats.decompressions
+            avg_decompression_time = (
+                self.stats.decompression_time_ms / self.stats.decompressions
+            )
             print(f"  Avg decompression time: {avg_decompression_time:.2f}ms")
 
         print("=" * 70 + "\n")
@@ -313,7 +335,7 @@ class AdaptiveCompressor(DataCompressor):
             return super().compress_data(data)
 
         # Sample first 4KB to estimate compressibility
-        sample = data[:min(self.sample_size, len(data))]
+        sample = data[: min(self.sample_size, len(data))]
 
         try:
             if self.config.algorithm == "zstd":
@@ -327,11 +349,12 @@ class AdaptiveCompressor(DataCompressor):
             if estimated_ratio >= 0.85:
                 self.stats.skipped_ratio += 1
                 logger.debug(
-                    f"Skipping compression (estimated ratio: {estimated_ratio:.2f})")
+                    f"Skipping compression (estimated ratio: {estimated_ratio:.2f})"
+                )
                 return {
                     "data": data.hex(),
                     "compressed": False,
-                    "size": original_size
+                    "size": original_size,
                 }
         except Exception as e:
             logger.warning(f"Adaptive sampling failed, using default: {e}")
@@ -342,8 +365,10 @@ class AdaptiveCompressor(DataCompressor):
 
 # Convenience functions
 
-def create_compressor(algorithm: str = "zstd", level: int = 3,
-                      adaptive: bool = True) -> DataCompressor:
+
+def create_compressor(
+    algorithm: str = "zstd", level: int = 3, adaptive: bool = True
+) -> DataCompressor:
     """Create a configured compressor instance.
 
     Args:
@@ -355,10 +380,7 @@ def create_compressor(algorithm: str = "zstd", level: int = 3,
         DataCompressor instance
     """
     config = CompressionConfig(
-        enabled=True,
-        algorithm=algorithm,
-        level=level,
-        adaptive=adaptive
+        enabled=True, algorithm=algorithm, level=level, adaptive=adaptive
     )
 
     if adaptive:

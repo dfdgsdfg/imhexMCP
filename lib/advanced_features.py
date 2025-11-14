@@ -20,24 +20,27 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 # ============================================================================
 # Request Prioritization
 # ============================================================================
 
+
 class Priority(IntEnum):
     """Request priority levels (lower value = higher priority)."""
+
     CRITICAL = 0  # System-critical operations
-    HIGH = 1      # User-facing operations
-    NORMAL = 2    # Standard operations
-    LOW = 3       # Background tasks
+    HIGH = 1  # User-facing operations
+    NORMAL = 2  # Standard operations
+    LOW = 3  # Background tasks
 
 
 @dataclass(order=True)
 class PrioritizedRequest(Generic[T]):
     """A request with priority and aging support."""
+
     priority: int
     timestamp: float = field(compare=False)
     request_id: str = field(compare=False)
@@ -46,7 +49,8 @@ class PrioritizedRequest(Generic[T]):
 
     def __post_init__(self):
         """Calculate effective priority with aging."""
-        # Age requests over time to prevent starvation (1 priority level per 10 seconds)
+        # Age requests over time to prevent starvation (1 priority level per 10
+        # seconds)
         age_bonus = int((time.monotonic() - self.timestamp) / 10.0)
         self.priority = max(0, self.priority - age_bonus)
 
@@ -54,6 +58,7 @@ class PrioritizedRequest(Generic[T]):
 @dataclass
 class PriorityConfig:
     """Configuration for priority queue."""
+
     max_queue_size: int = 1000
     aging_interval: float = 10.0  # Seconds per priority level
     default_priority: Priority = Priority.NORMAL
@@ -81,7 +86,7 @@ class PriorityQueue:
         self,
         coro: Callable[[], Awaitable[T]],
         priority: Priority = None,
-        request_id: Optional[str] = None
+        request_id: Optional[str] = None,
     ) -> asyncio.Future:
         """
         Submit a request to the priority queue.
@@ -110,7 +115,7 @@ class PriorityQueue:
             timestamp=time.monotonic(),
             request_id=request_id,
             coro=coro,
-            future=future
+            future=future,
         )
 
         # Add to queue
@@ -118,7 +123,8 @@ class PriorityQueue:
         self._active_requests[request_id] = request
 
         logger.debug(
-            f"Submitted request {request_id} with priority {priority.name}")
+            f"Submitted request {request_id} with priority {priority.name}"
+        )
 
         return future
 
@@ -162,11 +168,7 @@ class PriorityScheduler:
     Manages worker tasks that process requests concurrently.
     """
 
-    def __init__(
-        self,
-        queue: PriorityQueue,
-        num_workers: int = 10
-    ):
+    def __init__(self, queue: PriorityQueue, num_workers: int = 10):
         """Initialize scheduler."""
         self.queue = queue
         self.num_workers = num_workers
@@ -180,7 +182,8 @@ class PriorityScheduler:
 
         self._running = True
         logger.info(
-            f"Starting priority scheduler with {self.num_workers} workers")
+            f"Starting priority scheduler with {self.num_workers} workers"
+        )
 
         for i in range(self.num_workers):
             worker = asyncio.create_task(self._worker_loop(i))
@@ -227,20 +230,23 @@ class PriorityScheduler:
 # Circuit Breaker
 # ============================================================================
 
+
 class CircuitState(Enum):
     """Circuit breaker states."""
-    CLOSED = "closed"       # Normal operation
-    OPEN = "open"          # Failures detected, rejecting requests
+
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Failures detected, rejecting requests
     HALF_OPEN = "half_open"  # Testing if service recovered
 
 
 @dataclass
 class CircuitBreakerConfig:
     """Configuration for circuit breaker."""
+
     failure_threshold: int = 5  # Failures before opening circuit
     success_threshold: int = 2  # Successes in half-open to close
-    timeout: float = 60.0       # Seconds before trying half-open
-    window_size: int = 10       # Rolling window for failure rate
+    timeout: float = 60.0  # Seconds before trying half-open
+    window_size: int = 10  # Rolling window for failure rate
 
 
 class CircuitBreakerError(Exception):
@@ -257,9 +263,7 @@ class CircuitBreaker:
     """
 
     def __init__(
-        self,
-        name: str,
-        config: Optional[CircuitBreakerConfig] = None
+        self, name: str, config: Optional[CircuitBreakerConfig] = None
     ):
         """Initialize circuit breaker."""
         self.name = name
@@ -314,8 +318,11 @@ class CircuitBreaker:
         """Check if state transition is needed."""
         if self._state == CircuitState.OPEN:
             # Check if timeout elapsed
-            if (self._last_failure_time and
-                    time.monotonic() - self._last_failure_time >= self.config.timeout):
+            if (
+                self._last_failure_time
+                and time.monotonic() - self._last_failure_time
+                >= self.config.timeout
+            ):
                 self._transition_to_half_open()
 
         elif self._state == CircuitState.CLOSED:
@@ -403,6 +410,7 @@ class CircuitBreaker:
 # Integrated Advanced Client
 # ============================================================================
 
+
 class AdvancedRequestManager:
     """
     Combines prioritization and circuit breaker for advanced request handling.
@@ -412,7 +420,7 @@ class AdvancedRequestManager:
         self,
         priority_config: Optional[PriorityConfig] = None,
         circuit_config: Optional[CircuitBreakerConfig] = None,
-        num_workers: int = 10
+        num_workers: int = 10,
     ):
         """Initialize advanced request manager."""
         self.priority_queue = PriorityQueue(priority_config)
@@ -442,7 +450,7 @@ class AdvancedRequestManager:
         self,
         coro: Callable[[], Awaitable[T]],
         priority: Priority = Priority.NORMAL,
-        use_circuit_breaker: bool = True
+        use_circuit_breaker: bool = True,
     ) -> T:
         """
         Execute request with prioritization and circuit breaker.
@@ -457,8 +465,10 @@ class AdvancedRequestManager:
         """
         # Wrap with circuit breaker if enabled
         if use_circuit_breaker:
+
             async def protected_coro():
                 return await self.circuit_breaker.call(coro)
+
             final_coro = protected_coro
         else:
             final_coro = coro

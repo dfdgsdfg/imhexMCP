@@ -22,21 +22,21 @@ class MetricsHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         """Handle GET requests."""
-        if self.path == '/metrics' and self.metrics:
+        if self.path == "/metrics" and self.metrics:
             # Return metrics
             try:
                 metrics_data = self.metrics.get_metrics()
                 content_type = self.metrics.get_content_type()
 
                 self.send_response(200)
-                self.send_header('Content-Type', content_type)
-                self.send_header('Content-Length', str(len(metrics_data)))
+                self.send_header("Content-Type", content_type)
+                self.send_header("Content-Length", str(len(metrics_data)))
                 self.end_headers()
                 self.wfile.write(metrics_data)
             except Exception as e:
                 logger.error(f"Error generating metrics: {e}")
                 self.send_error(500, f"Internal Server Error: {e}")
-        elif self.path == '/':
+        elif self.path == "/":
             # Root path - show simple index
             response = b"""<!DOCTYPE html>
 <html>
@@ -49,8 +49,8 @@ class MetricsHandler(BaseHTTPRequestHandler):
 </body>
 </html>"""
             self.send_response(200)
-            self.send_header('Content-Type', 'text/html')
-            self.send_header('Content-Length', str(len(response)))
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(response)))
             self.end_headers()
             self.wfile.write(response)
         else:
@@ -65,10 +65,7 @@ class MetricsServer:
     """Prometheus metrics HTTP server."""
 
     def __init__(
-        self,
-        metrics: ImHexMCPMetrics,
-        host: str = "0.0.0.0",
-        port: int = 9090
+        self, metrics: ImHexMCPMetrics, host: str = "0.0.0.0", port: int = 9090
     ):
         """Initialize metrics server.
 
@@ -99,14 +96,13 @@ class MetricsServer:
 
             # Start server in background thread
             self.thread = threading.Thread(
-                target=self._run_server,
-                daemon=True,
-                name="MetricsServer"
+                target=self._run_server, daemon=True, name="MetricsServer"
             )
             self.thread.start()
 
             logger.info(
-                f"Metrics server started on http://{self.host}:{self.port}/metrics")
+                f"Metrics server started on http://{self.host}:{self.port}/metrics"
+            )
 
         except Exception as e:
             logger.error(f"Failed to start metrics server: {e}")

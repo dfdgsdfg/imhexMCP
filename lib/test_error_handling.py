@@ -221,6 +221,7 @@ class TestRetryDecorator:
 
     def test_retry_honors_exception_tuple(self):
         """Test that retry only catches specified exceptions."""
+
         @retry_with_backoff(max_attempts=3, exceptions=(socket.error,))
         def raises_value_error():
             raise ValueError("Not retryable")
@@ -232,8 +233,9 @@ class TestRetryDecorator:
         """Test exponential backoff timing."""
         call_times = []
 
-        @retry_with_backoff(max_attempts=3, initial_delay=0.05,
-                            exponential_base=2.0)
+        @retry_with_backoff(
+            max_attempts=3, initial_delay=0.05, exponential_base=2.0
+        )
         def timing_test():
             call_times.append(time.time())
             if len(call_times) < 3:
@@ -261,7 +263,7 @@ class TestRetryDecorator:
             max_attempts=5,
             initial_delay=1.0,
             max_delay=2.0,
-            exponential_base=10.0
+            exponential_base=10.0,
         )
         def capped_backoff():
             nonlocal call_count
@@ -364,9 +366,7 @@ class TestCircuitBreaker:
     def test_circuit_breaker_closes_after_successes(self):
         """Test circuit breaker closes after enough successes."""
         breaker = CircuitBreaker(
-            failure_threshold=2,
-            recovery_timeout=0.1,
-            success_threshold=2
+            failure_threshold=2, recovery_timeout=0.1, success_threshold=2
         )
 
         def failing_func():
@@ -475,7 +475,8 @@ class TestHealthCheck:
             # Verify socket operations
             mock_socket.assert_called_once()
             mock_sock_instance.connect.assert_called_once_with(
-                ("localhost", 31337))
+                ("localhost", 31337)
+            )
             mock_sock_instance.close.assert_called_once()
 
     def test_health_check_failure(self):
@@ -483,7 +484,8 @@ class TestHealthCheck:
         with patch("socket.socket") as mock_socket:
             mock_sock_instance = MagicMock()
             mock_sock_instance.connect.side_effect = socket.error(
-                "Connection refused")
+                "Connection refused"
+            )
             mock_socket.return_value = mock_sock_instance
 
             health = HealthCheck("localhost", 31337)

@@ -19,13 +19,15 @@ from enum import Enum
 
 class CachePolicy(Enum):
     """Cache eviction policies."""
-    LRU = "lru"           # Least Recently Used
+
+    LRU = "lru"  # Least Recently Used
     TTL_ONLY = "ttl_only"  # Only TTL-based expiration
 
 
 @dataclass
 class CacheEntry:
     """Cache entry with metadata."""
+
     key: str
     value: Any
     created_at: float
@@ -48,6 +50,7 @@ class CacheEntry:
 @dataclass
 class CacheStats:
     """Cache statistics."""
+
     hits: int = 0
     misses: int = 0
     evictions: int = 0
@@ -69,7 +72,7 @@ class CacheStats:
             "expired": self.expired,
             "size": self.size,
             "max_size": self.max_size,
-            "hit_rate": round(self.hit_rate(), 2)
+            "hit_rate": round(self.hit_rate(), 2),
         }
 
 
@@ -89,7 +92,7 @@ class ResponseCache:
         self,
         max_size: int = 1000,
         default_ttl: Optional[float] = 300.0,  # 5 minutes default
-        policy: CachePolicy = CachePolicy.LRU
+        policy: CachePolicy = CachePolicy.LRU,
     ):
         """
         Initialize response cache.
@@ -108,7 +111,8 @@ class ResponseCache:
         self._stats = CacheStats(max_size=max_size)
 
     def _generate_key(
-            self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> str:
+        self, endpoint: str, data: Optional[Dict[str, Any]] = None
+    ) -> str:
         """
         Generate cache key from endpoint and data.
 
@@ -131,9 +135,7 @@ class ResponseCache:
         return hashlib.sha256(key_string.encode()).hexdigest()[:16]
 
     def get(
-        self,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None
+        self, endpoint: str, data: Optional[Dict[str, Any]] = None
     ) -> Optional[Any]:
         """
         Get cached response.
@@ -177,7 +179,7 @@ class ResponseCache:
         endpoint: str,
         data: Optional[Dict[str, Any]],
         value: Any,
-        ttl: Optional[float] = None
+        ttl: Optional[float] = None,
     ) -> None:
         """
         Store response in cache.
@@ -203,7 +205,7 @@ class ResponseCache:
                 created_at=time.time(),
                 last_accessed=time.time(),
                 access_count=0,
-                ttl=ttl
+                ttl=ttl,
             )
 
             self._cache[key] = entry
@@ -226,7 +228,7 @@ class ResponseCache:
     def invalidate(
         self,
         endpoint: Optional[str] = None,
-        data: Optional[Dict[str, Any]] = None
+        data: Optional[Dict[str, Any]] = None,
     ) -> int:
         """
         Invalidate cache entries.
@@ -287,8 +289,7 @@ class ResponseCache:
         """
         with self._lock:
             keys_to_remove = [
-                key for key, entry in self._cache.items()
-                if entry.is_expired()
+                key for key, entry in self._cache.items() if entry.is_expired()
             ]
 
             for key in keys_to_remove:
@@ -313,9 +314,7 @@ class ResponseCache:
             self._stats.expired = 0
 
     def get_entry_info(
-        self,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None
+        self, endpoint: str, data: Optional[Dict[str, Any]] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Get metadata about cached entry.
@@ -341,9 +340,12 @@ class ResponseCache:
                 "access_count": entry.access_count,
                 "ttl": entry.ttl,
                 "age": time.time() - entry.created_at,
-                "expires_in": (entry.ttl - (time.time() - entry.created_at))
-                if entry.ttl else None,
-                "is_expired": entry.is_expired()
+                "expires_in": (
+                    (entry.ttl - (time.time() - entry.created_at))
+                    if entry.ttl
+                    else None
+                ),
+                "is_expired": entry.is_expired(),
             }
 
     def get_all_entries(self) -> List[Dict[str, Any]]:
@@ -362,7 +364,7 @@ class ResponseCache:
                     "access_count": entry.access_count,
                     "ttl": entry.ttl,
                     "age": time.time() - entry.created_at,
-                    "is_expired": entry.is_expired()
+                    "is_expired": entry.is_expired(),
                 }
                 for entry in self._cache.values()
             ]
@@ -398,18 +400,18 @@ class CachingStrategy:
         """
         # Classify endpoints by expected change frequency
         stable_endpoints = {
-            "capabilities",      # Rarely changes
-            "file/info",        # File metadata is stable
+            "capabilities",  # Rarely changes
+            "file/info",  # File metadata is stable
         }
 
         moderate_endpoints = {
-            "file/list",        # Changes when files open/close
-            "file/current",     # Changes with active file
+            "file/list",  # Changes when files open/close
+            "file/current",  # Changes with active file
         }
 
         volatile_endpoints = {
-            "data/read",        # Data can change
-            "data/search",      # Results may vary
+            "data/read",  # Data can change
+            "data/search",  # Results may vary
             "data/statistics",  # Calculated values
         }
 
@@ -456,7 +458,7 @@ class AsyncResponseCache:
         max_size: int = 1000,
         max_memory_mb: float = 100.0,
         default_ttl: Optional[float] = 300.0,
-        enable_auto_cleanup: bool = True
+        enable_auto_cleanup: bool = True,
     ):
         """
         Initialize async response cache.
@@ -493,7 +495,8 @@ class AsyncResponseCache:
                 pass
 
     def _generate_key(
-            self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> str:
+        self, endpoint: str, data: Optional[Dict[str, Any]] = None
+    ) -> str:
         """Generate cache key from endpoint and data."""
         key_parts = [endpoint]
         if data:
@@ -518,9 +521,7 @@ class AsyncResponseCache:
             return 100
 
     async def get(
-        self,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None
+        self, endpoint: str, data: Optional[Dict[str, Any]] = None
     ) -> Optional[Any]:
         """
         Get cached response.
@@ -564,7 +565,7 @@ class AsyncResponseCache:
         endpoint: str,
         data: Optional[Dict[str, Any]],
         value: Any,
-        ttl: Optional[float] = None
+        ttl: Optional[float] = None,
     ) -> None:
         """
         Store response in cache.
@@ -605,7 +606,7 @@ class AsyncResponseCache:
                 created_at=time.time(),
                 last_accessed=time.time(),
                 access_count=0,
-                ttl=ttl_value
+                ttl=ttl_value,
             )
 
             self._cache[key] = entry
@@ -626,7 +627,7 @@ class AsyncResponseCache:
     async def invalidate(
         self,
         endpoint: Optional[str] = None,
-        data: Optional[Dict[str, Any]] = None
+        data: Optional[Dict[str, Any]] = None,
     ) -> int:
         """
         Invalidate cache entries.
@@ -690,8 +691,7 @@ class AsyncResponseCache:
         """
         async with self._lock:
             keys_to_remove = [
-                key for key, entry in self._cache.items()
-                if entry.is_expired()
+                key for key, entry in self._cache.items() if entry.is_expired()
             ]
 
             for key in keys_to_remove:
@@ -721,10 +721,15 @@ class AsyncResponseCache:
             stats_dict = self._stats.to_dict()
             stats_dict["memory_bytes"] = self._current_memory
             stats_dict["memory_mb"] = round(
-                self._current_memory / (1024 * 1024), 2)
+                self._current_memory / (1024 * 1024), 2
+            )
             stats_dict["memory_usage_pct"] = round(
-                (self._current_memory / self.max_memory_bytes * 100)
-                if self.max_memory_bytes > 0 else 0, 2
+                (
+                    (self._current_memory / self.max_memory_bytes * 100)
+                    if self.max_memory_bytes > 0
+                    else 0
+                ),
+                2,
             )
             return stats_dict
 
