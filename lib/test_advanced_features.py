@@ -30,7 +30,7 @@ class TestPriorityQueue:
         async def test_coro():
             return 42
 
-        # future = await queue.submit(test_coro, Priority.NORMAL)
+        future = await queue.submit(test_coro, Priority.NORMAL)
         assert future is not None
         assert queue.qsize() == 1
 
@@ -91,7 +91,7 @@ class TestPriorityQueue:
             await asyncio.sleep(0.01)
             return "success"
 
-        # future = await queue.submit(test_coro, Priority.NORMAL)
+        future = await queue.submit(test_coro, Priority.NORMAL)
         request = await queue.get_next()
         await queue.process_request(request)
 
@@ -106,7 +106,7 @@ class TestPriorityQueue:
         async def failing_coro():
             raise ValueError("test error")
 
-        # future = await queue.submit(failing_coro, Priority.NORMAL)
+        future = await queue.submit(failing_coro, Priority.NORMAL)
         request = await queue.get_next()
         await queue.process_request(request)
 
