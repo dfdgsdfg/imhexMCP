@@ -10,7 +10,7 @@ import socket
 import json
 import threading
 import concurrent.futures
-from typing import Dict, List, Any, Optional, Tuple, Callable
+from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 
@@ -160,8 +160,6 @@ class RequestBatcher:
         request: BatchRequest
     ) -> BatchResponse:
         """Execute single request with its own connection."""
-        import time
-
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(self.timeout)

@@ -13,7 +13,7 @@ Performance:
 import time
 import logging
 from typing import Dict, Any, Optional
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import base64
 
 logger = logging.getLogger(__name__)
@@ -257,12 +257,12 @@ class DataCompressor:
         print("Compression Statistics")
         print("=" * 70)
 
-        print(f"\nData Transfer:")
+        print("\nData Transfer:")
         print(f"  Bytes sent: {self.stats.bytes_sent:,} bytes")
         print(f"  Bytes saved: {self.stats.bytes_saved:,} bytes ({self.stats.compression_ratio:.1%} reduction)")
         print(f"  Bytes received: {self.stats.bytes_received:,} bytes")
 
-        print(f"\nOperations:")
+        print("\nOperations:")
         print(f"  Compressions: {self.stats.compressions}")
         print(f"  Decompressions: {self.stats.decompressions}")
         print(f"  Skipped (small): {self.stats.skipped_small}")
@@ -270,7 +270,7 @@ class DataCompressor:
 
         if self.stats.compressions > 0:
             avg_compression_time = self.stats.compression_time_ms / self.stats.compressions
-            print(f"\nTiming:")
+            print("\nTiming:")
             print(f"  Avg compression time: {avg_compression_time:.2f}ms")
 
         if self.stats.decompressions > 0:

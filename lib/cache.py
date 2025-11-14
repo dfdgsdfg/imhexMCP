@@ -512,7 +512,7 @@ class AsyncResponseCache:
                 return len(json.dumps(value, default=str))
             else:
                 return 100  # Default estimate
-        except:
+        except (TypeError, ValueError, OverflowError):
             return 100
 
     async def get(

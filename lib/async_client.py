@@ -13,7 +13,7 @@ Performance:
 import asyncio
 import socket
 import json
-from typing import Dict, Any, Optional, List, Callable, Tuple
+from typing import Dict, Any, Optional, List, Tuple
 from pathlib import Path
 import sys
 
@@ -21,7 +21,7 @@ import sys
 lib_path = Path(__file__).parent
 sys.path.insert(0, str(lib_path))
 
-from error_handling import retry_with_backoff, ImHexMCPError
+from error_handling import ImHexMCPError
 from connection_pool import ConnectionPool
 from request_batching import RequestBatcher, BatchMode, BatchStats
 from cache import AsyncResponseCache
