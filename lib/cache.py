@@ -635,6 +635,7 @@ class AsyncResponseCache:
             value: Response value to cache
             ttl: Time to live in seconds (None = use default)
         """
+        # Perform all expensive operations outside the lock
         key = self._generate_key(endpoint, data)
         ttl_value = ttl if ttl is not None else self.default_ttl
 
@@ -644,6 +645,18 @@ class AsyncResponseCache:
 
         value_size = self._estimate_size(value)
 
+        # Create entry outside lock (pure object creation, no side effects)
+        current_time = time.time()
+        entry = CacheEntry(
+            key=key,
+            value=value,
+            created_at=current_time,
+            last_accessed=current_time,
+            access_count=0,
+            ttl=ttl_value,
+        )
+
+        # Minimize critical section - only hold lock for cache mutations
         async with self._lock:
             # Evict until we have space
             while len(self._cache) >= self.max_size:
@@ -658,16 +671,7 @@ class AsyncResponseCache:
                 self._current_memory -= self._estimate_size(old_entry.value)
                 del self._cache[key]
 
-            # Create new entry
-            entry = CacheEntry(
-                key=key,
-                value=value,
-                created_at=time.time(),
-                last_accessed=time.time(),
-                access_count=0,
-                ttl=ttl_value,
-            )
-
+            # Insert new entry
             self._cache[key] = entry
             self._current_memory += value_size
             self._stats.size = len(self._cache)

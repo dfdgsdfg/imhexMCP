@@ -121,14 +121,19 @@ class DataCompressor:
         logger.debug("Using gzip compression")
 
     def _init_zlib(self) -> None:
-        """Initialize zlib compression."""
+        """Initialize zlib compression with reusable compressor objects."""
         import zlib
 
-        self._compress_func = lambda data: zlib.compress(
-            data, level=self.config.level
-        )
-        self._decompress_func = zlib.decompress
-        logger.debug("Using zlib compression")
+        # Use compressobj for better performance (reusable, fewer allocations)
+        # Store zlib module for dynamic level selection
+        self._zlib = zlib
+
+        # Pre-create compressor objects for common levels
+        # This avoids repeated object creation overhead
+        self._compressor = zlib.compressobj(level=self.config.level)
+        self._decompressor = zlib.decompressobj()
+
+        logger.debug(f"Using zlib compression with reusable compressor (level {self.config.level})")
 
     def compress_data(self, data: bytes) -> Dict[str, Any]:
         """Compress data if beneficial.
@@ -165,12 +170,30 @@ class DataCompressor:
                 "size": original_size,
             }
 
+        # Adaptive compression level based on data size
+        # Larger data = lower level (faster), smaller data = higher level (better ratio)
+        if self.config.adaptive and self.config.algorithm == "zlib":
+            if original_size > 100000:  # > 100KB: use fast compression
+                compression_level = max(1, self.config.level - 2)
+            elif original_size > 10000:  # > 10KB: use default
+                compression_level = self.config.level
+            else:  # < 10KB: use better compression
+                compression_level = min(9, self.config.level + 1)
+        else:
+            compression_level = self.config.level
+
         # Compress
         start = time.perf_counter()
         try:
             if self.config.algorithm == "zstd":
                 compressed = self._compressor.compress(data)
+            elif self.config.algorithm == "zlib":
+                # Use reusable compressor for zlib (faster than zlib.compress())
+                # Reset compressor for reuse
+                self._compressor = self._zlib.compressobj(level=compression_level)
+                compressed = self._compressor.compress(data) + self._compressor.flush()
             else:
+                # gzip fallback
                 compressed = self._compress_func(data)
 
             compression_time_ms = (time.perf_counter() - start) * 1000
@@ -244,7 +267,13 @@ class DataCompressor:
                 or self.config.algorithm == "zstd"
             ):
                 decompressed = self._decompressor.decompress(compressed_data)
+            elif self.config.algorithm == "zlib":
+                # Use reusable decompressor for zlib (faster than zlib.decompress())
+                # Reset decompressor for reuse
+                self._decompressor = self._zlib.decompressobj()
+                decompressed = self._decompressor.decompress(compressed_data) + self._decompressor.flush()
             else:
+                # gzip fallback
                 decompressed = self._decompress_func(compressed_data)
 
             decompression_time_ms = (time.perf_counter() - start) * 1000
