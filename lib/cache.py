@@ -15,6 +15,14 @@ from typing import Dict, Any, Optional, List
 from collections import OrderedDict
 from dataclasses import dataclass
 from enum import Enum
+from functools import lru_cache
+
+# Try to use orjson for better performance (2-3x faster)
+try:
+    import orjson
+    HAS_ORJSON = True
+except ImportError:
+    HAS_ORJSON = False
 
 
 class CachePolicy(Enum):
@@ -116,6 +124,8 @@ class ResponseCache:
         """
         Generate cache key from endpoint and data.
 
+        Optimized with orjson for 2-3x faster JSON serialization.
+
         Args:
             endpoint: API endpoint name
             data: Request parameters
@@ -126,8 +136,14 @@ class ResponseCache:
         # Create deterministic key from endpoint + sorted data
         key_parts = [endpoint]
         if data:
-            # Sort keys for deterministic ordering
-            sorted_data = json.dumps(data, sort_keys=True)
+            # Use orjson if available (2-3x faster)
+            if HAS_ORJSON:
+                sorted_data = orjson.dumps(
+                    data,
+                    option=orjson.OPT_SORT_KEYS
+                ).decode()
+            else:
+                sorted_data = json.dumps(data, sort_keys=True, default=str)
             key_parts.append(sorted_data)
 
         key_string = ":".join(key_parts)
@@ -497,24 +513,67 @@ class AsyncResponseCache:
     def _generate_key(
         self, endpoint: str, data: Optional[Dict[str, Any]] = None
     ) -> str:
-        """Generate cache key from endpoint and data."""
-        key_parts = [endpoint]
+        """
+        Generate cache key from endpoint and data.
+
+        Optimized with:
+        - orjson for 2-3x faster JSON serialization
+        - LRU cache for common endpoint+data combinations
+        """
+        # Convert data to hashable tuple for LRU cache
         if data:
-            sorted_data = json.dumps(data, sort_keys=True, default=str)
+            data_tuple = tuple(sorted(data.items()))
+        else:
+            data_tuple = None
+
+        return self._generate_key_cached(endpoint, data_tuple)
+
+    @lru_cache(maxsize=1000)
+    def _generate_key_cached(
+        self, endpoint: str, data_tuple: Optional[tuple] = None
+    ) -> str:
+        """Cached key generation (LRU cache for performance)."""
+        key_parts = [endpoint]
+
+        if data_tuple:
+            # Convert tuple back to dict
+            data_dict = dict(data_tuple)
+
+            # Use orjson if available (2-3x faster)
+            if HAS_ORJSON:
+                sorted_data = orjson.dumps(
+                    data_dict,
+                    option=orjson.OPT_SORT_KEYS
+                ).decode()
+            else:
+                sorted_data = json.dumps(data_dict, sort_keys=True, default=str)
+
             key_parts.append(sorted_data)
 
         key_string = ":".join(key_parts)
         return hashlib.sha256(key_string.encode()).hexdigest()[:16]
 
     def _estimate_size(self, value: Any) -> int:
-        """Estimate memory size of value in bytes."""
+        """
+        Estimate memory size of value in bytes.
+
+        Optimized: Fast approximation without full traversal.
+        """
         try:
             if isinstance(value, (str, bytes)):
                 return len(value)
             elif isinstance(value, (int, float)):
                 return 8
             elif isinstance(value, dict):
-                return len(json.dumps(value, default=str))
+                # Fast approximation: 100 bytes base + key/value lengths
+                # Avoids slow json.dumps() call
+                size = 100
+                for k, v in value.items():
+                    size += len(str(k)) + len(str(v)) + 16
+                return size
+            elif isinstance(value, (list, tuple)):
+                # Approximation for lists
+                return 50 + sum(len(str(item)) for item in value)
             else:
                 return 100  # Default estimate
         except (TypeError, ValueError, OverflowError):
