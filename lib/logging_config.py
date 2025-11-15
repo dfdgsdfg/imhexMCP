@@ -113,7 +113,7 @@ class ConsoleFormatter(logging.Formatter):
         )
 
         # Build message
-        message = f"{color} [{record.levelname: 8s}] {reset}  {timestamp}  - {
+        message = f"{color} [{record.levelname:<8s}] {reset}  {timestamp}  - {
             record.name}  - {record.getMessage()} "
 
         # Add context if available
