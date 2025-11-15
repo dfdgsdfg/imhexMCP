@@ -1,0 +1,104 @@
+============================================================
+Performance Profiling - ImHex MCP Library
+============================================================
+
+=== Profiling Data Compression ===
+Compression stats: {'bytes_sent': 7014400, 'bytes_received': 6963200, 'bytes_saved': 6952200, 'compression_ratio': 0.9911325273722628, 'compression_time_ms': 14.122748006229813, 'decompression_time_ms': 8.716134999303904, 'compressions': 200, 'decompressions': 200, 'skipped_small': 100, 'skipped_ratio': 0}
+
+=== Profiling AsyncImHexClient ===
+Cache operations completed: 1000 sets, 1000 gets
+
+=== Profiling Caching ===
+Cache stats: hits=5022, misses=1978
+
+============================================================
+Profiling Results
+============================================================
+
+### Top 30 functions by cumulative time ###
+         377260 function calls (377141 primitive calls) in 0.178 seconds
+
+   Ordered by: cumulative time
+   List reduced from 387 to 30 due to restriction <30>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        2    0.000    0.000    0.152    0.076 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:169(run)
+        6    0.000    0.000    0.151    0.025 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:683(run_until_complete)
+        6    0.000    0.000    0.151    0.025 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:672(run_forever)
+        2    0.000    0.000    0.151    0.075 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:87(run)
+       12    0.000    0.000    0.151    0.013 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:1966(_run_once)
+       12    0.000    0.000    0.150    0.013 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:92(_run)
+       12    0.000    0.000    0.150    0.013 {method 'run' of '_contextvars.Context' objects}
+        1    0.007    0.007    0.127    0.127 /Users/pasha/PycharmProjects/IMHexMCP/lib/profile_performance.py:91(profile_caching)
+     6000    0.018    0.000    0.069    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:622(set)
+    14000    0.014    0.000    0.061    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:513(_generate_key)
+     8000    0.011    0.000    0.058    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:582(get)
+    12996    0.022    0.000    0.043    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:531(_generate_key_cached)
+        1    0.001    0.001    0.027    0.027 /Users/pasha/PycharmProjects/IMHexMCP/lib/profile_performance.py:63(profile_compression)
+        1    0.002    0.002    0.023    0.023 /Users/pasha/PycharmProjects/IMHexMCP/lib/profile_performance.py:30(profile_async_client)
+      300    0.001    0.000    0.015    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:133(compress_data)
+      200    0.000    0.000    0.014    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:127(<lambda>)
+      200    0.014    0.000    0.014    0.000 {built-in method zlib.compress}
+     6000    0.007    0.000    0.011    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:556(_estimate_size)
+      9/3    0.000    0.000    0.011    0.004 <frozen importlib._bootstrap>:1360(_find_and_load)
+      9/3    0.000    0.000    0.010    0.003 <frozen importlib._bootstrap>:1308(_find_and_load_unlocked)
+      8/3    0.000    0.000    0.010    0.003 <frozen importlib._bootstrap>:914(_load_unlocked)
+      200    0.000    0.000    0.009    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:222(decompress_data)
+     22/7    0.000    0.000    0.009    0.001 <frozen importlib._bootstrap>:483(_call_with_frames_removed)
+      4/2    0.000    0.000    0.008    0.004 <frozen importlib._bootstrap_external>:756(exec_module)
+      200    0.008    0.000    0.008    0.000 {built-in method zlib.decompress}
+      4/2    0.000    0.000    0.008    0.004 {built-in method builtins.exec}
+    14001    0.003    0.000    0.007    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:19(__aexit__)
+        2    0.000    0.000    0.007    0.004 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:67(__init__)
+    12996    0.007    0.000    0.007    0.000 {method 'hexdigest' of '_hashlib.HASH' objects}
+    14001    0.004    0.000    0.006    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:13(__aenter__)
+
+
+
+
+### Top 30 functions by total time ###
+         377260 function calls (377141 primitive calls) in 0.178 seconds
+
+   Ordered by: internal time
+   List reduced from 387 to 30 due to restriction <30>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    12996    0.022    0.000    0.043    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:531(_generate_key_cached)
+     6000    0.018    0.000    0.069    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:622(set)
+    14000    0.014    0.000    0.061    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:513(_generate_key)
+      200    0.014    0.000    0.014    0.000 {built-in method zlib.compress}
+     8000    0.011    0.000    0.058    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:582(get)
+      200    0.008    0.000    0.008    0.000 {built-in method zlib.decompress}
+     6000    0.007    0.000    0.011    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:556(_estimate_size)
+        1    0.007    0.007    0.127    0.127 /Users/pasha/PycharmProjects/IMHexMCP/lib/profile_performance.py:91(profile_caching)
+    12996    0.007    0.000    0.007    0.000 {method 'hexdigest' of '_hashlib.HASH' objects}
+        4    0.005    0.001    0.005    0.001 {built-in method _imp.create_dynamic}
+    14001    0.004    0.000    0.006    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:13(__aenter__)
+    12996    0.004    0.000    0.004    0.000 {built-in method _hashlib.openssl_sha256}
+    24044    0.003    0.000    0.003    0.000 {built-in method time.time}
+    14001    0.003    0.000    0.005    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:127(release)
+    14001    0.003    0.000    0.007    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:19(__aexit__)
+    20005    0.003    0.000    0.003    0.000 {method 'items' of 'dict' objects}
+    14000    0.002    0.000    0.002    0.000 {built-in method builtins.sorted}
+25398/25372    0.002    0.000    0.002    0.000 {built-in method builtins.len}
+    12996    0.002    0.000    0.002    0.000 {orjson.dumps}
+    13239    0.002    0.000    0.002    0.000 {method 'join' of 'str' objects}
+    13199    0.002    0.000    0.002    0.000 {method 'encode' of 'str' objects}
+    13313    0.002    0.000    0.002    0.000 {method 'append' of 'list' objects}
+    13196    0.002    0.000    0.002    0.000 {method 'decode' of 'bytes' objects}
+    18494    0.002    0.000    0.002    0.000 {built-in method builtins.isinstance}
+     6000    0.002    0.000    0.002    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:406(get_ttl_for_endpoint)
+     8757    0.002    0.000    0.002    0.000 {method 'get' of 'dict' objects}
+     4000    0.002    0.000    0.005    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:335(randint)
+    14001    0.002    0.000    0.002    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:90(acquire)
+     4000    0.002    0.000    0.003    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:245(_randbelow_with_getrandbits)
+        1    0.002    0.002    0.023    0.023 /Users/pasha/PycharmProjects/IMHexMCP/lib/profile_performance.py:30(profile_async_client)
+
+
+
+
+✓ Detailed profiling results saved to: /Users/pasha/PycharmProjects/IMHexMCP/lib/profile_results.txt
+
+============================================================
+Profiling Complete!
+============================================================

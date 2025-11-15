@@ -1,395 +1,394 @@
-         443231 function calls (443112 primitive calls) in 0.217 seconds
+         377260 function calls (377141 primitive calls) in 0.178 seconds
 
    Ordered by: cumulative time
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-        2    0.000    0.000    0.191    0.095 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:169(run)
-        6    0.000    0.000    0.190    0.032 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:683(run_until_complete)
-        6    0.000    0.000    0.190    0.032 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:672(run_forever)
-        2    0.000    0.000    0.190    0.095 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:87(run)
-       12    0.000    0.000    0.190    0.016 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:1966(_run_once)
-       12    0.000    0.000    0.190    0.016 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:92(_run)
-       12    0.001    0.000    0.190    0.016 {method 'run' of '_contextvars.Context' objects}
-        1    0.007    0.007    0.156    0.156 /Users/pasha/PycharmProjects/IMHexMCP/lib/profile_performance.py:91(profile_caching)
-     6000    0.017    0.000    0.096    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:563(set)
-    14000    0.018    0.000    0.083    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:497(_generate_key)
-     8000    0.012    0.000    0.073    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:523(get)
-    20000    0.020    0.000    0.072    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py:183(dumps)
-    20000    0.015    0.000    0.049    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/encoder.py:183(encode)
-        1    0.001    0.001    0.032    0.032 /Users/pasha/PycharmProjects/IMHexMCP/lib/profile_performance.py:30(profile_async_client)
-     6000    0.005    0.000    0.031    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:509(_estimate_size)
-    20000    0.027    0.000    0.027    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/encoder.py:205(iterencode)
-        1    0.001    0.001    0.026    0.026 /Users/pasha/PycharmProjects/IMHexMCP/lib/profile_performance.py:63(profile_compression)
+        2    0.000    0.000    0.152    0.076 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:169(run)
+        6    0.000    0.000    0.151    0.025 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:683(run_until_complete)
+        6    0.000    0.000    0.151    0.025 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:672(run_forever)
+        2    0.000    0.000    0.151    0.075 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:87(run)
+       12    0.000    0.000    0.151    0.013 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:1966(_run_once)
+       12    0.000    0.000    0.150    0.013 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:92(_run)
+       12    0.000    0.000    0.150    0.013 {method 'run' of '_contextvars.Context' objects}
+        1    0.007    0.007    0.127    0.127 /Users/pasha/PycharmProjects/IMHexMCP/lib/profile_performance.py:91(profile_caching)
+     6000    0.018    0.000    0.069    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:622(set)
+    14000    0.014    0.000    0.061    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:513(_generate_key)
+     8000    0.011    0.000    0.058    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:582(get)
+    12996    0.022    0.000    0.043    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:531(_generate_key_cached)
+        1    0.001    0.001    0.027    0.027 /Users/pasha/PycharmProjects/IMHexMCP/lib/profile_performance.py:63(profile_compression)
+        1    0.002    0.002    0.023    0.023 /Users/pasha/PycharmProjects/IMHexMCP/lib/profile_performance.py:30(profile_async_client)
       300    0.001    0.000    0.015    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:133(compress_data)
       200    0.000    0.000    0.014    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:127(<lambda>)
       200    0.014    0.000    0.014    0.000 {built-in method zlib.compress}
+     6000    0.007    0.000    0.011    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:556(_estimate_size)
+      9/3    0.000    0.000    0.011    0.004 <frozen importlib._bootstrap>:1360(_find_and_load)
+      9/3    0.000    0.000    0.010    0.003 <frozen importlib._bootstrap>:1308(_find_and_load_unlocked)
+      8/3    0.000    0.000    0.010    0.003 <frozen importlib._bootstrap>:914(_load_unlocked)
       200    0.000    0.000    0.009    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:222(decompress_data)
-      9/3    0.000    0.000    0.009    0.003 <frozen importlib._bootstrap>:1360(_find_and_load)
-      9/3    0.000    0.000    0.008    0.003 <frozen importlib._bootstrap>:1308(_find_and_load_unlocked)
-      8/3    0.000    0.000    0.008    0.003 <frozen importlib._bootstrap>:914(_load_unlocked)
+     22/7    0.000    0.000    0.009    0.001 <frozen importlib._bootstrap>:483(_call_with_frames_removed)
+      4/2    0.000    0.000    0.008    0.004 <frozen importlib._bootstrap_external>:756(exec_module)
       200    0.008    0.000    0.008    0.000 {built-in method zlib.decompress}
-     22/7    0.000    0.000    0.007    0.001 <frozen importlib._bootstrap>:483(_call_with_frames_removed)
+      4/2    0.000    0.000    0.008    0.004 {built-in method builtins.exec}
     14001    0.003    0.000    0.007    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:19(__aexit__)
-      4/2    0.000    0.000    0.007    0.003 <frozen importlib._bootstrap_external>:756(exec_module)
-    14000    0.007    0.000    0.007    0.000 {method 'hexdigest' of '_hashlib.HASH' objects}
-      4/2    0.000    0.000    0.006    0.003 {built-in method builtins.exec}
-    58494    0.006    0.000    0.006    0.000 {built-in method builtins.isinstance}
-        2    0.000    0.000    0.006    0.003 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:67(__init__)
-    14001    0.004    0.000    0.005    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:13(__aenter__)
-     4000    0.002    0.000    0.005    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:335(randint)
+        2    0.000    0.000    0.007    0.004 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:67(__init__)
+    12996    0.007    0.000    0.007    0.000 {method 'hexdigest' of '_hashlib.HASH' objects}
+    14001    0.004    0.000    0.006    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:13(__aenter__)
+        1    0.000    0.000    0.006    0.006 /Users/pasha/PycharmProjects/IMHexMCP/lib/async_client.py:38(__init__)
+        1    0.000    0.000    0.005    0.005 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:100(_init_zstd)
         8    0.000    0.000    0.005    0.001 <frozen importlib._bootstrap>:809(module_from_spec)
         4    0.000    0.000    0.005    0.001 <frozen importlib._bootstrap_external>:1054(create_module)
         4    0.005    0.001    0.005    0.001 {built-in method _imp.create_dynamic}
-    14001    0.003    0.000    0.004    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:127(release)
-    34243    0.004    0.000    0.004    0.000 {method 'join' of 'str' objects}
-    14000    0.004    0.000    0.004    0.000 {built-in method _hashlib.openssl_sha256}
-        1    0.000    0.000    0.004    0.004 /Users/pasha/PycharmProjects/IMHexMCP/lib/async_client.py:38(__init__)
-        1    0.000    0.000    0.004    0.004 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:100(_init_zstd)
-        1    0.000    0.000    0.004    0.004 /Users/pasha/PycharmProjects/IMHexMCP/mcp-server/venv/lib/python3.14/site-packages/zstandard/__init__.py:1(<module>)
-    24034    0.003    0.000    0.003    0.000 {built-in method time.time}
-    20000    0.003    0.000    0.003    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/encoder.py:105(__init__)
-     4000    0.002    0.000    0.003    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:245(_randbelow_with_getrandbits)
+     4000    0.002    0.000    0.005    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:335(randint)
+        1    0.000    0.000    0.005    0.005 /Users/pasha/PycharmProjects/IMHexMCP/mcp-server/venv/lib/python3.14/site-packages/zstandard/__init__.py:1(<module>)
+    14001    0.003    0.000    0.005    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:127(release)
+    12996    0.004    0.000    0.004    0.000 {built-in method _hashlib.openssl_sha256}
+    24044    0.003    0.000    0.003    0.000 {built-in method time.time}
         1    0.000    0.000    0.003    0.003 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:1(<module>)
-     6017    0.001    0.000    0.002    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:38(is_expired)
-     6017    0.001    0.000    0.002    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:44(touch)
-    14203    0.002    0.000    0.002    0.000 {method 'encode' of 'str' objects}
-    14317    0.002    0.000    0.002    0.000 {method 'append' of 'list' objects}
-     6000    0.002    0.000    0.002    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:390(get_ttl_for_endpoint)
+     4000    0.002    0.000    0.003    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:245(_randbelow_with_getrandbits)
+    20005    0.003    0.000    0.003    0.000 {method 'items' of 'dict' objects}
+    14000    0.002    0.000    0.002    0.000 {built-in method builtins.sorted}
+25398/25372    0.002    0.000    0.002    0.000 {built-in method builtins.len}
+    12996    0.002    0.000    0.002    0.000 {orjson.dumps}
+    13239    0.002    0.000    0.002    0.000 {method 'join' of 'str' objects}
+     6022    0.001    0.000    0.002    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:46(is_expired)
+    13199    0.002    0.000    0.002    0.000 {method 'encode' of 'str' objects}
+    13313    0.002    0.000    0.002    0.000 {method 'append' of 'list' objects}
+    13196    0.002    0.000    0.002    0.000 {method 'decode' of 'bytes' objects}
+    18494    0.002    0.000    0.002    0.000 {built-in method builtins.isinstance}
+     6022    0.001    0.000    0.002    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:52(touch)
+     6000    0.002    0.000    0.002    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:406(get_ttl_for_endpoint)
      8757    0.002    0.000    0.002    0.000 {method 'get' of 'dict' objects}
-19398/19372    0.002    0.000    0.002    0.000 {built-in method builtins.len}
-        1    0.000    0.000    0.002    0.002 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:123(_init_zlib)
     14001    0.002    0.000    0.002    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:90(acquire)
-    14001    0.001    0.000    0.001    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:144(_wake_up_first)
+        1    0.000    0.000    0.002    0.002 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:123(_init_zlib)
         1    0.000    0.000    0.001    0.001 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/bisect.py:1(<module>)
-     6017    0.001    0.000    0.001    0.000 {method 'move_to_end' of 'collections.OrderedDict' objects}
+    14001    0.001    0.000    0.001    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:144(_wake_up_first)
         4    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:829(get_code)
         9    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap>:1243(_find_spec)
-        9    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:1287(find_spec)
-        9    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:1258(_get_spec)
-       48    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:1360(find_spec)
         1    0.000    0.000    0.001    0.001 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/platform.py:1249(python_implementation)
         1    0.000    0.000    0.001    0.001 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/platform.py:1145(_sys_version)
-     5717    0.001    0.000    0.001    0.000 {method 'getrandbits' of '_random.Random' objects}
-        4    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:512(_compile_bytecode)
+     6022    0.001    0.000    0.001    0.000 {method 'move_to_end' of 'collections.OrderedDict' objects}
+        9    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:1287(find_spec)
+        9    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:1258(_get_spec)
         1    0.000    0.000    0.001    0.001 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/__init__.py:287(compile)
         1    0.000    0.000    0.001    0.001 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/__init__.py:330(_compile)
+       48    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:1360(find_spec)
         1    0.000    0.000    0.001    0.001 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:757(compile)
+     5753    0.001    0.000    0.001    0.000 {method 'getrandbits' of '_random.Random' objects}
+        2    0.000    0.000    0.001    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:58(__enter__)
+        4    0.000    0.000    0.001    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:140(_lazy_init)
+        1    0.000    0.000    0.001    0.001 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:963(parse)
+        2    0.000    0.000    0.001    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:842(new_event_loop)
+      9/1    0.000    0.000    0.001    0.001 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:452(_parse_sub)
+        4    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:512(_compile_bytecode)
+        1    0.000    0.000    0.001    0.001 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/platform.py:1(<module>)
         4    0.001    0.000    0.001    0.000 {built-in method marshal.loads}
+      9/1    0.000    0.000    0.001    0.001 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:512(_parse)
+        2    0.000    0.000    0.001    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:726(new_event_loop)
+        2    0.000    0.000    0.001    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/unix_events.py:60(__init__)
+        2    0.000    0.000    0.001    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/selector_events.py:59(__init__)
      8000    0.001    0.000    0.001    0.000 {built-in method _operator.index}
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:58(__enter__)
-        4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:140(_lazy_init)
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/platform.py:1(<module>)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:62(__exit__)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:842(new_event_loop)
+        2    0.000    0.000    0.001    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:62(__exit__)
         2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:65(close)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:726(new_event_loop)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/unix_events.py:60(__init__)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/selector_events.py:59(__init__)
-      200    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py:62(b64decode)
-     4000    0.000    0.000    0.000    0.000 {method 'bit_length' of 'int' objects}
         9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:419(__enter__)
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:963(parse)
-      9/1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:452(_parse_sub)
-       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:304(acquire)
-      9/1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:512(_parse)
+     4000    0.000    0.000    0.000    0.000 {method 'bit_length' of 'int' objects}
         3    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/collections/__init__.py:361(namedtuple)
-       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:162(__enter__)
-       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:124(setdefault)
-       65    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:145(_path_stat)
-       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:74(__new__)
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:590(_code)
-       65    0.000    0.000    0.000    0.000 {built-in method posix.stat}
-      229    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:131(_path_join)
+      200    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py:62(b64decode)
+       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:304(acquire)
         4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:950(get_data)
-      200    0.000    0.000    0.000    0.000 {built-in method binascii.a2b_base64}
+       65    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:145(_path_stat)
+       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:162(__enter__)
+       65    0.000    0.000    0.000    0.000 {built-in method posix.stat}
+       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:124(setdefault)
         2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/selector_events.py:118(_make_self_pipe)
-       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:540(select)
-       16    0.000    0.000    0.000    0.000 {method 'control' of 'select.kqueue' objects}
-     21/1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:39(_compile)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:419(__init__)
-        3    0.000    0.000    0.000    0.000 {built-in method builtins.eval}
-      404    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/logging/__init__.py:1498(debug)
+       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:74(__new__)
         4    0.000    0.000    0.000    0.000 {built-in method _io.open_code}
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/unix_events.py:69(close)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/selector_events.py:99(close)
+        3    0.000    0.000    0.000    0.000 {built-in method builtins.eval}
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:419(__init__)
+      229    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:131(_path_join)
+       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:540(select)
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:590(_code)
+       16    0.000    0.000    0.000    0.000 {method 'control' of 'select.kqueue' objects}
+      200    0.000    0.000    0.000    0.000 {built-in method binascii.a2b_base64}
+     21/1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:39(_compile)
+      404    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/logging/__init__.py:1498(debug)
         2    0.000    0.000    0.000    0.000 {built-in method time.get_clock_info}
-      200    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py:31(_bytes_from_decode_data)
-        8    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:736(_init_module_attrs)
         1    0.000    0.000    0.000    0.000 {method 'match' of 're.Pattern' objects}
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/selector_events.py:110(_close_self_pipe)
-      200    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py:48(b64encode)
-      800    0.000    0.000    0.000    0.000 {built-in method time.perf_counter}
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/unix_events.py:69(close)
+        8    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:736(_init_module_attrs)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/selector_events.py:99(close)
+      200    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py:31(_bytes_from_decode_data)
         2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/selector_events.py:278(_add_reader)
         2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socket.py:659(socketpair)
+      200    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py:48(b64encode)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/selector_events.py:110(_close_self_pipe)
         4    0.000    0.000    0.000    0.000 {built-in method builtins.__build_class__}
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:499(register)
-      185    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:168(__getitem__)
-        6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:461(create_task)
-      406    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/logging/__init__.py:1765(isEnabledFor)
-        8    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:243(cache_from_source)
-       12    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:635(cached)
+      800    0.000    0.000    0.000    0.000 {built-in method time.perf_counter}
         1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1411(_fill_cache)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:499(register)
+       12    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:635(cached)
+        8    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:243(cache_from_source)
+        4    0.000    0.000    0.000    0.000 {method 'read' of '_io.BufferedReader' objects}
+        1    0.000    0.000    0.000    0.000 {built-in method posix.listdir}
        11    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:164(_path_isfile)
-        4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1062(exec_module)
-        8    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:372(_get_cached)
         2    0.000    0.000    0.000    0.000 {built-in method _socket.socketpair}
+        8    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:372(_get_cached)
        12    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:155(_path_is_mode_type)
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:119(__init__)
-      466    0.000    0.000    0.000    0.000 {method 'rstrip' of 'str' objects}
+      406    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/logging/__init__.py:1765(isEnabledFor)
+        6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:461(create_task)
+        4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1062(exec_module)
+       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:429(_get_module_lock)
+      185    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:168(__getitem__)
+        2    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
         8    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1355(_get_spec)
         4    0.000    0.000    0.000    0.000 {built-in method _imp.exec_dynamic}
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:128(seed)
-        1    0.000    0.000    0.000    0.000 {built-in method posix.listdir}
-       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:429(_get_module_lock)
-      200    0.000    0.000    0.000    0.000 {built-in method binascii.b2a_base64}
-       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:817(call_soon)
-        4    0.000    0.000    0.000    0.000 {method 'read' of '_io.BufferedReader' objects}
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/selector_events.py:293(_remove_reader)
-        2    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
-        6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/tasks.py:707(ensure_future)
        56    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1236(_path_importer_cache)
-      100    0.000    0.000    0.000    0.000 {method 'hex' of 'bytes' objects}
+      200    0.000    0.000    0.000    0.000 {built-in method binascii.b2a_base64}
+        1    0.000    0.000    0.000    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/connection_pool.py:100(__init__)
+       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:817(call_soon)
+      466    0.000    0.000    0.000    0.000 {method 'rstrip' of 'str' objects}
         6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:636(_run_forever_setup)
-        1    0.000    0.000    0.000    0.000 {function Random.seed at 0x10aaa1010}
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/selector_events.py:293(_remove_reader)
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:119(__init__)
         4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/signal.py:56(signal)
-      200    0.000    0.000    0.000    0.000 {method 'decode' of 'bytes' objects}
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:525(_compile_info)
+      100    0.000    0.000    0.000    0.000 {method 'hex' of 'bytes' objects}
+        6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/tasks.py:707(ensure_future)
         9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:423(__exit__)
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:128(seed)
+       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:372(release)
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:525(_compile_info)
+       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:846(_call_soon)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/coroutines.py:10(_is_debug_mode)
+        8    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:563(spec_from_file_location)
+        8    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:137(_path_split)
+     26/6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:178(getwidth)
         4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socket.py:507(close)
+        1    0.000    0.000    0.000    0.000 {function Random.seed at 0x10c337cc0}
+        1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1223(_path_hooks)
+        6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:798(_get_event_loop_policy)
        78    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:261(get)
         2    0.000    0.000    0.000    0.000 {built-in method math.log}
-     26/6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:178(getwidth)
-       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:372(release)
-       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:846(_call_soon)
+        1    0.000    0.000    0.000    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:777(get_stats)
         4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socket.py:503(_real_close)
-        8    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:563(spec_from_file_location)
-        6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:181(_run_until_complete_cb)
-        8    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:248(_optimize_charset)
-        1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1223(_path_hooks)
-        8    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:137(_path_split)
-        6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:798(_get_event_loop_policy)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/coroutines.py:10(_is_debug_mode)
-        4    0.000    0.000    0.000    0.000 {function socket.close at 0x10a3a1590}
-        1    0.000    0.000    0.000    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:718(get_stats)
         1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:787(_init_event_loop_policy)
-      240    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:494(_verbose_message)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:207(_cancel_all_tasks)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:491(__init__)
         3    0.000    0.000    0.000    0.000 <frozen _collections_abc>:792(get)
-        6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:656(_run_forever_cleanup)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:517(unregister)
-        2    0.000    0.000    0.000    0.000 {built-in method _asyncio.all_tasks}
+        8    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:248(_optimize_charset)
+        6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:181(_run_until_complete_cb)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:491(__init__)
+      240    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:494(_verbose_message)
+        1    0.000    0.000    0.000    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:74(to_dict)
        20    0.000    0.000    0.000    0.000 {built-in method builtins.max}
-        5    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:98(closegroup)
-       45    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:176(append)
-        1    0.000    0.000    0.000    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:66(to_dict)
-       92    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:240(__next)
-        8    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/signal.py:36(_enum_to_int)
-       15    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:412(_simple)
-        3    0.000    0.000    0.000    0.000 <frozen os>:704(__getitem__)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py:104(__init__)
-       14    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:41(__init__)
-        4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:969(path_stats)
-        4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:427(_classify_pyc)
         4    0.000    0.000    0.000    0.000 {method '__exit__' of '_io._IOBase' objects}
-        1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1452(path_hook_for_FileFinder)
+        4    0.000    0.000    0.000    0.000 {function socket.close at 0x10bc31590}
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:207(_cancel_all_tasks)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:517(unregister)
+        3    0.000    0.000    0.000    0.000 <frozen os>:704(__getitem__)
         6    0.000    0.000    0.000    0.000 {built-in method builtins.print}
-       54    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:164(__len__)
-        4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/signal.py:62(getsignal)
-        1    0.000    0.000    0.000    0.000 {built-in method builtins.__import__}
+        8    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/signal.py:36(_enum_to_int)
+        2    0.000    0.000    0.000    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:472(__init__)
+        5    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:98(closegroup)
+        4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:427(_classify_pyc)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py:104(__init__)
+       92    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:240(__next)
+        2    0.000    0.000    0.000    0.000 {built-in method _asyncio.all_tasks}
+       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:766(time)
         4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socket.py:224(__init__)
-        2    0.000    0.000    0.000    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:456(__init__)
-        4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:837(set_event_loop)
-       74    0.000    0.000    0.000    0.000 {method 'rpartition' of 'str' objects}
+       14    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:41(__init__)
+        6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:656(_run_forever_cleanup)
         3    0.000    0.000    0.000    0.000 {built-in method builtins.round}
-        4    0.000    0.000    0.000    0.000 {built-in method _signal.signal}
-       12    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:89(_unpack_uint32)
+        4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:969(path_stats)
+       74    0.000    0.000    0.000    0.000 {method 'rpartition' of 'str' objects}
         9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:1131(find_spec)
-        9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:232(__init__)
-        9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:448(cb)
-       37    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:293(tell)
-        1    0.000    0.000    0.000    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/connection_pool.py:100(__init__)
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/enum.py:1593(__and__)
-        1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:466(_lock_unlock_module)
-        4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:460(_validate_timestamp_pyc)
+        4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/signal.py:62(getsignal)
+       45    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:176(append)
+       12    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:89(_unpack_uint32)
         2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:238(register)
-       70    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:256(match)
-        4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:69(get)
-       49    0.000    0.000    0.000    0.000 {built-in method builtins.getattr}
-        8    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:221(_compile_charset)
+        1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1452(path_hook_for_FileFinder)
+        9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:448(cb)
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.__import__}
        10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:82(remove)
-       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_futures.py:13(isfuture)
-       12    0.000    0.000    0.000    0.000 {built-in method sys.set_asyncgen_hooks}
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:563(close)
-        9    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:372(_escape)
+       15    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:412(_simple)
+        1    0.000    0.000    0.000    0.000 <frozen zipimport>:67(__init__)
+       49    0.000    0.000    0.000    0.000 {built-in method builtins.getattr}
+        9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:232(__init__)
+        4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:69(get)
        34    0.000    0.000    0.000    0.000 {built-in method builtins.hasattr}
-        9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:985(find_spec)
-       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:629(_check_running)
-       48    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:67(_relax_case)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py:235(update)
-       16    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:139(<genexpr>)
+       70    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:256(match)
+       54    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:164(__len__)
+        4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:460(_validate_timestamp_pyc)
+        4    0.000    0.000    0.000    0.000 {built-in method _signal.signal}
+        4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:837(set_event_loop)
        10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:79(__init__)
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/enum.py:1593(__and__)
+        9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:985(find_spec)
+        1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:466(_lock_unlock_module)
+        9    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:372(_escape)
+       12    0.000    0.000    0.000    0.000 {built-in method sys.set_asyncgen_hooks}
+       37    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:293(tell)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py:235(update)
+       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_futures.py:13(isfuture)
+        5    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:449(_uniq)
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:103(Random)
+       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:629(_check_running)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:563(close)
+       16    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:139(<genexpr>)
+       23    0.000    0.000    0.000    0.000 {method '__enter__' of '_thread.RLock' objects}
+        8    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:219(_fileobj_lookup)
+       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:648(parent)
+        6    0.000    0.000    0.000    0.000 {built-in method sys.get_asyncgen_hooks}
+       48    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:67(_relax_case)
+        8    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:221(_compile_charset)
+        4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:48(_new_module)
         9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:190(_path_abspath)
        27    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:1229(__exit__)
-        1    0.000    0.000    0.000    0.000 {built-in method math.exp}
+        6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/coroutines.py:41(iscoroutine)
+        3    0.000    0.000    0.000    0.000 <frozen os>:786(encode)
+        9    0.000    0.000    0.000    0.000 {built-in method _imp.is_builtin}
+       12    0.000    0.000    0.000    0.000 {built-in method __new__ of type object at 0x10b488b90}
        27    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:1225(__enter__)
-        8    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:219(_fileobj_lookup)
-        4    0.000    0.000    0.000    0.000 {method 'setblocking' of '_socket.socket' objects}
-        1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1334(__init__)
-       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:648(parent)
+       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:173(__exit__)
+      2/1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:450(_get_literal_prefix)
+        1    0.000    0.000    0.000    0.000 {built-in method math.exp}
         8    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/futures.py:307(_get_loop)
+        1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1334(__init__)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:49(__init__)
         5    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:86(opengroup)
         2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:729(close)
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:103(Random)
-       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:766(time)
-        1    0.000    0.000    0.000    0.000 <frozen zipimport>:67(__init__)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/_weakrefset.py:24(__iter__)
-        4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:720(set_event_loop)
-        6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/coroutines.py:41(iscoroutine)
-       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:173(__exit__)
-       23    0.000    0.000    0.000    0.000 {method '__enter__' of '_thread.RLock' objects}
-        9    0.000    0.000    0.000    0.000 {built-in method _imp.is_builtin}
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/platform.py:938(uname_result)
-        6    0.000    0.000    0.000    0.000 {built-in method sys.get_asyncgen_hooks}
-      2/1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:450(_get_literal_prefix)
-       46    0.000    0.000    0.000    0.000 {built-in method _imp.acquire_lock}
-       12    0.000    0.000    0.000    0.000 {method 'append' of 'collections.deque' objects}
-        5    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:449(_uniq)
-       16    0.000    0.000    0.000    0.000 {built-in method _asyncio._get_running_loop}
-       46    0.000    0.000    0.000    0.000 {built-in method _imp.release_lock}
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py:49(__init__)
-       12    0.000    0.000    0.000    0.000 {built-in method __new__ of type object at 0x109bf8b90}
        28    0.000    0.000    0.000    0.000 {built-in method _thread.get_ident}
-       23    0.000    0.000    0.000    0.000 {method '__exit__' of '_thread.RLock' objects}
-        9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:185(_path_isabs)
-       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:2049(_set_coroutine_origin_tracking)
-       42    0.000    0.000    0.000    0.000 {built-in method builtins.min}
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/logging/__init__.py:1510(info)
-       27    0.000    0.000    0.000    0.000 {method 'startswith' of 'str' objects}
-       18    0.000    0.000    0.000    0.000 {built-in method sys.intern}
-        8    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/signal.py:24(_int_to_enum)
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/platform.py:938(uname_result)
+        4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:720(set_event_loop)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/_weakrefset.py:24(__iter__)
         4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:312(_class_escape)
-        3    0.000    0.000    0.000    0.000 <frozen os>:786(encode)
-        6    0.000    0.000    0.000    0.000 {method 'cancelled' of '_asyncio.Task' objects}
-        4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:48(_new_module)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/unix_events.py:910(__del__)
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/enum.py:676(__call__)
+       46    0.000    0.000    0.000    0.000 {built-in method _imp.acquire_lock}
+        4    0.000    0.000    0.000    0.000 {method 'setblocking' of '_socket.socket' objects}
         1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:706(__init__)
-        4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:404(_check_name_wrapper)
-        6    0.000    0.000    0.000    0.000 {method 'add_done_callback' of '_asyncio.Task' objects}
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:213(__init__)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:251(unregister)
-        8    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:21(_fileobj_to_fd)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:570(shutdown_asyncgens)
-       18    0.000    0.000    0.000    0.000 {method 'find' of 'bytearray' objects}
-        1    0.000    0.000    0.000    0.000 {built-in method math.sqrt}
+       12    0.000    0.000    0.000    0.000 {method 'append' of 'collections.deque' objects}
+       46    0.000    0.000    0.000    0.000 {built-in method _imp.release_lock}
+       23    0.000    0.000    0.000    0.000 {method '__exit__' of '_thread.RLock' objects}
         2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/_weakrefset.py:12(__init__)
-        1    0.000    0.000    0.000    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:265(get_stats)
-       32    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:548(_check_closed)
-        4    0.000    0.000    0.000    0.000 {built-in method _signal.getsignal}
-        4    0.000    0.000    0.000    0.000 {method 'extend' of 'list' objects}
+       16    0.000    0.000    0.000    0.000 {built-in method _asyncio._get_running_loop}
        11    0.000    0.000    0.000    0.000 {method 'pop' of 'dict' objects}
+        9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:185(_path_isabs)
+        4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:404(_check_name_wrapper)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:213(__init__)
+       27    0.000    0.000    0.000    0.000 {method 'startswith' of 'str' objects}
+       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:2049(_set_coroutine_origin_tracking)
+        8    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/signal.py:24(_int_to_enum)
         9    0.000    0.000    0.000    0.000 {built-in method _imp.find_frozen}
-        3    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/logging/__init__.py:1751(getEffectiveLevel)
+       42    0.000    0.000    0.000    0.000 {built-in method builtins.min}
+        1    0.000    0.000    0.000    0.000 {method 'groups' of 're.Match' objects}
+        8    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:21(_fileobj_to_fd)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:251(unregister)
+        6    0.000    0.000    0.000    0.000 {method 'add_done_callback' of '_asyncio.Task' objects}
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:570(shutdown_asyncgens)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/logging/__init__.py:1510(info)
+       12    0.000    0.000    0.000    0.000 {built-in method time.monotonic}
+       18    0.000    0.000    0.000    0.000 {built-in method sys.intern}
+       12    0.000    0.000    0.000    0.000 {built-in method from_bytes}
         2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:272(close)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:78(cancel)
-       34    0.000    0.000    0.000    0.000 {built-in method builtins.ord}
-       18    0.000    0.000    0.000    0.000 {method '__contains__' of 'frozenset' objects}
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/enum.py:676(__call__)
+       10    0.000    0.000    0.000    0.000 {built-in method _weakref._remove_dead_weakref}
+        4    0.000    0.000    0.000    0.000 {method '__enter__' of '_io._IOBase' objects}
+        4    0.000    0.000    0.000    0.000 {built-in method _signal.getsignal}
+       32    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:548(_check_closed)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/unix_events.py:906(__init__)
+       10    0.000    0.000    0.000    0.000 {method 'remove' of 'list' objects}
+        1    0.000    0.000    0.000    0.000 {built-in method math.sqrt}
+       12    0.000    0.000    0.000    0.000 {method 'popleft' of 'collections.deque' objects}
+        1    0.000    0.000    0.000    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:265(get_stats)
+        4    0.000    0.000    0.000    0.000 {method 'extend' of 'list' objects}
+       18    0.000    0.000    0.000    0.000 {method 'find' of 'bytearray' objects}
         1    0.000    0.000    0.000    0.000 {built-in method _sre.compile}
        24    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:113(__init__)
-       18    0.000    0.000    0.000    0.000 {method 'isidentifier' of 'str' objects}
-       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:83(groups)
-        2    0.000    0.000    0.000    0.000 {method 'close' of 'select.kqueue' objects}
-        1    0.000    0.000    0.000    0.000 {method 'groups' of 're.Match' objects}
-       10    0.000    0.000    0.000    0.000 {method 'remove' of 'list' objects}
-       12    0.000    0.000    0.000    0.000 {built-in method from_bytes}
+       34    0.000    0.000    0.000    0.000 {built-in method builtins.ord}
         1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:169(_path_isdir)
-       18    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/collections/__init__.py:435(<genexpr>)
-        2    0.000    0.000    0.000    0.000 <string>:1(<lambda>)
-        4    0.000    0.000    0.000    0.000 {built-in method _contextvars.copy_context}
-        3    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/enum.py:1575(_get_value)
-       11    0.000    0.000    0.000    0.000 {method 'pop' of 'list' objects}
-       10    0.000    0.000    0.000    0.000 {built-in method _weakref._remove_dead_weakref}
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:225(__init_subclass__)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/unix_events.py:906(__init__)
-       12    0.000    0.000    0.000    0.000 {built-in method time.monotonic}
-       16    0.000    0.000    0.000    0.000 {built-in method posix.fspath}
-        6    0.000    0.000    0.000    0.000 {method 'remove_done_callback' of '_asyncio.Task' objects}
-       16    0.000    0.000    0.000    0.000 {method 'add' of 'set' objects}
-        3    0.000    0.000    0.000    0.000 {method 'split' of 'str' objects}
-        4    0.000    0.000    0.000    0.000 {method '__enter__' of '_io._IOBase' objects}
-        8    0.000    0.000    0.000    0.000 {method 'get_loop' of '_asyncio.Future' objects}
-       12    0.000    0.000    0.000    0.000 {built-in method _asyncio._set_running_loop}
-        9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:602(__init__)
-       12    0.000    0.000    0.000    0.000 {method 'popleft' of 'collections.deque' objects}
-        4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/_weakrefset.py:32(__len__)
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:231(__init__)
-        9    0.000    0.000    0.000    0.000 {built-in method _thread.allocate_lock}
-       22    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:2064(get_debug)
-       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/selector_events.py:744(_process_events)
-       12    0.000    0.000    0.000    0.000 {method 'endswith' of 'str' objects}
-       18    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:762(is_running)
         2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/threading.py:1469(current_thread)
-        4    0.000    0.000    0.000    0.000 {method 'detach' of '_socket.socket' objects}
-        8    0.000    0.000    0.000    0.000 {method 'rfind' of 'str' objects}
-        4    0.000    0.000    0.000    0.000 {method 'fileno' of '_socket.socket' objects}
-        6    0.000    0.000    0.000    0.000 {method 'result' of '_asyncio.Task' objects}
-       15    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:172(__setitem__)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:2067(set_debug)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/unix_events.py:953(can_use_pidfd)
+       18    0.000    0.000    0.000    0.000 {method 'isidentifier' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:225(__init_subclass__)
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:231(__init__)
+        2    0.000    0.000    0.000    0.000 <string>:1(<lambda>)
+       18    0.000    0.000    0.000    0.000 {method '__contains__' of 'frozenset' objects}
+       11    0.000    0.000    0.000    0.000 {method 'pop' of 'list' objects}
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/events.py:78(cancel)
+       16    0.000    0.000    0.000    0.000 {built-in method posix.fspath}
+        3    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/logging/__init__.py:1751(getEffectiveLevel)
+       16    0.000    0.000    0.000    0.000 {method 'add' of 'set' objects}
+        9    0.000    0.000    0.000    0.000 {built-in method _thread.allocate_lock}
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/unix_events.py:910(__del__)
         5    0.000    0.000    0.000    0.000 {built-in method fromkeys}
-        2    0.000    0.000    0.000    0.000 {method 'copy' of 'set' objects}
-        6    0.000    0.000    0.000    0.000 {method 'exception' of '_asyncio.Task' objects}
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/platform.py:882(_Processor)
-        2    0.000    0.000    0.000    0.000 {built-in method sys.is_finalizing}
-        7    0.000    0.000    0.000    0.000 {method 'lower' of 'str' objects}
-        1    0.000    0.000    0.000    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:61(hit_rate)
-        9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:415(__init__)
-        6    0.000    0.000    0.000    0.000 {method 'done' of '_asyncio.Task' objects}
-        1    0.000    0.000    0.000    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:48(to_dict)
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:481(_get_charset_prefix)
-        7    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:33(_combine_flags)
-        5    0.000    0.000    0.000    0.000 {method 'items' of 'dict' objects}
-       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:158(__init__)
-        2    0.000    0.000    0.000    0.000 {method 'values' of 'dict' objects}
+       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:83(groups)
+        3    0.000    0.000    0.000    0.000 {method 'split' of 'str' objects}
+        2    0.000    0.000    0.000    0.000 {method 'close' of 'select.kqueue' objects}
+        6    0.000    0.000    0.000    0.000 {method 'remove_done_callback' of '_asyncio.Task' objects}
+        9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:602(__init__)
+        4    0.000    0.000    0.000    0.000 {built-in method _contextvars.copy_context}
+        4    0.000    0.000    0.000    0.000 {method 'detach' of '_socket.socket' objects}
+        3    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/enum.py:1575(_get_value)
+       12    0.000    0.000    0.000    0.000 {built-in method _asyncio._set_running_loop}
+       18    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/collections/__init__.py:435(<genexpr>)
         3    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:75(__init__)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:595(shutdown_default_executor)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:2067(set_debug)
+       12    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/selector_events.py:744(_process_events)
+        8    0.000    0.000    0.000    0.000 {method 'rfind' of 'str' objects}
+       12    0.000    0.000    0.000    0.000 {method 'endswith' of 'str' objects}
+       15    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:172(__setitem__)
+       18    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:762(is_running)
+        8    0.000    0.000    0.000    0.000 {method 'get_loop' of '_asyncio.Future' objects}
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/platform.py:882(_Processor)
+        1    0.000    0.000    0.000    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/cache.py:69(hit_rate)
+        2    0.000    0.000    0.000    0.000 {method 'copy' of 'set' objects}
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:888(SystemRandom)
         4    0.000    0.000    0.000    0.000 {built-in method _imp._fix_co_filename}
+        4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/_weakrefset.py:32(__len__)
+       22    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:2064(get_debug)
+        4    0.000    0.000    0.000    0.000 {method 'fileno' of '_socket.socket' objects}
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:367(__init__)
+        6    0.000    0.000    0.000    0.000 {method 'result' of '_asyncio.Task' objects}
+        9    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:415(__init__)
+        1    0.000    0.000    0.000    0.000 /Users/pasha/PycharmProjects/IMHexMCP/lib/data_compression.py:48(to_dict)
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/enum.py:186(__get__)
+        1    0.000    0.000    0.000    0.000 {method '__enter__' of '_thread.lock' objects}
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/unix_events.py:953(can_use_pidfd)
+        7    0.000    0.000    0.000    0.000 {method 'lower' of 'str' objects}
+        6    0.000    0.000    0.000    0.000 {method 'exception' of '_asyncio.Task' objects}
+        2    0.000    0.000    0.000    0.000 {method 'clear' of 'dict' objects}
+        7    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:33(_combine_flags)
+       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:158(__init__)
+        2    0.000    0.000    0.000    0.000 {method 'replace' of 'str' objects}
+        6    0.000    0.000    0.000    0.000 {method 'cancelled' of '_asyncio.Task' objects}
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/functools.py:1096(__init__)
         1    0.000    0.000    0.000    0.000 {built-in method posix.register_at_fork}
         6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:721(stop)
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/random.py:888(SystemRandom)
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/enum.py:186(__get__)
-        2    0.000    0.000    0.000    0.000 {method 'clear' of 'dict' objects}
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:481(_get_charset_prefix)
         1    0.000    0.000    0.000    0.000 {built-in method builtins.setattr}
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/functools.py:1096(__init__)
-        2    0.000    0.000    0.000    0.000 {method 'replace' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 <string>:2(__init__)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:595(shutdown_default_executor)
+        2    0.000    0.000    0.000    0.000 {built-in method sys.is_finalizing}
+        6    0.000    0.000    0.000    0.000 {method 'done' of '_asyncio.Task' objects}
         3    0.000    0.000    0.000    0.000 {built-in method sys._getframemodulename}
+        2    0.000    0.000    0.000    0.000 {method 'clear' of 'collections.deque' objects}
         8    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1340(<genexpr>)
-        8    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:656(has_location)
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:947(fix_flags)
         2    0.000    0.000    0.000    0.000 {method 'clear' of 'list' objects}
-        1    0.000    0.000    0.000    0.000 {method '__enter__' of '_thread.lock' objects}
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/enum.py:1145(__new__)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/threading.py:1585(main_thread)
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:947(fix_flags)
+        8    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:656(has_location)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:63(__init__)
+        4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:276(get_map)
+        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:756(__del__)
         2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:587(isstring)
         6    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:752(is_closed)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:756(__del__)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:63(__init__)
-        2    0.000    0.000    0.000    0.000 {method 'clear' of 'collections.deque' objects}
-        4    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py:276(get_map)
-        1    0.000    0.000    0.000    0.000 {method '__exit__' of '_thread.lock' objects}
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py:367(__init__)
-        1    0.000    0.000    0.000    0.000 <string>:2(__init__)
-        4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:920(__init__)
-        3    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/logging/__init__.py:1354(disable)
-        2    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/threading.py:1585(main_thread)
         4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:945(get_filename)
+        1    0.000    0.000    0.000    0.000 {method '__exit__' of '_thread.lock' objects}
+        2    0.000    0.000    0.000    0.000 {method 'values' of 'dict' objects}
+        3    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/logging/__init__.py:1354(disable)
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/enum.py:1145(__new__)
+        4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:920(__init__)
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/enum.py:1323(value)
         4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1043(__init__)
+        1    0.000    0.000    0.000    0.000 {method 'strip' of 'str' objects}
         3    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py:442(_get_iscased)
+        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:77(__init__)
         4    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:753(create_module)
         1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/functools.py:1102(__set_name__)
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_parser.py:77(__init__)
-        1    0.000    0.000    0.000    0.000 {method 'strip' of 'str' objects}
         1    0.000    0.000    0.000    0.000 <string>:1(<module>)
-        1    0.000    0.000    0.000    0.000 /usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/enum.py:1323(value)
 
 

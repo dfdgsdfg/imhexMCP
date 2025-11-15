@@ -1,0 +1,70 @@
+Failed to create connection: Multiple exceptions: [Errno 61] Connect call failed ('::1', 31337, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 31337)
+Failed to create initial connection: Multiple exceptions: [Errno 61] Connect call failed ('::1', 31337, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 31337)
+Failed to create connection: Multiple exceptions: [Errno 61] Connect call failed ('::1', 31337, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 31337)
+Failed to create initial connection: Multiple exceptions: [Errno 61] Connect call failed ('::1', 31337, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 31337)
+Failed to create connection: Multiple exceptions: [Errno 61] Connect call failed ('::1', 31337, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 31337)
+======================================================================
+CACHING PERFORMANCE BENCHMARK
+======================================================================
+
+Measuring cache hit rate and performance improvement
+Target: 50-90% cache hit rate
+
+[1/5] Benchmarking repeated identical requests...
+Traceback (most recent call last):
+  File "/Users/pasha/PycharmProjects/IMHexMCP/lib/../lib/async_client.py", line 226, in _send_request_pooled
+    conn = await self._pool.acquire()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pasha/PycharmProjects/IMHexMCP/lib/../lib/connection_pool.py", line 239, in acquire
+    conn = await self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pasha/PycharmProjects/IMHexMCP/lib/../lib/connection_pool.py", line 179, in _create_connection
+    reader, writer = await asyncio.wait_for(
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+    )
+    ^
+  File "/usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/tasks.py", line 488, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/streams.py", line 48, in open_connection
+    transport, _ = await loop.create_connection(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        lambda: protocol, host, port, **kwds)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py", line 1176, in create_connection
+    raise OSError('Multiple exceptions: {}'.format(
+        ', '.join(str(exc) for exc in exceptions)))
+OSError: Multiple exceptions: [Errno 61] Connect call failed ('::1', 31337, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 31337)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/pasha/PycharmProjects/IMHexMCP/lib/../mcp-server/benchmark_caching.py", line 335, in <module>
+    success = asyncio.run(main())
+  File "/usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py", line 204, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py", line 127, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/local/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "/Users/pasha/PycharmProjects/IMHexMCP/lib/../mcp-server/benchmark_caching.py", line 245, in main
+    repeated_stats = await benchmark_repeated_requests(num_requests=50)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pasha/PycharmProjects/IMHexMCP/lib/../mcp-server/benchmark_caching.py", line 32, in benchmark_repeated_requests
+    await client.send_request("capabilities")
+  File "/Users/pasha/PycharmProjects/IMHexMCP/lib/../lib/async_client.py", line 155, in send_request
+    response = await self._send_request_with_retry(endpoint, data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pasha/PycharmProjects/IMHexMCP/lib/../lib/async_client.py", line 177, in _send_request_with_retry
+    return await self._send_request_impl(endpoint, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pasha/PycharmProjects/IMHexMCP/lib/../lib/async_client.py", line 198, in _send_request_impl
+    return await self._send_request_pooled(endpoint, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pasha/PycharmProjects/IMHexMCP/lib/../lib/async_client.py", line 258, in _send_request_pooled
+    raise ImHexMCPError(f"Request error: {e}")
+error_handling.ImHexMCPError: Request error: Multiple exceptions: [Errno 61] Connect call failed ('::1', 31337, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 31337)
