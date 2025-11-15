@@ -163,6 +163,7 @@ class CachedImHexClient:
         if (
             not bypass_cache
             and self.cache_enabled
+            and self.cache is not None
             and self._is_cacheable(endpoint)
         ):
             cached_result = self.cache.get(endpoint, data)
@@ -173,13 +174,14 @@ class CachedImHexClient:
         result = self._send_request(endpoint, data)
 
         # Handle cache invalidation for state-changing endpoints
-        if endpoint in self.invalidating_endpoints:
+        if endpoint in self.invalidating_endpoints and self.cache is not None:
             for invalidated_endpoint in self.invalidating_endpoints[endpoint]:
                 self.cache.invalidate(invalidated_endpoint)
 
         # Cache successful responses for cacheable endpoints
         if (
             self.cache_enabled
+            and self.cache is not None
             and self._is_cacheable(endpoint)
             and result.get("status") == "success"
         ):

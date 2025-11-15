@@ -664,7 +664,7 @@ def profile_endpoint(
     endpoint: str,
     data: Optional[Dict[str, Any]] = None,
     iterations: int = 100,
-) -> ProfileStats:
+) -> Optional[ProfileStats]:
     """
     Profile specific endpoint with multiple iterations.
 

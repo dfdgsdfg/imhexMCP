@@ -45,7 +45,7 @@ class PrioritizedRequest(Generic[T]):
     timestamp: float = field(compare=False)
     request_id: str = field(compare=False)
     coro: Callable[[], Awaitable[T]] = field(compare=False)
-    future: asyncio.Future = field(compare=False, default=None)
+    future: Optional[asyncio.Future] = field(compare=False, default=None)
 
     def __post_init__(self):
         """Calculate effective priority with aging."""
@@ -85,7 +85,7 @@ class PriorityQueue:
     async def submit(
         self,
         coro: Callable[[], Awaitable[T]],
-        priority: Priority = None,
+        priority: Optional[Priority] = None,
         request_id: Optional[str] = None,
     ) -> asyncio.Future:
         """
@@ -107,7 +107,7 @@ class PriorityQueue:
             request_id = f"req_{self._request_count}"
 
         # Create future for result
-        future = asyncio.Future()
+        future: asyncio.Future[T] = asyncio.Future()
 
         # Create prioritized request
         request = PrioritizedRequest(
@@ -142,6 +142,9 @@ class PriorityQueue:
 
     async def process_request(self, request: PrioritizedRequest) -> None:
         """Process a single request."""
+        if request.future is None:
+            return
+
         try:
             result = await request.coro()
             request.future.set_result(result)
@@ -213,6 +216,9 @@ class PriorityScheduler:
             try:
                 # Get next request (blocks if queue empty)
                 request = await self.queue.get_next()
+
+                if request is None:
+                    continue
 
                 # Process request
                 await self.queue.process_request(request)

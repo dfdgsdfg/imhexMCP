@@ -299,7 +299,7 @@ class AsyncImHexClient:
 
     async def send_batch(
         self, requests: List[tuple], return_exceptions: bool = False
-    ) -> List[Dict[str, Any]]:
+    ) -> List[Dict[str, Any] | BaseException]:
         """
         Send multiple requests concurrently.
 
@@ -761,7 +761,7 @@ class AsyncEnhancedImHexClient(AsyncImHexClient):
 
         # Simple async cache (LRU would be better for production)
         if enable_cache:
-            self._cache: Dict[str, Dict[str, Any]] = {}
+            self._simple_cache: Dict[str, Dict[str, Any]] = {}
             self._cache_max_size = cache_max_size
             self._cache_lock = asyncio.Lock()
 
@@ -805,12 +805,12 @@ class AsyncEnhancedImHexClient(AsyncImHexClient):
             cache_key = self._make_cache_key(endpoint, data)
 
             async with self._cache_lock:
-                if cache_key in self._cache:
+                if cache_key in self._simple_cache:
                     if self.enable_profiling:
                         elapsed = (time.perf_counter() - start_time) * 1000
                         self._request_times.append(elapsed)
                         self._request_count += 1
-                    return self._cache[cache_key]
+                    return self._simple_cache[cache_key]
 
         # Send request
         result = await super().send_request(endpoint, data, retry)
@@ -825,12 +825,12 @@ class AsyncEnhancedImHexClient(AsyncImHexClient):
 
             async with self._cache_lock:
                 # Simple size limit
-                if len(self._cache) >= self._cache_max_size:
+                if len(self._simple_cache) >= self._cache_max_size:
                     # Remove oldest entry (not truly LRU, just simple)
-                    first_key = next(iter(self._cache))
-                    del self._cache[first_key]
+                    first_key = next(iter(self._simple_cache))
+                    del self._simple_cache[first_key]
 
-                self._cache[cache_key] = result
+                self._simple_cache[cache_key] = result
 
         # Track performance
         if self.enable_profiling:
@@ -853,7 +853,7 @@ class AsyncEnhancedImHexClient(AsyncImHexClient):
 
         return {
             "enabled": True,
-            "size": len(self._cache),
+            "size": len(self._simple_cache),
             "max_size": self._cache_max_size,
         }
 
@@ -938,7 +938,7 @@ async def async_batch_read(
     # Convert hex to bytes
     results = []
     for response in responses:
-        if response.get("status") == "success":
+        if isinstance(response, dict) and response.get("status") == "success":
             data_hex = response["data"]["data"]
             results.append(bytes.fromhex(data_hex))
         else:
