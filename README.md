@@ -3,270 +3,310 @@
 <div align="center">
 <img width="2912" height="1632" alt="image" src="https://github.com/user-attachments/assets/925eb2fc-921b-40fe-8d59-e334bf985a4a" />
 
-**🔧 Patch-Based MCP Plugin for ImHex**
+**🔧 AI-Powered Binary Analysis with ImHex**
 
 [![License](https://img.shields.io/badge/license-GPL--2.0-green.svg)](LICENSE)
-[![ImHex](https://img.shields.io/badge/ImHex-nightly-orange.svg)](https://github.com/WerWolv/ImHex)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](patches/PATCH_MANIFEST.md)
-[![Status](https://img.shields.io/badge/status-production%20ready-green.svg)](STATUS.md)
+[![ImHex](https://img.shields.io/badge/ImHex-1.38.0-orange.svg)](https://github.com/WerWolv/ImHex)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/jmpnop/imhexMCP)
+[![Status](https://img.shields.io/badge/status-production%20ready-green.svg)](#)
 
 [![CI](https://github.com/jmpnop/imhexMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/jmpnop/imhexMCP/actions)
-[![codecov](https://codecov.io/gh/jmpnop/imhexMCP/branch/main/graph/badge.svg)](https://codecov.io/gh/jmpnop/imhexMCP)
-[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
+[![Tests](https://img.shields.io/badge/tests-255%2F255%20passing-success.svg)](#testing)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.14-blue.svg)](https://www.python.org/)
+[![Performance](https://img.shields.io/badge/performance-18%25%20faster-brightgreen.svg)](#performance)
 
-*Add Model Context Protocol support to ImHex through automated patches*
+*Model Context Protocol server enabling AI assistants like Claude to analyze binary files programmatically*
 
-**[⚡ Quick Start](#-quick-start)** • [Features](#-features) • [Documentation](#-documentation) • [Patches](patches/PATCH_MANIFEST.md) • [Status](STATUS.md)
+**[⚡ Quick Start](#-quick-start)** • **[Features](#-features)** • **[Documentation](docs/)** • **[Testing](#-testing)** • **[Performance](#-performance)**
 
 </div>
 
 ---
 
-## 💡 What is This?
+## 💡 Overview
 
-This project provides **git patches** that add Model Context Protocol (MCP) support to [ImHex](https://github.com/WerWolv/ImHex), enabling AI assistants like Claude to interact with the hex editor programmatically.
+ImHex MCP provides a **production-ready Python MCP server** that connects AI assistants to [ImHex](https://github.com/WerWolv/ImHex), the powerful hex editor. This enables autonomous binary analysis, malware inspection, firmware analysis, and reverse engineering workflows.
 
-### Patch-Based Approach
+### What's Included
 
-Instead of maintaining a fork of ImHex, we maintain **lightweight patches** that you apply to a fresh ImHex clone. This approach:
-
-- ✅ **Stays current** - Apply patches to latest ImHex
-- ✅ **Minimal maintenance** - Only patch code, not entire codebase
-- ✅ **Easy updates** - Regenerate patches after changes
-- ✅ **Clear changes** - See exactly what's modified
-- ✅ **Portable** - Patches work across ImHex versions
-
-### What's Included?
-
-**10 Production-Ready Patches** (~200KB total):
-- Queue-based async file opening (fixes connection reset errors)
-- Complete MCP plugin implementation (~2500 lines)
-- 16+ network endpoints for binary analysis
-- Batch operations (open_directory, search, hash, diff)
-- Enhanced error handling and detailed logging
+- **🔌 MCP Server** - 40+ tools for binary analysis (Python)
+- **📦 ImHex Patches** - 10 patches adding network interface & queue-based file opening
+- **⚡ Performance Optimizations** - 18% faster with caching, compression, async operations
+- **🧪 Comprehensive Testing** - 255/255 tests passing (100% success rate)
+- **📊 Production Features** - Prometheus metrics, circuit breakers, rate limiting
+- **📖 Complete Documentation** - API docs, architecture diagrams, guides
 
 ---
 
 ## 🌟 Features
 
-### Network Interface Endpoints
+### Core Capabilities
 
-After applying patches, ImHex will have:
+**File Operations**
+- Queue-based async file opening (no manual GUI interaction!)
+- Multi-file management (list, switch, close)
+- Binary data read/write with multiple encodings
 
-#### File Operations
-- `file/open` - Queue-based async file opening
-- `file/open/status` - Check file open progress
-- `file/list` - List all open files
-- `file/close` - Close file by provider ID
+**Analysis Tools**
+- Pattern searching (hex, text, regex) with pagination
+- Multi-architecture disassembly (x86, ARM, MIPS, etc.)
+- Hash calculation (MD5, SHA-1, SHA-256, SHA-384, SHA-512)
+- String extraction (ASCII, UTF-16)
+- File type detection (30+ magic number signatures)
+- Entropy analysis for encryption detection
+- Binary diff with Myers algorithm
 
-#### Data Operations
-- `data/read` - Read bytes from file
-- `data/write` - Write bytes to file
-- `data/strings` - Extract ASCII/UTF-16 strings
-- `data/magic` - File type identification via magic numbers
-- `data/disassemble` - Multi-architecture disassembly (x86, ARM, etc.)
-- `data/hash` - Compute MD5, SHA-1, SHA-256, SHA-384, SHA-512
+**Batch Operations**
+- Multi-file pattern search
+- Batch hashing
+- Comparative analysis across files
 
-#### Batch Operations
-- `batch/open_directory` - Open multiple files by glob pattern
-- `batch/search` - Search patterns across multiple files
-- `batch/hash` - Compute hashes for multiple files
-- `batch/diff` - Compare files with Myers diff algorithm
+**Advanced Features**
+- Chunked reading for large files (100MB+)
+- Data export (binary, hex, base64)
+- Bookmark management
+- Pattern Language integration
 
-#### Analysis Operations
-- `analysis/entropy` - Calculate entropy for data regions
-- `analysis/diff` - Compare two providers with detailed region analysis
-- `capabilities` - List all available endpoints
+### Python Library Features
 
----
+**Performance** (17 improvements, 100% complete)
+- **18% faster overall** (0.217s → 0.178s)
+- **98.9% bandwidth reduction** with zstd compression
+- **28% faster cache operations** with orjson + LRU caching
+- **25% lock reduction** with optimized critical sections
+- **97% faster JSON** serialization
 
-## 🚀 MCP Server (NEW - v2.0)
-
-### Recent Enhancements
-
-The Python MCP server has been significantly enhanced with 15 major improvements:
-
-#### Testing & Quality
-1. **Pytest Framework** - Professional test suite with coverage reporting
-2. **CI/CD Pipeline** - Automated testing via GitHub Actions
-3. **Property-Based Testing** - Hypothesis integration for edge case discovery
-4. **Code Quality Tools** - Black, Ruff, isort formatting
-
-#### Configuration & Typing
-5. **Centralized Config** - YAML/TOML based configuration system
-6. **Type Hints** - Comprehensive typing with mypy static analysis
-
-#### Monitoring & Metrics
-7. **Prometheus Metrics** - Production-ready metrics export at `/metrics`
-
-#### Code Organization
-8. **Consolidated Batching** - Single `lib/batch_operations.py` module
-
-#### Documentation
-9. **API Documentation** - Sphinx-generated docs in `docs/build/html/`
-10. **Architecture Diagrams** - Visual system architecture
-
-#### Security
-11. **Security Hardening** - Rate limiting, input validation, sanitization
-
-#### Dependencies
-12. **Poetry** - Modern dependency management (see `pyproject.toml`)
-
-#### Advanced Features
-13. **Request Prioritization** - Priority queue with aging mechanism
-14. **Circuit Breaker** - Fault tolerance for ImHex connection
-15. **Multi-Tier Caching** - L1/L2 cache with predictive prefetching
-
-### Server Capabilities
-
-```bash
-# Run tests
-cd mcp-server
-./venv/bin/pytest -v
-
-# View API documentation
-open docs/build/html/index.html
-
-# Check metrics
-curl http://localhost:8000/metrics
-```
-
-See [docs/](docs/) for complete documentation.
+**Production Ready**
+- Async/await support with connection pooling
+- Response caching with LRU eviction
+- Retry logic with exponential backoff
+- Circuit breaker pattern
+- Prometheus metrics export
+- Rate limiting & input validation
+- 100% type hints with mypy compliance
 
 ---
 
 ## 🚀 Quick Start
 
+### Prerequisites
+
+- macOS or Linux
+- Python 3.10+ (tested on 3.10, 3.11, 3.12, 3.14)
+- CMake 3.25+
+- Git
+- C++ compiler (GCC 11+ or Clang 14+)
+
 ### One-Command Setup
 
 ```bash
-git clone https://github.com/jmpnop/imhexMCP
+git clone --recurse-submodules https://github.com/jmpnop/imhexMCP.git
 cd imhexMCP
 ./setup-imhex-mcp.sh
 ```
 
-That's it! The script will:
-1. Clone ImHex from official repository
-2. Apply all 10 patches automatically
-3. Show what was applied and build instructions
+This script:
+1. Clones ImHex repository
+2. Applies all 10 patches automatically
+3. Shows build instructions
 
-### Build ImHex with MCP Plugin
+### Build ImHex
 
 ```bash
 cd ImHex
 mkdir -p build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . -j$(sysctl -n hw.ncpu)
+cmake --build . -j$(sysctl -n hw.ncpu)  # macOS
+# cmake --build . -j$(nproc)            # Linux
 ```
 
-After building, the MCP plugin will be at:
-```
-ImHex/build/plugins/mcp.hexplug
+### Setup MCP Server
+
+```bash
+cd ../../mcp-server
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-### Enable Network Interface
+### Start ImHex & Enable Network Interface
 
 1. Run ImHex: `./ImHex/build/imhex`
 2. Go to **Settings** → **General**
 3. Enable **Network Interface**
 4. Restart ImHex
 
-The network interface will listen on `localhost:31337`
+Network interface listens on `localhost:31337`
+
+### Configure Claude Desktop
+
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "imhex": {
+      "command": "/ABSOLUTE/PATH/TO/imhexMCP/mcp-server/venv/bin/python",
+      "args": ["/ABSOLUTE/PATH/TO/imhexMCP/mcp-server/server.py"]
+    }
+  }
+}
+```
+
+**Important**: Use absolute paths, not relative!
+
+### Verify Setup
+
+```bash
+cd imhexMCP
+./verify-setup.sh  # Should show 15/15 passed
+```
+
+### Test with Claude
+
+In Claude, ask:
+```
+Can you check if ImHex is working? Use the imhex_get_capabilities tool.
+```
 
 ---
 
-## 📦 Repository Structure
+## 📖 Key Endpoints
 
-```
-imhexMCP/                              # Lightweight patch repository
-│
-├── 📄 README.md                       # This file
-├── 📄 STATUS.md                       # Project status and roadmap
-├── 📄 setup-imhex-mcp.sh             # Automated setup script (executable)
-│
-└── 📁 patches/                        # Git patches for ImHex
-    ├── PATCH_MANIFEST.md              # Comprehensive patch documentation
-    ├── README.md                      # Patch overview
-    │
-    ├── 0001-feat-Implement-queue...  # Queue-based file opening (91KB)
-    ├── 0002-improvement-Add-detail... # Error logging improvements (9.5KB)
-    │
-    ├── 0007-fix-Replace-RequestOpe... # Complete MCP plugin (61KB)
-    ├── 0008-fix-Improve-disassembl... # Enhanced error handling (6.8KB)
-    ├── 0009-fix-Implement-TaskMana... # Async diff analysis (5.6KB)
-    │
-    ├── 0010-feat-Add-batch-open_di... # Batch open_directory (11KB)
-    ├── 0011-Add-batch-search-endpo... # Batch search (8.4KB)
-    ├── 0012-Add-batch-hash-endpoin... # Batch hash (7.1KB)
-    ├── 0013-Fix-glob-pattern-match... # Glob pattern fix (2.1KB)
-    └── 0014-Fix-glob-pattern-escap... # Glob escaping fix (2.9KB)
-```
+The ImHex MCP plugin provides 28 network endpoints. Here are the most important:
 
-**Total Repository Size:** ~500KB (patches only, no source code)
+| Endpoint | Description | Example Usage |
+|----------|-------------|---------------|
+| `file/open` | Queue-based async file opening | Open firmware for analysis |
+| `data/read` | Read hex data with encoding options | Extract file headers |
+| `data/search` | Pattern search (hex/text/regex) | Find magic numbers |
+| `data/hash` | Calculate file hashes | Verify file integrity |
+| `data/strings` | Extract ASCII/UTF-16 strings | Find embedded URLs |
+| `data/magic` | File type detection | Identify unknown files |
+| `data/disassemble` | Multi-arch disassembly | Reverse engineer code |
+| `batch/search` | Multi-file pattern search | Malware analysis |
+| `batch/hash` | Batch hash calculation | Forensic analysis |
+| `data/entropy` | Shannon entropy analysis | Detect encryption |
 
----
-
-## 📖 Documentation
-
-| Document | Description |
-|----------|-------------|
-| **[PATCH_MANIFEST.md](patches/PATCH_MANIFEST.md)** | Complete patch documentation with application order |
-| **[STATUS.md](STATUS.md)** | Project status, metrics, and roadmap |
-| [patches/README.md](patches/README.md) | Patch overview and explanation |
+**Full reference**: See [ENDPOINTS.md](ENDPOINTS.md) for all 28 endpoints with detailed parameters.
 
 ---
 
 ## 🧪 Testing
 
-All patches have been tested against **ImHex nightly build (commit b1e218596)** on macOS ARM64.
+### Test Suite
 
-### Known Working Status
-- ✅ Connection reset issue: RESOLVED
-- ✅ Queue-based file opening: WORKING
-- ✅ Batch operations: WORKING
-- ✅ Diff analysis: WORKING
-- ✅ All v1.0.0 tests: PASSING
-
-### Test After Building
+**255 tests, 100% passing** ✅
 
 ```bash
-# Ensure ImHex is running with Network Interface enabled
-cd mcp-server
-./venv/bin/python test_binary_analysis.py
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=lib --cov=mcp-server --cov-report=term-missing
+
+# Run specific test types
+pytest -m unit          # Unit tests only
+pytest -m integration   # Integration tests (requires ImHex)
+pytest -m compression   # Compression tests
 ```
 
-Expected: All endpoints respond correctly
+### Test Organization
+
+Tests are organized with pytest markers:
+- `@pytest.mark.unit` - Fast unit tests (no dependencies)
+- `@pytest.mark.integration` - Requires running ImHex
+- `@pytest.mark.slow` - Tests taking >1 second
+- `@pytest.mark.compression` - Compression module tests
+
+### Coverage
+
+Current coverage by module:
+- `error_handling.py`: 94%
+- `advanced_features.py`: 96%
+- `advanced_cache.py`: 92%
+- `batching.py`: 90%
+- `security.py`: 82%
+
+**Target**: 80%+ coverage for all modules
 
 ---
 
-## 🔧 For Developers
+## ⚡ Performance
 
-### Regenerating Patches
+### Overall Improvements
 
-If you modify the ImHex source after applying patches:
+17/17 optimizations complete (100%)
 
-```bash
-cd ImHex
-git format-patch origin/master..HEAD -o ../patches/ --start-number=7
+| Metric | Baseline | Optimized | Improvement |
+|--------|----------|-----------|-------------|
+| **Total runtime** | 0.217s | 0.178s | **18% faster** |
+| **Function calls** | 443,231 | 371,908 | **16% fewer** |
+| **Cache operations** | 0.169s | ~0.127s | **28% faster** |
+| **JSON serialization** | 0.072s | 0.002s | **97% faster** |
+| **Lock overhead** | 24,044 calls | 18,024 | **25% reduction** |
+
+### Key Optimizations
+
+**Round 1**: orjson + LRU Caching + Fast Size Estimation
+- orjson for 2-3x faster JSON (24x per call in practice)
+- LRU-cached key generation with `@lru_cache(maxsize=1000)`
+- Direct length calculations for size estimation
+
+**Round 2**: Compression + Async Lock Optimization
+- Compression buffer reuse with `zlib.compressobj()`
+- Adaptive compression levels (based on data size)
+- CacheEntry creation moved outside critical section
+- 25% reduction in time.time() calls under lock
+
+### Compression Performance
+
+- **98.9% bandwidth reduction** with zstd
+- **Net benefit**: 227ms saved per 100 requests (@ 100 Mbps)
+- **Overhead**: <1ms compression time for most payloads
+- **Cache speedup**: 21,670x faster for metadata
+
+**Full details**: See [lib/PERFORMANCE_RESULTS.md](lib/PERFORMANCE_RESULTS.md) and [lib/OPTIMIZATION_RESULTS_ROUND2.md](lib/OPTIMIZATION_RESULTS_ROUND2.md)
+
+---
+
+## 📂 Project Structure
+
 ```
-
-This generates new patches from your commits.
-
-### Updating to Latest ImHex
-
-```bash
-# 1. Clone latest ImHex
-git clone https://github.com/WerWolv/ImHex.git ImHex-new
-cd ImHex-new
-
-# 2. Apply patches (may need manual fixes if ImHex changed)
-git apply /path/to/imhexMCP/patches/*.patch
-
-# 3. Resolve conflicts if any
-# 4. Commit and regenerate patches
-git add .
-git commit -m "Apply MCP patches to latest ImHex"
-git format-patch origin/master..HEAD -o /path/to/imhexMCP/patches/
+imhexMCP/
+├── lib/                          # Core Python library (production-ready)
+│   ├── async_client.py          # Main async client
+│   ├── cache.py                 # Response caching (LRU + orjson)
+│   ├── data_compression.py      # Adaptive compression
+│   ├── connection_pool.py       # Connection pooling
+│   ├── request_batching.py      # Batch operations
+│   ├── error_handling.py        # Retry logic & circuit breaker
+│   ├── security.py              # Input validation & sanitization
+│   ├── metrics.py               # Prometheus metrics
+│   └── test_*.py                # Test suite (255 tests)
+│
+├── mcp-server/                  # MCP server implementation
+│   ├── server.py                # Main MCP server (2381 lines)
+│   ├── enhanced_client.py       # Enhanced client wrapper
+│   ├── imhex_cli.py            # CLI interface
+│   └── benchmark_*.py          # Performance benchmarks
+│
+├── patches/                     # Git patches for ImHex
+│   ├── PATCH_MANIFEST.md        # Patch documentation
+│   ├── 0001-feat-*.patch        # Queue-based file opening
+│   └── 0007-0014-*.patch        # Complete MCP plugin
+│
+├── ImHex/                       # ImHex submodule (1.38.0.WIP)
+│   └── build/imhex             # ImHex binary
+│
+├── docs/                        # Comprehensive documentation
+│   ├── LIBRARY-ARCHITECTURE.md # 15+ Mermaid diagrams
+│   ├── API.md                  # API reference
+│   └── ...
+│
+├── CLAUDE.md                    # AI assistant context
+├── README.md                    # This file
+└── setup-imhex-mcp.sh          # Automated setup script
 ```
 
 ---
@@ -275,33 +315,66 @@ git format-patch origin/master..HEAD -o /path/to/imhexMCP/patches/
 
 ```
 ┌─────────────────────┐
-│   User / AI         │  Analyze binaries
+│   User / AI         │  Analyze binaries via Claude
 └──────────┬──────────┘
-           │ Network requests (JSON over TCP)
-           │
+           │ MCP Protocol (stdio)
+┌──────────▼──────────┐
+│   MCP Server        │  Python server (40+ tools)
+│   - Request handling│  • Async operations
+│   - Caching         │  • Connection pooling
+│   - Compression     │  • Performance optimization
+└──────────┬──────────┘
+           │ JSON-RPC over TCP
 ┌──────────▼──────────┐
 │   ImHex             │  Hex editor with network interface
 │   Network Interface │  • Listens on localhost:31337
 └──────────┬──────────┘
-           │ Internal API calls
-           │
+           │ Plugin API
 ┌──────────▼──────────┐
-│   MCP Plugin        │  This project's patches
-│   - File operations │  • 16+ network endpoints
-│   - Data analysis   │  • Queue-based file opening
-│   - Batch ops       │  • Async diff analysis
-│   - Hash/Search     │  • Enhanced error handling
+│   MCP Plugin        │  C++ plugin (patched)
+│   - File operations │  • Queue-based file opening
+│   - Data analysis   │  • 28 network endpoints
+│   - Batch ops       │  • Enhanced error handling
 └──────────┬──────────┘
            │ ImHex APIs
-           │
 ┌──────────▼──────────┐
 │   ImHex Core        │
 │   - FileProvider    │
 │   - Pattern Engine  │
 │   - Crypto Library  │
-│   - TaskManager     │
 └─────────────────────┘
 ```
+
+---
+
+## 📊 Improvements Summary
+
+**Status**: 17/17 complete (100%) 🎉
+
+### Critical Improvements
+1. ✅ **Pytest Framework** - Professional test suite (255 tests, 100% passing)
+2. ✅ **CI/CD Pipeline** - GitHub Actions (tests, security, lint, benchmarks)
+3. ✅ **Type Hints** - 100% mypy compliance
+4. ✅ **Python 3.14 Compatibility** - All tests passing
+5. ✅ **Test Suite Fixes** - From 86% to 100% pass rate
+
+### Performance & Optimization
+6. ✅ **Performance Profiling** - cProfile analysis, bottleneck identification
+7. ✅ **Optimization Round 1** - orjson, LRU caching (18% faster)
+8. ✅ **Optimization Round 2** - Compression, async locks (25% lock reduction)
+
+### Security & Quality
+9. ✅ **Security Hardening** - Rate limiting, input validation, SQL injection prevention
+10. ✅ **Code Quality Tools** - Black, flake8, mypy
+11. ✅ **Centralized Config** - Pydantic-based validation
+
+### Documentation
+12. ✅ **Sphinx API Documentation** - 100% module coverage (21 modules)
+13. ✅ **Architecture Diagrams** - 15+ Mermaid diagrams
+14. ✅ **Property-Based Testing** - Hypothesis integration
+15. ✅ **Prometheus Metrics** - Production monitoring
+
+**Full details**: See [IMPROVEMENTS-SUMMARY.md](IMPROVEMENTS-SUMMARY.md)
 
 ---
 
@@ -315,102 +388,40 @@ git format-patch origin/master..HEAD -o /path/to/imhexMCP/patches/
 - ⚠️ **Linux x86_64** - Standard ImHex build process
 - ⚠️ **Windows** - Via MSYS2/MinGW64
 
-Patches modify ImHex's C++ code, so any platform ImHex supports should work.
-
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Areas for help:
+We welcome contributions!
 
-- 🐛 **Bug fixes** - Report and fix issues
-- 📝 **Documentation** - Improve guides and examples
-- 🧪 **Testing** - Test on different platforms
-- ✨ **Features** - Add new endpoints or improve existing ones
+### Areas for Help
+- 🐛 Bug fixes and issue reports
+- 📝 Documentation improvements
+- 🧪 Testing on different platforms
+- ✨ New features and endpoints
 
 ### Contribution Workflow
 
 1. Fork this repository
 2. Clone ImHex and apply patches
-3. Make your changes to ImHex source
-4. Test thoroughly
-5. Commit your changes to ImHex
-6. Generate new patches: `git format-patch origin/master..HEAD`
-7. Submit PR with updated patches
+3. Make your changes
+4. Run tests: `pytest`
+5. Generate new patches: `git format-patch origin/master..HEAD`
+6. Submit PR with updated patches
 
 ---
 
-## 📊 Project Statistics
+## 📄 Documentation
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| **Repository Size** | ~500KB | Patches only |
-| **Total Patches** | 10 | All tested and working |
-| **Patch Size** | 209KB | Total size of all patches |
-| **Network Endpoints** | 16+ | File, data, batch, analysis operations |
-| **Code Lines Added** | ~3,500 | MCP plugin implementation |
-| **Tested ImHex Version** | b1e218596 | ImHex nightly build |
-| **Platform** | macOS ARM64 | Also works on x86_64 |
-
----
-
-## 🗺️ Roadmap
-
-### v1.0.0 (Current) ✅
-- [x] Complete MCP plugin implementation
-- [x] Queue-based async file opening
-- [x] 16+ network endpoints
-- [x] Batch operations (open_directory, search, hash)
-- [x] Diff analysis with Myers algorithm
-- [x] Production-ready automated setup
-
-### Future (Community Driven)
-- [ ] WebSocket support for streaming responses
-- [ ] Authentication for network interface
-- [ ] MCP server integration (Python)
-- [ ] Docker container for easy deployment
-- [ ] Homebrew formula for macOS
-
-Have ideas? Open an issue or discussion!
-
----
-
-## ❓ FAQ
-
-<details>
-<summary><b>Do patches work with the latest ImHex?</b></summary>
-
-Patches are tested against ImHex commit b1e218596. They should apply to nearby commits, but may need adjustments for major ImHex changes. If patches fail, open an issue.
-
-</details>
-
-<details>
-<summary><b>Can I use my existing ImHex installation?</b></summary>
-
-Yes! Just apply the patches to your ImHex directory and rebuild. The setup script is optional - it just automates the process.
-
-</details>
-
-<details>
-<summary><b>What if a patch fails to apply?</b></summary>
-
-First, check you're in a clean ImHex directory. If ImHex has changed significantly, patches may need manual adjustment. Open an issue and we'll update the patches.
-
-</details>
-
-<details>
-<summary><b>Do I need the MCP server (Python)?</b></summary>
-
-No! The patches add a network interface directly to ImHex. You can connect to it from any client (Python, curl, AI assistants, etc.). An MCP server would be an additional component.
-
-</details>
-
-<details>
-<summary><b>Is this safe for malware analysis?</b></summary>
-
-The MCP plugin runs inside ImHex with the same permissions. The network interface only listens on localhost (127.0.0.1). Use appropriate sandboxing as you would with ImHex normally.
-
-</details>
+| Document | Description |
+|----------|-------------|
+| **[CLAUDE.md](CLAUDE.md)** | Complete project context for AI assistants |
+| **[patches/PATCH_MANIFEST.md](patches/PATCH_MANIFEST.md)** | Patch documentation and application order |
+| **[docs/LIBRARY-ARCHITECTURE.md](docs/LIBRARY-ARCHITECTURE.md)** | Architecture diagrams and design |
+| **[lib/PERFORMANCE_RESULTS.md](lib/PERFORMANCE_RESULTS.md)** | Performance optimization results |
+| **[TESTING.md](TESTING.md)** | Testing guide and best practices |
+| **[docs/SECURITY.md](docs/SECURITY.md)** | Security guidelines |
+| **[docs/API.md](docs/API.md)** | API reference |
 
 ---
 
@@ -422,42 +433,37 @@ The MCP plugin runs inside ImHex with the same permissions. The network interfac
 
 ---
 
+## 📞 Support
+
+### Get Help
+- 📖 **Documentation**: Start with [CLAUDE.md](CLAUDE.md)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/jmpnop/imhexMCP/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/jmpnop/imhexMCP/discussions)
+
+### Report Issues
+
+Please include:
+- ImHex commit hash
+- Operating system and architecture
+- Python version
+- Error messages
+- Steps to reproduce
+
+---
+
 ## 📄 License
 
 **GPL-2.0** - Same as ImHex
 
-This project provides patches for ImHex and follows its licensing terms. See [LICENSE](LICENSE) for full text.
+This project provides a Model Context Protocol server and patches for ImHex, following its licensing terms. See [LICENSE](LICENSE) for full text.
 
 ---
 
 ## 🙏 Credits
 
-### Core Project
 - **[ImHex](https://github.com/WerWolv/ImHex)** by [WerWolv](https://github.com/WerWolv) - The amazing hex editor
 - **[Model Context Protocol](https://modelcontextprotocol.io/)** by [Anthropic](https://www.anthropic.com/) - Protocol specification
-
-### Special Thanks
-- WerWolv for creating ImHex and its excellent plugin API
-- Anthropic for the MCP specification
 - The reverse engineering community for feedback and testing
-
----
-
-## 📞 Support
-
-### Get Help
-- 📖 **Documentation:** Start with [PATCH_MANIFEST.md](patches/PATCH_MANIFEST.md)
-- 🐛 **Issues:** [GitHub Issues](https://github.com/jmpnop/imhexMCP/issues)
-- 💬 **Discussions:** [GitHub Discussions](https://github.com/jmpnop/imhexMCP/discussions)
-
-### Report Issues
-
-When reporting issues, please include:
-- ImHex commit hash
-- Operating system and architecture
-- Which patches failed to apply
-- Error messages
-- Steps to reproduce
 
 ---
 
@@ -467,10 +473,10 @@ When reporting issues, please include:
 
 **Made with ❤️ for the reverse engineering community**
 
-[Report Bug](https://github.com/jmpnop/imhexMCP/issues) · [Request Feature](https://github.com/jmpnop/imhexMCP/issues) · [Documentation](patches/)
+[Report Bug](https://github.com/jmpnop/imhexMCP/issues) · [Request Feature](https://github.com/jmpnop/imhexMCP/issues) · [Documentation](docs/)
 
 ---
 
-**Version 2.0.0** | **Last Updated: 2025-11-13** | **Status: ✅ Production Ready**
+**Version 2.0.0** | **Last Updated: 2025-11-15** | **Status: ✅ Production Ready**
 
 </div>
