@@ -13,7 +13,17 @@ import sys
 import functools
 import threading
 from pathlib import Path
-from typing import Dict, Any, Optional, Callable, TypeVar, Generic
+from typing import (
+    Dict,
+    Any,
+    Optional,
+    Callable,
+    TypeVar,
+    Generic,
+    Tuple,
+    cast,
+    overload,
+)
 
 # Add lib directory to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -41,7 +51,15 @@ class LazyProperty(Generic[T]):
         self.name = func.__name__
         self.lock = threading.Lock()
 
+    @overload
+    def __get__(self, obj: None, objtype: Any = None) -> "LazyProperty[T]":
+        ...
+
+    @overload
     def __get__(self, obj: Any, objtype: Any = None) -> T:
+        ...
+
+    def __get__(self, obj: Any, objtype: Any = None) -> "T | LazyProperty[T]":
         if obj is None:
             return self
 
@@ -86,10 +104,12 @@ class LazyValue(Generic[T]):
     def get(self) -> T:
         """Get value, computing it on first access."""
         if self._initialized:
+            assert self._value is not None
             return self._value
 
         with self._lock:
             if self._initialized:
+                assert self._value is not None
                 return self._value
 
             self._value = self._factory()
@@ -127,7 +147,7 @@ def memoize(func: Callable[..., T]) -> Callable[..., T]:
         ...         return n
         ...     return fibonacci(n-1) + fibonacci(n-2)
     """
-    cache = {}
+    cache: Dict[Tuple[Any, ...], T] = {}
     lock = threading.Lock()
 
     @functools.wraps(func)
@@ -148,9 +168,9 @@ def memoize(func: Callable[..., T]) -> Callable[..., T]:
             return result
 
     # Add cache inspection methods
-    wrapper.cache = cache
-    wrapper.cache_clear = lambda: cache.clear()
-    wrapper.cache_info = lambda: {
+    wrapper.cache = cache  # type: ignore[attr-defined]
+    wrapper.cache_clear = lambda: cache.clear()  # type: ignore[attr-defined]
+    wrapper.cache_info = lambda: {  # type: ignore[attr-defined]
         "size": len(cache),
         "keys": list(cache.keys()),
     }
@@ -176,7 +196,7 @@ def memoize_with_ttl(ttl: float):
     import time
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
-        cache = {}
+        cache: Dict[Tuple[Any, ...], Tuple[T, float]] = {}
         lock = threading.Lock()
 
         @functools.wraps(func)
@@ -201,9 +221,9 @@ def memoize_with_ttl(ttl: float):
                 cache[key] = (result, current_time)
                 return result
 
-        wrapper.cache = cache
-        wrapper.cache_clear = lambda: cache.clear()
-        wrapper.cache_info = lambda: {
+        wrapper.cache = cache  # type: ignore[attr-defined]
+        wrapper.cache_clear = lambda: cache.clear()  # type: ignore[attr-defined]
+        wrapper.cache_info = lambda: {  # type: ignore[attr-defined]
             "size": len(cache),
             "keys": list(cache.keys()),
             "ttl": ttl,
@@ -390,7 +410,7 @@ class LazyProviderList:
         self._load_providers()
 
 
-class DeferredOperation:
+class DeferredOperation(Generic[T]):
     """
     Deferred operation that executes on demand.
 
@@ -419,10 +439,12 @@ class DeferredOperation:
     def execute(self) -> T:
         """Execute operation if not already done."""
         if self._executed:
+            assert self._result is not None
             return self._result
 
         with self._lock:
             if self._executed:
+                assert self._result is not None
                 return self._result
 
             self._result = self._operation()
@@ -567,7 +589,7 @@ def once(func: Callable[[], T]) -> Callable[[], T]:
         >>> initialize()  # Prints "Initializing..."
         >>> initialize()  # Returns cached result, no print
     """
-    result = []
+    result: list[T] = []
     lock = threading.Lock()
 
     @functools.wraps(func)

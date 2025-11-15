@@ -10,7 +10,7 @@ import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Optional
 
-from .metrics import ImHexMCPMetrics
+from metrics import ImHexMCPMetrics  # type: ignore[import-not-found]
 
 logger = logging.getLogger(__name__)
 

@@ -9,14 +9,22 @@ Features:
 - Request size limits
 - Path traversal protection
 - JSON payload validation
+- SQL injection protection
+- Command injection protection
+- IP whitelisting/blacklisting
+- Security event logging
 """
 
 import asyncio
 import time
 import re
-from typing import Dict, Any, Optional, List
+import logging
+from typing import Dict, Any, Optional, List, Set
 from pathlib import Path
 from dataclasses import dataclass, field
+import ipaddress
+
+logger = logging.getLogger(__name__)
 
 
 class SecurityViolation(Exception):
@@ -33,6 +41,20 @@ class InvalidInput(SecurityViolation):
 
 class PayloadTooLarge(SecurityViolation):
     """Exception raised when payload exceeds size limit."""
+
+
+@dataclass
+class IPFilterConfig:
+    """Configuration for IP filtering."""
+
+    enabled: bool = False
+    whitelist: Set[str] = field(
+        default_factory=set
+    )  # Allowed IP addresses/networks
+    blacklist: Set[str] = field(
+        default_factory=set
+    )  # Blocked IP addresses/networks
+    whitelist_mode: bool = False  # If True, only whitelist IPs allowed
 
 
 @dataclass
@@ -66,6 +88,29 @@ class ValidationConfig:
         ]
     )
     sanitize_strings: bool = True  # Remove control characters
+    check_sql_injection: bool = True  # Detect SQL injection attempts
+    check_command_injection: bool = True  # Detect command injection attempts
+    sql_injection_patterns: List[str] = field(
+        default_factory=lambda: [
+            r"(\bUNION\b.*\bSELECT\b)",
+            r"(\bSELECT\b.*\bFROM\b)",
+            r"(\bINSERT\b.*\bINTO\b)",
+            r"(\bUPDATE\b.*\bSET\b)",
+            r"(\bDELETE\b.*\bFROM\b)",
+            r"(\bDROP\b.*\bTABLE\b)",
+            r"(--|\#|\/\*|\*\/)",  # SQL comments
+            r"(\bOR\b.*=.*)",
+            r"(\bAND\b.*=.*)",
+        ]
+    )
+    command_injection_patterns: List[str] = field(
+        default_factory=lambda: [
+            r"[\;\|\&\$\`]",  # Shell metacharacters
+            r"\$\(",  # Command substitution
+            r"\`",  # Backticks
+            r">\s*/dev/",  # Device redirection
+        ]
+    )
 
 
 class TokenBucket:
@@ -227,6 +272,53 @@ class InputValidator:
         """Initialize validator with configuration."""
         self.config = config
 
+    def check_sql_injection(self, value: str, field_name: str = "value") -> None:
+        """
+        Check for SQL injection patterns.
+
+        Args:
+            value: String to check
+            field_name: Name of field for logging
+
+        Raises:
+            InvalidInput: If SQL injection pattern detected
+        """
+        if not self.config.check_sql_injection:
+            return
+
+        value_upper = value.upper()
+        for pattern in self.config.sql_injection_patterns:
+            if re.search(pattern, value_upper, re.IGNORECASE):
+                logger.warning(
+                    f"SQL injection attempt detected in {field_name}: {pattern}"
+                )
+                raise InvalidInput(
+                    f"{field_name} contains potentially malicious content"
+                )
+
+    def check_command_injection(self, value: str, field_name: str = "value") -> None:
+        """
+        Check for command injection patterns.
+
+        Args:
+            value: String to check
+            field_name: Name of field for logging
+
+        Raises:
+            InvalidInput: If command injection pattern detected
+        """
+        if not self.config.check_command_injection:
+            return
+
+        for pattern in self.config.command_injection_patterns:
+            if re.search(pattern, value):
+                logger.warning(
+                    f"Command injection attempt detected in {field_name}: {pattern}"
+                )
+                raise InvalidInput(
+                    f"{field_name} contains potentially dangerous characters"
+                )
+
     def validate_string(self, value: str, field_name: str = "value") -> str:
         """
         Validate and sanitize string input.
@@ -250,6 +342,10 @@ class InputValidator:
                 f"{field_name} exceeds maximum length of {
                     self.config.max_string_length}"
             )
+
+        # Check for injection attacks
+        self.check_sql_injection(value, field_name)
+        self.check_command_injection(value, field_name)
 
         # Sanitize control characters if enabled
         if self.config.sanitize_strings:
@@ -461,19 +557,102 @@ class InputValidator:
         return validated
 
 
+class IPFilter:
+    """
+    IP address filtering for access control.
+
+    Supports whitelisting and blacklisting of IP addresses and networks.
+    """
+
+    def __init__(self, config: IPFilterConfig):
+        """Initialize IP filter with configuration."""
+        self.config = config
+        self._whitelist_networks: List[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
+        self._blacklist_networks: List[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
+
+        # Parse whitelist
+        for ip_str in config.whitelist:
+            try:
+                if "/" in ip_str:
+                    self._whitelist_networks.append(ipaddress.ip_network(ip_str))
+                else:
+                    self._whitelist_networks.append(
+                        ipaddress.ip_network(f"{ip_str}/32")
+                    )
+            except ValueError as e:
+                logger.error(f"Invalid whitelist IP/network {ip_str}: {e}")
+
+        # Parse blacklist
+        for ip_str in config.blacklist:
+            try:
+                if "/" in ip_str:
+                    self._blacklist_networks.append(ipaddress.ip_network(ip_str))
+                else:
+                    self._blacklist_networks.append(
+                        ipaddress.ip_network(f"{ip_str}/32")
+                    )
+            except ValueError as e:
+                logger.error(f"Invalid blacklist IP/network {ip_str}: {e}")
+
+    def is_allowed(self, ip_address: str) -> bool:
+        """
+        Check if IP address is allowed.
+
+        Args:
+            ip_address: IP address to check
+
+        Returns:
+            True if allowed, False otherwise
+        """
+        if not self.config.enabled:
+            return True
+
+        try:
+            ip = ipaddress.ip_address(ip_address)
+        except ValueError:
+            logger.warning(f"Invalid IP address: {ip_address}")
+            return False
+
+        # Check blacklist first
+        for network in self._blacklist_networks:
+            if ip in network:
+                logger.warning(f"IP {ip_address} is blacklisted")
+                return False
+
+        # If whitelist mode, IP must be in whitelist
+        if self.config.whitelist_mode:
+            for network in self._whitelist_networks:
+                if ip in network:
+                    return True
+            logger.warning(
+                f"IP {ip_address} not in whitelist (whitelist mode enabled)"
+            )
+            return False
+
+        # Check whitelist (if not empty, acts as additional allowed IPs)
+        if self._whitelist_networks:
+            for network in self._whitelist_networks:
+                if ip in network:
+                    return True
+
+        # Default allow if not in whitelist mode
+        return True
+
+
 @dataclass
 class SecurityConfig:
     """Master security configuration."""
 
     rate_limit: RateLimitConfig = field(default_factory=RateLimitConfig)
     validation: ValidationConfig = field(default_factory=ValidationConfig)
+    ip_filter: IPFilterConfig = field(default_factory=IPFilterConfig)
 
 
 class SecurityManager:
     """
     Centralized security management.
 
-    Combines rate limiting, input validation, and other security features.
+    Combines rate limiting, input validation, IP filtering, and other security features.
     """
 
     def __init__(self, config: Optional[SecurityConfig] = None):
@@ -481,12 +660,14 @@ class SecurityManager:
         self.config = config or SecurityConfig()
         self.rate_limiter = RateLimiter(self.config.rate_limit)
         self.validator = InputValidator(self.config.validation)
+        self.ip_filter = IPFilter(self.config.ip_filter)
 
     async def check_request(
         self,
         endpoint: str,
         data: Dict[str, Any],
         client_id: Optional[str] = None,
+        client_ip: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Perform all security checks on a request.
@@ -494,7 +675,8 @@ class SecurityManager:
         Args:
             endpoint: Endpoint being accessed
             data: Request data
-            client_id: Optional client identifier
+            client_id: Optional client identifier (host:port)
+            client_ip: Optional client IP address
 
         Returns:
             Validated and sanitized data
@@ -502,6 +684,13 @@ class SecurityManager:
         Raises:
             SecurityViolation: If any security check fails
         """
+        # Check IP filter
+        if client_ip and not self.ip_filter.is_allowed(client_ip):
+            logger.warning(
+                f"Access denied for IP {client_ip} to endpoint {endpoint}"
+            )
+            raise SecurityViolation(f"Access denied from IP {client_ip}")
+
         # Check rate limit
         await self.rate_limiter.check_rate_limit(client_id)
 
@@ -510,6 +699,11 @@ class SecurityManager:
 
         # Validate endpoint data
         validated_data = self.validator.validate_endpoint_data(endpoint, data)
+
+        # Log successful security check
+        logger.debug(
+            f"Security check passed for endpoint={endpoint}, client_id={client_id}, ip={client_ip}"
+        )
 
         return validated_data
 
