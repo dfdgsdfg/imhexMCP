@@ -90,7 +90,7 @@ class RequestBatcher:
         sock: socket.socket,
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+    ) -> Tuple[Dict[str, Any], float]:
         """Send single request on existing socket."""
         import time
 

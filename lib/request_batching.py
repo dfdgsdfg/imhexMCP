@@ -18,7 +18,7 @@ import asyncio
 
 # json import removed (unused)
 import time
-from typing import Dict, Any, List, Optional, Tuple, Callable
+from typing import Dict, Any, List, Optional, Tuple, Callable, cast
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -236,7 +236,7 @@ class RequestBatcher:
                     )
                 )
             else:
-                final_responses.append(response)
+                final_responses.append(cast(BatchResponse, response))
 
         # Calculate statistics
         elapsed = (time.perf_counter() - start_time) * 1000
@@ -339,7 +339,7 @@ class RequestBatcher:
                         data={"error": str(result)},
                     )
                 else:
-                    responses_dict[req.request_id] = result
+                    responses_dict[req.request_id] = cast(BatchResponse, result)
                 completed[req.request_id] = True
 
         # Order responses by original request order

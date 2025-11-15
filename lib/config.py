@@ -193,7 +193,7 @@ def load_config(config_path: Optional[str] = None) -> Config:
         )
 
     # Load base configuration
-    config_dict = {}
+    config_dict: dict = {}
     if Path(config_path).exists():
         with open(config_path, "r", encoding="utf-8") as f:
             config_dict = yaml.safe_load(f) or {}
