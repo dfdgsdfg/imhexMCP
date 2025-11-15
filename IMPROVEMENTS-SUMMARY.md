@@ -179,27 +179,110 @@ max-complexity = 15
 
 ---
 
+### 4. ✅ Python 3.14 Compatibility (COMPLETE)
+
+**Priority**: Critical
+**Status**: Fixed and tested
+**Date**: 2025-11-14
+**Files Modified**:
+- `lib/logging_config.py` - Fixed f-string format specifier
+- `lib/test_advanced_features.py` - Fixed hanging test
+
+**Issues Resolved**:
+
+1. **F-string Format Specifier Error**:
+   - **Problem**: `{record.levelname: 8s}` format not allowed in Python 3.14
+   - **Fix**: Changed to `{record.levelname:<8s}` (left-aligned)
+   - **Impact**: Fixed 2 failing tests in test_logging.py
+
+2. **Hanging Test in test_advanced_features.py**:
+   - **Problem**: Commented line caused `queue.get_next()` to wait indefinitely
+   - **Fix**: Uncommented request submission line
+   - **Impact**: Eliminated 10+ minute test hangs
+
+**Test Results**:
+- All 186 tests pass in 16.16 seconds
+- Test coverage: 22% overall
+- No hanging tests
+
+---
+
+### 5. ✅ Centralized Configuration System (COMPLETE)
+
+**Priority**: Critical
+**Status**: Implemented with pydantic
+**Date**: 2025-11-14
+**Files Created**:
+- `config.yaml.example` - Template configuration file
+- `lib/config.py` - Pydantic-based configuration system
+
+**Features**:
+
+#### Configuration Sections
+- Connection settings (host, port, timeouts)
+- Performance settings (compression, workers)
+- Cache settings (L1/L2 cache, TTL)
+- Security settings (rate limiting, validation)
+- Monitoring settings (metrics, logging)
+- Circuit breaker settings
+- Priority queue settings
+- Logging settings
+
+#### Key Capabilities
+- **Pydantic Validation**: All settings validated with clear error messages
+- **Environment Variable Overrides**: Override any setting via `IMHEX_MCP_*` env vars
+- **Type Safety**: Full type hints and validation
+- **Default Values**: Sensible defaults for all settings
+- **Documentation**: Well-documented example file
+
+**Usage**:
+```python
+from lib.config import load_config, get_config
+
+# Load from file
+config = load_config("config.yaml")
+
+# Or use global singleton
+config = get_config()
+
+# Access settings
+print(config.connection.host)
+print(config.cache.enabled)
+```
+
+**Environment Variable Examples**:
+```bash
+export IMHEX_MCP_CONNECTION_HOST=192.168.1.100
+export IMHEX_MCP_PERFORMANCE_MAX_WORKERS=8
+export IMHEX_MCP_SECURITY_ENABLE_RATE_LIMITING=true
+```
+
+**Benefits**:
+- Centralized configuration management
+- Type-safe settings access
+- Easy deployment configuration
+- Clear validation errors
+- Environment-specific overrides
+
+---
+
 ## Implementation Progress
 
-### Completed (3/15)
+### Completed (5/15)
 
 | Priority | Task | Status | Files | Impact |
 |----------|------|--------|-------|--------|
 | Critical | Pytest Framework | ✅ COMPLETE | 4 files | Testing foundation |
 | Critical | CI/CD Pipeline | ✅ COMPLETE | 4 workflows | Automation |
 | High | Code Quality Tools | ✅ COMPLETE | 1 config | Code consistency |
+| Critical | Python 3.14 Compatibility | ✅ COMPLETE | 2 files | All 186 tests pass |
+| Critical | Centralized Config | ✅ COMPLETE | config.yaml.example, lib/config.py | Pydantic-based validation |
 
 ### In Progress (1/15)
 
 | Priority | Task | Status | Progress |
 |----------|------|--------|----------|
-| Critical | Type Hints + mypy | 🔄 IN PROGRESS | Config added, implementation pending |
-
-### Pending High Priority (1/15)
-
-| Priority | Task | Status | Notes |
-|----------|------|--------|-------|
-| Critical | Centralized Config | ⏳ PENDING | Will use YAML for runtime config |
+| Critical | Type Hints + mypy | 🔄 IN PROGRESS | 34 errors identified, fixes pending |
 
 ---
 

@@ -71,7 +71,7 @@ class TestPriorityQueue:
             return True
 
         # Submit low priority request
-        future = await queue.submit(test_coro, Priority.LOW)
+        _future = await queue.submit(test_coro, Priority.LOW)  # noqa: F841
 
         # Wait for aging
         await asyncio.sleep(0.3)
