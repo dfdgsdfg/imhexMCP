@@ -17,9 +17,7 @@ converted to proper regex patterns.
 
 Related to batch operations Phase 1 testing.
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 ---
  plugins/mcp/source/plugin_mcp.cpp | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)

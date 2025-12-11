@@ -25,9 +25,7 @@ Result:
 
 All 10 batch operations tests now pass (100% success rate).
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 ---
  plugins/mcp/source/plugin_mcp.cpp | 12 ++++++++++--
  1 file changed, 10 insertions(+), 2 deletions(-)

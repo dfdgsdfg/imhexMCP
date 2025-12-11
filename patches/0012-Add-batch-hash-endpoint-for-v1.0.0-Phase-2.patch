@@ -21,9 +21,7 @@ Use cases:
 
 Part of v1.0.0 batch operations feature for automated workflows.
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 ---
  plugins/mcp/source/plugin_mcp.cpp | 113 +++++++++++++++++++++++++++++-
  1 file changed, 112 insertions(+), 1 deletion(-)

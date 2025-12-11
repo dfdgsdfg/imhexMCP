@@ -293,9 +293,6 @@ Follow this format:
 
 <metrics/results if applicable>
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 Types: feat, fix, perf, docs, test, refactor, chore

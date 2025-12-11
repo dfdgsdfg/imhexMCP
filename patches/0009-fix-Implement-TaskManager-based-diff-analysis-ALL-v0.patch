@@ -60,9 +60,7 @@ while (!taskCompleted && totalWaitMs < maxWaitMs) {
 
 Closes #diff-crash-issue
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 ---
  plugins/mcp/source/plugin_mcp.cpp | 46 +++++++++++++++++++++++++++----
  1 file changed, 40 insertions(+), 6 deletions(-)

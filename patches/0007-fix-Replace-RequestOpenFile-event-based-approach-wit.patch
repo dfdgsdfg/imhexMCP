@@ -38,9 +38,7 @@ workflows and full v0.4.0 testing (diff/analyze requires 2 open files).
 
 Fixes #timeout-issue
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 ---
  plugins/mcp/CMakeLists.txt        |   19 +
  plugins/mcp/source/plugin_mcp.cpp | 1280 +++++++++++++++++++++++++++++

@@ -11,9 +11,7 @@ Capture actual error messages from FileProvider::getErrorMessage() instead of
 generic 'Failed to open file' message. This provides better diagnostic information
 for troubleshooting file opening issues.
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 ---
  cmake/build_helpers.cmake                     |  6 ++-
  lib/libimhex/source/providers/provider.cpp    | 12 ++++-

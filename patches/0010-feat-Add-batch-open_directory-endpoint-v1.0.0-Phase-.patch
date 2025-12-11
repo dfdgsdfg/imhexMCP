@@ -38,9 +38,7 @@ Endpoint count: 20 → 21
 Implementation follows v1.0.0 batch operations design document.
 Part of Phase 1: Directory Opening (Week 1).
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 ---
  plugins/mcp/source/plugin_mcp.cpp | 184 +++++++++++++++++++++++++++++-
  1 file changed, 183 insertions(+), 1 deletion(-)

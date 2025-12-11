@@ -29,9 +29,7 @@ Two critical fixes for v0.4.0 endpoints:
 
 **Note**: The test script needs to be updated to use "intel" or "x86" instead of "x86_64" for architecture parameter.
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 ---
  plugins/mcp/source/plugin_mcp.cpp | 46 +++++++++++++++++++++++++------
  1 file changed, 37 insertions(+), 9 deletions(-)

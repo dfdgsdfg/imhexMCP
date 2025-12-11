@@ -23,9 +23,7 @@ This implements Solution 1 (Event-Based Response Queue) from FILE_OPEN_ANALYSIS.
 achieving the primary goal of preventing connection resets without requiring
 ImHex core modifications.
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-Co-Authored-By: Claude <noreply@anthropic.com>
 ---
  plugins/mcp/source/plugin_mcp.cpp | 1539 +++++++++++++++++++++--------
  1 file changed, 1130 insertions(+), 409 deletions(-)
