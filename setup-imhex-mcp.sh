@@ -113,10 +113,8 @@ if ! command -v uv &>/dev/null; then
     exit 1
 fi
 
-echo_info "Creating virtual environment..."
-uv venv "$MCP_SERVER_DIR/.venv"
 echo_info "Installing dependencies..."
-uv pip install --python "$MCP_SERVER_DIR/.venv/bin/python" -r "$MCP_SERVER_DIR/requirements.txt"
+(cd "$MCP_SERVER_DIR" && uv sync)
 echo_success "MCP server environment ready"
 
 # Build instructions
@@ -138,7 +136,7 @@ echo ""
 echo "To test the MCP plugin:"
 echo "  1. Run ImHex: $IMHEX_DIR/build/imhex"
 echo "  2. Enable Network Interface in Settings"
-echo "  3. Run test: cd $MCP_SERVER_DIR && ./.venv/bin/python test_binary_analysis.py"
+echo "  3. Run test: cd $MCP_SERVER_DIR && uv run python test_binary_analysis.py"
 echo ""
 
 if [ $FAILED -eq 0 ]; then
