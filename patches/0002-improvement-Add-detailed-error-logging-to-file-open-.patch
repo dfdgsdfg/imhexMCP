@@ -12,6 +12,7 @@ generic 'Failed to open file' message. This provides better diagnostic informati
 for troubleshooting file opening issues.
 
 Updated for upstream API change: open(bool) now returns OpenResult instead of bool.
+Also fix nodiscard warnings in convertToMemoryFile/convertToDirectAccess.
 
 ---
 diff --git a/cmake/build_helpers.cmake b/cmake/build_helpers.cmake
@@ -90,7 +91,7 @@ index f0a431f55..566ee4f8f 100644
          std::fs::path m_path;
          wolv::io::File m_file;
 diff --git a/plugins/builtin/source/content/providers/file_provider.cpp b/plugins/builtin/source/content/providers/file_provider.cpp
-index 3c49087fb..0591c89ea 100644
+index 3c49087fb..7e6d6c5c2 100644
 --- a/plugins/builtin/source/content/providers/file_provider.cpp
 +++ b/plugins/builtin/source/content/providers/file_provider.cpp
 @@ -234,7 +234,14 @@ namespace hex::plugin::builtin {
@@ -109,7 +110,7 @@ index 3c49087fb..0591c89ea 100644
  
          size_t fileSize = 0x00;
          {
-@@ -351,26 +358,38 @@ namespace hex::plugin::builtin {
+@@ -351,26 +358,37 @@ namespace hex::plugin::builtin {
      }
  
      void FileProvider::loadSettings(const nlohmann::json &settings) {
@@ -142,9 +143,8 @@ index 3c49087fb..0591c89ea 100644
 -            } catch (const std::fs::filesystem_error &) {
 -                fullPath = projectPath.parent_path() / path;
 -            }
-+                if (!wolv::io::fs::exists(fullPath)) {
-+                    this->setErrorMessage(fmt::format("hex.builtin.provider.file.error.open"_lang, m_path.string(), formatSystemError(ENOENT)));
-+                }
++                if (!wolv::io::fs::exists(fullPath))
++                    fullPath = path;
  
 -            if (!wolv::io::fs::exists(fullPath))
 -                fullPath = path;
@@ -163,6 +163,21 @@ index 3c49087fb..0591c89ea 100644
      }
  
      nlohmann::json FileProvider::storeSettings(nlohmann::json settings) const {
+@@ -401,12 +419,12 @@ namespace hex::plugin::builtin {
+ 
+     void FileProvider::convertToMemoryFile() {
+         this->close();
+-        this->open(false);
++        std::ignore = this->open(false);
+     }
+ 
+     void FileProvider::convertToDirectAccess() {
+         this->close();
+-        this->open(true);
++        std::ignore = this->open(true);
+     }
+ 
+     void FileProvider::handleFileChange() {
 --- a/plugins/mcp/source/plugin_mcp.cpp
 +++ b/plugins/mcp/source/plugin_mcp.cpp
 @@ -70,10 +70,11 @@
