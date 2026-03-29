@@ -1,4 +1,4 @@
-From cba4eacd1ee2a2624f3b8dc11ae486aa98c9a6ee Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Pavel Polikashin <polikashin@celestialtech.io>
 Date: Tue, 11 Nov 2025 22:12:14 -0500
 Subject: [PATCH 2/2] improvement: Add detailed error logging to file/open
@@ -7,27 +7,18 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-Capture actual error messages from FileProvider::getErrorMessage() instead of
+Capture actual error messages from OpenResult::getErrorMessage() instead of
 generic 'Failed to open file' message. This provides better diagnostic information
 for troubleshooting file opening issues.
 
+Updated for upstream API change: open(bool) now returns OpenResult instead of bool.
 
 ---
- cmake/build_helpers.cmake                     |  6 ++-
- lib/libimhex/source/providers/provider.cpp    | 12 ++++-
- plugins/builtin/CMakeLists.txt                |  2 +
- .../content/providers/file_provider.hpp       |  3 +-
- .../content/providers/file_provider.cpp       | 53 ++++++++++++-------
- plugins/mcp/source/plugin_mcp.cpp             |  4 +-
- plugins/mcp/test_list_providers.py            | 14 +++++
- 7 files changed, 67 insertions(+), 27 deletions(-)
- create mode 100644 plugins/mcp/test_list_providers.py
-
 diff --git a/cmake/build_helpers.cmake b/cmake/build_helpers.cmake
-index c8f0cc5b9..90e464558 100644
+index 384fe96e0..76cd3a5cb 100644
 --- a/cmake/build_helpers.cmake
 +++ b/cmake/build_helpers.cmake
-@@ -547,9 +547,11 @@ function(verifyCompiler)
+@@ -580,9 +580,11 @@ function(verifyCompiler)
          message(FATAL_ERROR "ImHex requires GCC 12.0.0 or newer. Please use the latest GCC version.")
      elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "17.0.0")
          message(FATAL_ERROR "ImHex requires Clang 17.0.0 or newer. Please use the latest Clang version.")
@@ -42,10 +33,10 @@ index c8f0cc5b9..90e464558 100644
      endif()
  endfunction()
 diff --git a/lib/libimhex/source/providers/provider.cpp b/lib/libimhex/source/providers/provider.cpp
-index 381ba357a..8269eb517 100644
+index 4cd87c430..6b07c0e71 100644
 --- a/lib/libimhex/source/providers/provider.cpp
 +++ b/lib/libimhex/source/providers/provider.cpp
-@@ -257,8 +257,16 @@ namespace hex::prv {
+@@ -289,8 +289,16 @@ namespace hex::prv {
      }
  
      void Provider::loadSettings(const nlohmann::json &settings) {
@@ -65,10 +56,10 @@ index 381ba357a..8269eb517 100644
  
      std::pair<Region, bool> Provider::getRegionValidity(u64 address) const {
 diff --git a/plugins/builtin/CMakeLists.txt b/plugins/builtin/CMakeLists.txt
-index 6faea9c60..455ad91f3 100644
+index 92088a29e..0993e8e90 100644
 --- a/plugins/builtin/CMakeLists.txt
 +++ b/plugins/builtin/CMakeLists.txt
-@@ -132,6 +132,8 @@ add_imhex_plugin(
+@@ -145,6 +145,8 @@ add_imhex_plugin(
          ${JTHREAD_LIBRARIES}
          plcli
          libpl-gen
@@ -78,35 +69,35 @@ index 6faea9c60..455ad91f3 100644
  
  if (WIN32)
 diff --git a/plugins/builtin/include/content/providers/file_provider.hpp b/plugins/builtin/include/content/providers/file_provider.hpp
-index b8d061033..5c048fc59 100644
+index f0a431f55..566ee4f8f 100644
 --- a/plugins/builtin/include/content/providers/file_provider.hpp
 +++ b/plugins/builtin/include/content/providers/file_provider.hpp
-@@ -44,6 +44,7 @@ namespace hex::plugin::builtin {
+@@ -45,6 +45,7 @@ namespace hex::plugin::builtin {
          void setPath(const std::fs::path &path);
  
-         [[nodiscard]] bool open() override;
-+        bool open(bool memoryMapped);
+         [[nodiscard]] OpenResult open() override;
++        [[nodiscard]] OpenResult open(bool directAccess);
          void close() override;
  
          void loadSettings(const nlohmann::json &settings) override;
-@@ -65,8 +66,6 @@ namespace hex::plugin::builtin {
+@@ -66,8 +67,6 @@ namespace hex::plugin::builtin {
      private:
          void handleFileChange();
  
--        bool open(bool memoryMapped);
+-        OpenResult open(bool directAccess);
 -
      protected:
          std::fs::path m_path;
          wolv::io::File m_file;
 diff --git a/plugins/builtin/source/content/providers/file_provider.cpp b/plugins/builtin/source/content/providers/file_provider.cpp
-index ff8104edc..32608c79d 100644
+index 3c49087fb..0591c89ea 100644
 --- a/plugins/builtin/source/content/providers/file_provider.cpp
 +++ b/plugins/builtin/source/content/providers/file_provider.cpp
-@@ -199,7 +199,14 @@ namespace hex::plugin::builtin {
+@@ -234,7 +234,14 @@ namespace hex::plugin::builtin {
      }
  
-     bool FileProvider::open() {
--        const size_t maxMemoryFileSize = ContentRegistry::Settings::read<u64>("hex.builtin.setting.general", "hex.builtin.setting.general.max_mem_file_size", 128_MiB);
+     prv::Provider::OpenResult FileProvider::open() {
+-        const auto maxMemoryFileSize = ContentRegistry::Settings::read<u64>("hex.builtin.setting.general", "hex.builtin.setting.general.max_mem_file_size", 128_MiB);
 +        // Try to read settings, but gracefully handle when settings system is not initialized
 +        // (e.g., when called via network interface before ImHex fully starts)
 +        size_t maxMemoryFileSize = 128_MiB; // Default value
@@ -118,14 +109,11 @@ index ff8104edc..32608c79d 100644
  
          size_t fileSize = 0x00;
          {
-@@ -297,30 +304,38 @@ namespace hex::plugin::builtin {
+@@ -351,26 +358,38 @@ namespace hex::plugin::builtin {
      }
  
      void FileProvider::loadSettings(const nlohmann::json &settings) {
 -        Provider::loadSettings(settings);
--
--        auto pathString = settings.at("path").get<std::string>();
--        std::fs::path path = std::u8string(pathString.begin(), pathString.end());
 +        // Gracefully handle when settings are not available or incomplete
 +        // (e.g., when FileProvider is created programmatically via network interface)
 +        try {
@@ -142,6 +130,11 @@ index ff8104edc..32608c79d 100644
 +                    fullPath = projectPath.parent_path() / path;
 +                }
  
+-        auto pathString = settings.at("path").get<std::string>();
+-        std::fs::path path = std::u8string(pathString.begin(), pathString.end());
++                if (!wolv::io::fs::exists(fullPath))
++                    fullPath = path;
+ 
 -        if (auto projectPath = ProjectFile::getPath(); !projectPath.empty()) {
 -            std::fs::path fullPath;
 -            try {
@@ -149,19 +142,14 @@ index ff8104edc..32608c79d 100644
 -            } catch (const std::fs::filesystem_error &) {
 -                fullPath = projectPath.parent_path() / path;
 -            }
-+                if (!wolv::io::fs::exists(fullPath))
-+                    fullPath = path;
- 
--            if (!wolv::io::fs::exists(fullPath))
--                fullPath = path;
 +                if (!wolv::io::fs::exists(fullPath)) {
 +                    this->setErrorMessage(fmt::format("hex.builtin.provider.file.error.open"_lang, m_path.string(), formatSystemError(ENOENT)));
 +                }
  
--            if (!wolv::io::fs::exists(fullPath)) {
--                this->setErrorMessage(fmt::format("hex.builtin.provider.file.error.open"_lang, m_path.string(), formatSystemError(ENOENT)));
+-            if (!wolv::io::fs::exists(fullPath))
+-                fullPath = path;
 +                path = std::move(fullPath);
-             }
++            }
  
 -            path = std::move(fullPath);
 +            this->setPath(path);
@@ -175,25 +163,24 @@ index ff8104edc..32608c79d 100644
      }
  
      nlohmann::json FileProvider::storeSettings(nlohmann::json settings) const {
-diff --git a/plugins/mcp/source/plugin_mcp.cpp b/plugins/mcp/source/plugin_mcp.cpp
-index ddb3f247d..0ea95203a 100644
 --- a/plugins/mcp/source/plugin_mcp.cpp
 +++ b/plugins/mcp/source/plugin_mcp.cpp
-@@ -72,8 +72,8 @@ namespace hex::plugin::mcp {
+@@ -70,10 +70,11 @@
+                     auto fileProvider = std::make_unique<hex::plugin::builtin::FileProvider>();
+                     fileProvider->setPath(std::fs::path(request.path));
  
-                     if (!fileProvider->open(false)) {
+-                    if (!fileProvider->open(false)) {
++                    auto openResult = fileProvider->open(false);
++                    if (!openResult.isSuccess()) {
                          request.status = "error";
 -                        request.error_message = "Failed to open file";
 -                        hex::log::error("MCP: Failed to open file: {}", request.path);
-+                        request.error_message = fileProvider->getErrorMessage();
++                        request.error_message = std::string(openResult.getErrorMessage());
 +                        hex::log::error("MCP: Failed to open file '{}': {}", request.path, request.error_message);
                          continue;
                      }
  
-diff --git a/plugins/mcp/test_list_providers.py b/plugins/mcp/test_list_providers.py
-new file mode 100644
-index 000000000..959f44ee8
---- /dev/null
+--- a/plugins/mcp/test_list_providers.py
 +++ b/plugins/mcp/test_list_providers.py
 @@ -0,0 +1,14 @@
 +#!/usr/bin/env python3
@@ -212,4 +199,3 @@ index 000000000..959f44ee8
 +    pass
 -- 
 2.51.1
-
